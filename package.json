@@ -1,9 +1,22 @@
 {
-  "name": "notifyhub-auth-ui",
+  "name": "notifyhub",
   "version": "1.0.0",
   "private": true,
-  "description": "Frontend-only authentication UI for NotifyHub",
+  "description": "NotifyHub frontend migrated to Next.js with Tailwind CSS",
   "scripts": {
-    "start": "node server.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.19",
+    "postcss": "8.4.37",
+    "tailwindcss": "3.4.4"
   }
 }

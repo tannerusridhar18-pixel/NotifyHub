@@ -13,16 +13,16 @@ Frontend-only NotifyHub interface with a landing page plus five authentication p
 ## Run
 
 ```bash
-npm start
+npm run dev
 ```
 
 Then open:
 
-- `http://localhost:3000` for the landing page
-- `http://localhost:3000/auth.html` for the authentication entry page
+- `http://localhost:3000` for the home page
+- `http://localhost:3000/auth` for the authentication portal
 
 ## Notes
 
-- Static HTML, CSS, and JavaScript only
+- Next.js App Router with React and Tailwind CSS
 - No backend, API, database, or real authentication
 - Simulated validation, loading, and success states
