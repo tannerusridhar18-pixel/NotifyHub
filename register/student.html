@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Registration | NotifyHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <main class="auth-layout">
+    <section class="auth-panel auth-panel-brand">
+      <a class="logo" href="../index.html" aria-label="NotifyHub home">
+        <span class="brand-mark" aria-hidden="true"><span class="brand-bell"></span></span>
+        <span>
+          <strong>NotifyHub</strong>
+          <small>Smart Campus Announcement Platform</small>
+        </span>
+      </a>
+      <p class="eyebrow">Student Registration</p>
+      <h1>Create your student account</h1>
+      <p class="panel-copy">Join NotifyHub to receive relevant announcements, event reminders, and urgent updates designed for campus life.</p>
+      <div class="feature-list">
+        <div><strong>Course visibility</strong><span>See updates connected to your academic path.</span></div>
+        <div><strong>Campus awareness</strong><span>Catch important notices before they pass by.</span></div>
+        <div><strong>Mobile-ready access</strong><span>Register and sign in smoothly from anywhere.</span></div>
+      </div>
+    </section>
+
+    <section class="auth-panel auth-panel-form">
+      <nav class="role-switcher" aria-label="Switch role">
+        <a class="role-chip" href="../login/admin.html">Admin</a>
+        <a class="role-chip" href="faculty.html">Faculty</a>
+        <a class="role-chip is-active" href="student.html" aria-current="page">Student</a>
+      </nav>
+
+      <form class="auth-card" data-mode="register" data-role="student" novalidate>
+        <div class="card-head">
+          <span class="role-badge">Student Registration</span>
+          <h2>Create account</h2>
+          <p>Set up your student profile to stay updated with campus announcements and events.</p>
+        </div>
+
+        <div class="form-alert" aria-live="polite"></div>
+
+        <label class="field">
+          <span>Full Name</span>
+          <input type="text" name="fullName" autocomplete="name" placeholder="Enter full name" required>
+          <small class="field-error"></small>
+        </label>
+
+        <label class="field">
+          <span>Student ID</span>
+          <input type="text" name="studentId" placeholder="Enter student ID" required>
+          <small class="field-error"></small>
+        </label>
+
+        <label class="field">
+          <span>Department/Course</span>
+          <input type="text" name="department" placeholder="Enter department or course" required>
+          <small class="field-error"></small>
+        </label>
+
+        <label class="field">
+          <span>Year</span>
+          <select name="year" required>
+            <option value="">Select year</option>
+            <option>1st Year</option>
+            <option>2nd Year</option>
+            <option>3rd Year</option>
+            <option>4th Year</option>
+            <option>Postgraduate</option>
+          </select>
+          <small class="field-error"></small>
+        </label>
+
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" autocomplete="email" placeholder="student@notifyhub.edu" required>
+          <small class="field-error"></small>
+        </label>
+
+        <label class="field">
+          <span>Password</span>
+          <div class="password-wrap">
+            <input type="password" name="password" autocomplete="new-password" placeholder="Create a password" required>
+            <button type="button" class="toggle-password" data-target="password" aria-label="Show password">Show</button>
+          </div>
+          <small class="field-error"></small>
+        </label>
+
+        <label class="field">
+          <span>Confirm Password</span>
+          <div class="password-wrap">
+            <input type="password" name="confirmPassword" autocomplete="new-password" placeholder="Confirm your password" required>
+            <button type="button" class="toggle-password" data-target="confirmPassword" aria-label="Show confirm password">Show</button>
+          </div>
+          <small class="field-error"></small>
+        </label>
+
+        <label class="check-field check-field-block">
+          <input type="checkbox" name="terms" required>
+          <span>I agree to the terms and conditions for NotifyHub access.</span>
+        </label>
+        <small class="field-error checkbox-error"></small>
+
+        <button class="submit-button" type="submit">Register</button>
+
+        <p class="form-foot">
+          Already registered?
+          <a class="text-link" href="../login/student.html">Back to login</a>
+        </p>
+      </form>
+    </section>
+  </main>
+  <script src="../js/auth.js"></script>
+</body>
+</html>

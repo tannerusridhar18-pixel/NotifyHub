@@ -1,0 +1,9 @@
+{
+  "name": "notifyhub-auth-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend-only authentication UI for NotifyHub",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

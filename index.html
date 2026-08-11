@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NotifyHub | Smart Campus Announcement Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="home-body">
+  <header class="site-header" id="top">
+    <div class="site-shell">
+      <a class="logo site-logo" href="#top" aria-label="NotifyHub home">
+        <span class="brand-mark" aria-hidden="true"><span class="brand-bell"></span></span>
+        <span>
+          <strong>NotifyHub</strong>
+          <small>Smart Campus Announcement Platform</small>
+        </span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+        <a class="nav-link is-active" href="#top">Home</a>
+        <a class="nav-link" href="#announcements">Announcements</a>
+        <a class="nav-link" href="#events">Events</a>
+        <a class="nav-link" href="#about">About</a>
+        <a class="nav-link nav-login" href="auth.html">Login</a>
+        <a class="nav-cta" href="auth.html">Get Started</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero-section section-animate">
+      <div class="site-shell hero-grid">
+        <div class="hero-copy-block">
+          <p class="eyebrow">Modern Campus Communication</p>
+          <h1>Stay Connected. Stay Informed.</h1>
+          <p class="hero-copy">
+            NotifyHub brings campus announcements, events, and urgent alerts together in one smart
+            digital platform built for students, faculty, and administrators.
+          </p>
+          <div class="hero-points">
+            <span>Real-time announcements</span>
+            <span>Event visibility</span>
+            <span>Urgent alerts</span>
+          </div>
+          <div class="hero-actions">
+            <a class="hero-button hero-button-primary" href="#announcements">Explore Announcements</a>
+            <a class="hero-button hero-button-secondary" href="auth.html">Get Started</a>
+          </div>
+          <div class="hero-stats">
+            <article>
+              <strong>3 Roles</strong>
+              <span>Admin, Faculty, Student access flows</span>
+            </article>
+            <article>
+              <strong>1 Platform</strong>
+              <span>Centralized digital campus noticeboard</span>
+            </article>
+            <article>
+              <strong>Any Device</strong>
+              <span>Built for desktop, tablet, and mobile access</span>
+            </article>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-label="NotifyHub notification preview">
+          <div class="hero-device">
+            <div class="device-topbar">
+              <span class="device-dot"></span>
+              <span class="device-title">Campus Feed</span>
+              <span class="device-badge">Live</span>
+            </div>
+            <div class="device-panel device-panel-alert">
+              <div>
+                <p>Urgent Alert</p>
+                <strong>Library block access shifts to Gate 2 after 6 PM today.</strong>
+              </div>
+              <span>Now</span>
+            </div>
+            <div class="device-panel">
+              <div>
+                <p>Event Reminder</p>
+                <strong>Innovation Club seminar starts at 2:00 PM in Auditorium A.</strong>
+              </div>
+              <span>2 PM</span>
+            </div>
+            <div class="device-panel">
+              <div>
+                <p>Announcement</p>
+                <strong>Mid-semester timetable updates are available for all departments.</strong>
+              </div>
+              <span>Today</span>
+            </div>
+            <div class="device-search">
+              <span class="search-pill">Search & filter by department</span>
+              <div class="search-tags">
+                <span>Events</span>
+                <span>Alerts</span>
+                <span>Academics</span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-float hero-float-left">
+            <strong>Faculty Posting</strong>
+            <span>Department notices and event updates</span>
+          </div>
+          <div class="hero-float hero-float-right">
+            <strong>Student Access</strong>
+            <span>Instant campus updates on the go</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section section-animate" id="announcements">
+      <div class="site-shell">
+        <div class="section-head">
+          <p class="eyebrow">Core Features</p>
+          <h2>Everything Your Campus Needs to Stay Connected</h2>
+          <p>NotifyHub replaces scattered notice boards with a clear, searchable, digital communication experience.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="info-card">
+            <div class="info-icon" aria-hidden="true">A</div>
+            <h3>Real-Time Announcements</h3>
+            <p>Help students and faculty receive important campus information quickly and clearly.</p>
+          </article>
+          <article class="info-card" id="events">
+            <div class="info-icon" aria-hidden="true">E</div>
+            <h3>Events</h3>
+            <p>Keep campus events, workshops, and academic activities visible in one place.</p>
+          </article>
+          <article class="info-card">
+            <div class="info-icon" aria-hidden="true">!</div>
+            <h3>Urgent Alerts</h3>
+            <p>Highlight high-priority updates when the campus needs fast communication.</p>
+          </article>
+          <article class="info-card">
+            <div class="info-icon" aria-hidden="true">S</div>
+            <h3>Search &amp; Filtering</h3>
+            <p>Make it easier to find relevant announcements, departments, and information.</p>
+          </article>
+          <article class="info-card">
+            <div class="info-icon" aria-hidden="true">D</div>
+            <h3>Accessible Anywhere</h3>
+            <p>Designed for smooth access across desktop, tablet, and mobile devices.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section section-animate">
+      <div class="site-shell">
+        <div class="section-head">
+          <p class="eyebrow">How It Works</p>
+          <h2>A simple flow for modern campus communication</h2>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <span class="step-number">01</span>
+            <h3>Publish</h3>
+            <p>Authorized Admin and Faculty users publish campus announcements and updates.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-number">02</span>
+            <h3>Notify</h3>
+            <p>Information becomes available through the centralized digital platform.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-number">03</span>
+            <h3>Stay Informed</h3>
+            <p>Students access announcements, events, and alerts directly from their devices.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section section-animate" id="about">
+      <div class="site-shell">
+        <div class="section-head">
+          <p class="eyebrow">Role-Based Access</p>
+          <h2>Built for every campus communication role</h2>
+          <p>NotifyHub keeps the experience consistent while giving each role a clear purpose.</p>
+        </div>
+
+        <div class="role-grid">
+          <article class="role-card">
+            <span class="card-role">Admin</span>
+            <h3>Manage and control the NotifyHub platform.</h3>
+            <p>Privileged access for platform management, publishing oversight, and secure administration.</p>
+            <a class="text-link" href="login/admin.html">Admin Login</a>
+          </article>
+          <article class="role-card">
+            <span class="card-role">Faculty</span>
+            <h3>Share announcements and campus information.</h3>
+            <p>Faculty can sign in or create an account to communicate academic and event-related updates.</p>
+            <div class="role-links">
+              <a class="text-link" href="login/faculty.html">Faculty Login</a>
+              <a class="text-link" href="register/faculty.html">Faculty Registration</a>
+            </div>
+          </article>
+          <article class="role-card">
+            <span class="card-role">Student</span>
+            <h3>Stay updated with campus announcements, events, and alerts.</h3>
+            <p>Students can quickly sign in or register to follow campus-wide updates from anywhere.</p>
+            <div class="role-links">
+              <a class="text-link" href="login/student.html">Student Login</a>
+              <a class="text-link" href="register/student.html">Student Registration</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section section-animate">
+      <div class="site-shell">
+        <div class="cta-card">
+          <p class="eyebrow">Get Started</p>
+          <h2>Stay Connected With Your Campus</h2>
+          <p>Access important announcements, events, and alerts through NotifyHub.</p>
+          <a class="hero-button hero-button-primary" href="auth.html">Get Started</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-shell footer-grid">
+      <div>
+        <a class="logo site-logo" href="#top" aria-label="NotifyHub home">
+          <span class="brand-mark" aria-hidden="true"><span class="brand-bell"></span></span>
+          <span>
+            <strong>NotifyHub</strong>
+            <small>Smart Campus Announcement Platform</small>
+          </span>
+        </a>
+        <p class="footer-copy">A centralized digital platform for campus announcements, events, and urgent alerts.</p>
+      </div>
+      <div class="footer-links">
+        <a href="#top">Home</a>
+        <a href="#announcements">Announcements</a>
+        <a href="#events">Events</a>
+        <a href="#about">About</a>
+        <a href="auth.html">Login</a>
+      </div>
+      <p class="footer-note">© 2026 NotifyHub. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/home.js"></script>
+</body>
+</html>
