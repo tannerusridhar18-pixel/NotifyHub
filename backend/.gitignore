@@ -1,0 +1,21 @@
+# Secrets / local configuration
+.env
+.env.*
+!.env.example
+application-local.yml
+application-properties.yml
+
+# Build output
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db

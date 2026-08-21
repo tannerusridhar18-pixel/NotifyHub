@@ -1,0 +1,14 @@
+# Copy this file to application-local.yml for local development.
+# application-local.yml is ignored by Git and must never be committed.
+
+spring:
+  datasource:
+    username: root
+    password: YOUR_MYSQL_PASSWORD
+
+notifyhub:
+  jwt-secret: REPLACE_WITH_A_RANDOM_SECRET_AT_LEAST_32_BYTES
+  frontend-origin: http://localhost:3000
+  admin-username: admin
+  admin-email: admin@notifyhub.local
+  admin-password: REPLACE_WITH_A_STRONG_LOCAL_ADMIN_PASSWORD
