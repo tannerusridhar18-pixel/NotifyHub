@@ -11,7 +11,7 @@ target/
 # IDE
 .idea/
 *.iml
-.vscode/
+.vscode/q
 .classpath
 .project
 .settings/

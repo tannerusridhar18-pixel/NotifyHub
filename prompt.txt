@@ -1,0 +1,70 @@
+## NotifyHub Frontend Design Standard
+
+Whenever you create or modify a frontend page or component, functionality alone is NOT sufficient.
+
+The UI must look like a polished, modern, professional product.
+
+### Design requirements
+
+* Create a **unique and visually distinctive design** for the page/module.
+* Use attractive combinations of colors rather than relying on plain white/gray cards everywhere.
+* Use a carefully selected primary, secondary, accent, and background color palette.
+* Use gradients where they improve the visual design, but do not overuse them.
+* Use strong visual hierarchy for headings, sections, cards, buttons, and important information.
+* Use appropriate spacing, padding, borders, shadows, and rounded corners.
+* Use hover, focus, and subtle transition effects where appropriate.
+* Make important actions visually prominent.
+* Use icons where they improve usability.
+* Make empty states and loading states visually polished.
+* Error and success states should have clear visual treatment.
+* Ensure the design is responsive on desktop, tablet, and mobile.
+* Avoid making every section look like a generic rectangular card.
+* Avoid excessive use of the same color throughout the entire page.
+* Avoid overly bright or clashing colors.
+* Maintain good contrast and accessibility.
+
+### Product consistency
+
+The design should remain recognizably part of **NotifyHub**, but different modules can have their own visual treatment.
+
+For example:
+
+* Student pages can have a fresh, energetic visual identity.
+* Faculty pages can have a professional academic feel.
+* Admin pages can have a more powerful management-oriented appearance.
+* Notification interfaces can use visual priority based on unread/read state and notification type.
+
+Do not make all three dashboards identical except for the text.
+
+### Component quality
+
+Create reusable components where appropriate, but do not sacrifice visual quality just because a component is shared.
+
+Components should feel intentionally designed rather than assembled from default Tailwind styles.
+
+### Important
+
+Before implementing a frontend page:
+
+1. Understand what the page is supposed to accomplish.
+2. Design the visual hierarchy.
+3. Choose an appropriate color combination.
+4. Consider how the user will interact with the page.
+5. Then implement the UI.
+
+Do not produce a generic "dashboard template".
+
+The final result should look like a **real modern SaaS/product application**, not a college-project prototype.
+
+### Technical constraint
+
+Use the project's existing:
+
+* Next.js
+* Tailwind CSS
+* existing component system
+* existing dependencies
+
+Do not add large UI libraries or unnecessary dependencies just for styling unless there is a strong reason.
+
+Preserve existing functionality and backend integration while improving the frontend presentation.
