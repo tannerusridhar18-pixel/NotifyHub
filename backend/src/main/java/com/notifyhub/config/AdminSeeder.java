@@ -19,18 +19,21 @@ public class AdminSeeder implements CommandLineRunner {
     private final String username;
     private final String email;
     private final String password;
+    private final boolean syncPassword;
 
     public AdminSeeder(
             UserRepository users,
             PasswordEncoder encoder,
             @Value("${notifyhub.admin-username:admin}") String username,
             @Value("${notifyhub.admin-email:admin@notifyhub.local}") String email,
-            @Value("${notifyhub.admin-password:}") String password) {
+            @Value("${notifyhub.admin-password:}") String password,
+            @Value("${notifyhub.admin-sync-password:false}") boolean syncPassword) {
         this.users = users;
         this.encoder = encoder;
         this.username = username;
         this.email = email;
         this.password = password;
+        this.syncPassword = syncPassword;
     }
 
     @Override
@@ -44,9 +47,10 @@ public class AdminSeeder implements CommandLineRunner {
         user.setUsername(username);
         user.setEmail(email);
         user.setRole(Role.ADMIN);
-        user.setActive(true);
+        user.setAccountStatus(com.notifyhub.auth.AccountStatus.ACTIVE);
+        user.setMustChangePassword(false);
 
-        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+        if (syncPassword || user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
             user.setPasswordHash(encoder.encode(password));
             users.save(user);
             log.info("Initial NotifyHub admin account created for username '{}'.", username);

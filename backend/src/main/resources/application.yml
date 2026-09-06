@@ -45,12 +45,18 @@ management:
 
 notifyhub:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
-  jwt-secret: ${JWT_SECRET:NotifyHub_Local_Development_JWT_Secret_2026_X7K9M2P8Q4R6T1Z8N3W5A7B9C2D4F6H8}
+  jwt-secret: ${JWT_SECRET:}
   jwt-access-minutes: ${JWT_ACCESS_MINUTES:15}
   jwt-refresh-days: ${JWT_REFRESH_DAYS:7}
+  password-reset-minutes: ${PASSWORD_RESET_MINUTES:30}
+  invitation-hours: ${INVITATION_HOURS:48}
+  auth:
+    cookie-secure: ${AUTH_COOKIE_SECURE:false}
+    cookie-same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
   admin-username: ${ADMIN_USERNAME:admin}
   admin-email: ${ADMIN_EMAIL:admin@notifyhub.local}
   admin-password: ${ADMIN_PASSWORD:}
+  admin-sync-password: ${ADMIN_SYNC_PASSWORD:false}
   rate-limit-public-per-minute: ${RATE_LIMIT_PUBLIC_PER_MINUTE:120}
   rate-limit-auth-per-minute: ${RATE_LIMIT_AUTH_PER_MINUTE:10}
   rate-limit-query-per-minute: ${RATE_LIMIT_QUERY_PER_MINUTE:10}

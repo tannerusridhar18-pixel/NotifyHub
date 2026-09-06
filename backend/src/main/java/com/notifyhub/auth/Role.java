@@ -1,2 +1,2 @@
 package com.notifyhub.auth;
-public enum Role { ADMIN }
+public enum Role { ADMIN, FACULTY, STUDENT }

@@ -1,0 +1,2 @@
+ALTER TABLE users
+    MODIFY COLUMN username VARCHAR(190) NOT NULL;

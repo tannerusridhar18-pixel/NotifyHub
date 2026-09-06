@@ -15,14 +15,11 @@ import java.util.Date;
 
 @Service
 public class JwtService {
-    private static final String DEVELOPMENT_SECRET =
-            "NotifyHub_Local_Development_JWT_Secret_2026_X7K9M2P8Q4R6T1Z8N3W5A7B9C2D4F6H8";
-
     private final SecretKey signingKey;
     private final long accessMinutes;
 
     public JwtService(
-            @Value("${notifyhub.jwt-secret:" + DEVELOPMENT_SECRET + "}") String secret,
+            @Value("${notifyhub.jwt-secret:}") String secret,
             @Value("${notifyhub.jwt-access-minutes:15}") long accessMinutes) {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("JWT secret is missing. Configure JWT_SECRET.");

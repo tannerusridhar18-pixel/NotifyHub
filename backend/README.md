@@ -2,6 +2,8 @@
 
 Production-oriented Smart Campus Announcement API built with Spring Boot 3.5.4, Java 21, MySQL, Flyway, Spring Data JPA, Spring Security, and JWT.
 
+Java 21 is the supported project runtime and the Maven compiler release. A newer local JDK may compile this project, but it is not the project's compatibility target; use JDK 21 for repeatable development and CI.
+
 ## Features
 
 - Public announcement feed with pagination, search, category and department filtering
@@ -20,6 +22,9 @@ Production-oriented Smart Campus Announcement API built with Spring Boot 3.5.4, 
 - API rate limiting
 - Flyway-managed MySQL schema
 - Generic API error responses without stack traces
+- Admin-provisioned invitation completion with single-use hashed tokens
+- Database-backed current-user identity and role authorization foundation
+- HttpOnly cookie sessions with rotating refresh-token families and CSRF protection
 
 ## Requirements
 
@@ -56,7 +61,7 @@ For deployment, configure the following variables in the hosting provider instea
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 
-Never commit `application-local.yml`, `.env`, or real secrets.
+Never commit `application-local.yml`, `.env`, or real secrets. The committed configuration has no JWT fallback secret; `JWT_SECRET` must be supplied through environment configuration or the ignored local file.
 
 ## Build and run
 

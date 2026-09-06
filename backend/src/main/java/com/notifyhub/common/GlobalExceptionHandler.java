@@ -1,5 +1,6 @@
 package com.notifyhub.common;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,48 +12,38 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
+import java.util.List;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ResponseEntity<ApiResponse<Void>> validation(MethodArgumentNotValidException ex) {
-        return ResponseEntity.badRequest().body(ApiResponse.message("Invalid request data."));
+    ResponseEntity<ApiError> validation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        List<ApiError.FieldError> fields = ex.getBindingResult().getFieldErrors().stream().map(error -> new ApiError.FieldError(error.getField(), "Invalid value.")).toList();
+        return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid request.", request, fields);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    ResponseEntity<ApiResponse<Void>> violation(ConstraintViolationException ex) {
-        return ResponseEntity.badRequest().body(ApiResponse.message("Invalid request data."));
-    }
-
+    ResponseEntity<ApiError> violation(ConstraintViolationException ex, HttpServletRequest request) { return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid request.", request, List.of()); }
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    ResponseEntity<ApiResponse<Void>> unreadable(HttpMessageNotReadableException ex) {
-        return ResponseEntity.badRequest().body(ApiResponse.message("Malformed request body."));
-    }
-
+    ResponseEntity<ApiError> unreadable(HttpMessageNotReadableException ex, HttpServletRequest request) { return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Malformed request.", request, List.of()); }
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    ResponseEntity<ApiResponse<Void>> typeMismatch(MethodArgumentTypeMismatchException ex) {
-        return ResponseEntity.badRequest().body(ApiResponse.message("Invalid request parameter."));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    ResponseEntity<ApiResponse<Void>> illegal(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(ApiResponse.message(ex.getMessage()));
-    }
+    ResponseEntity<ApiError> typeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) { return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid request parameter.", request, List.of()); }
 
     @ExceptionHandler(ResponseStatusException.class)
-    ResponseEntity<ApiResponse<Void>> status(ResponseStatusException ex) {
-        return ResponseEntity.status(ex.getStatusCode())
-                .body(ApiResponse.message(ex.getReason() == null ? "Request failed." : ex.getReason()));
+    ResponseEntity<ApiError> status(ResponseStatusException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        String code = switch (status) { case UNAUTHORIZED -> "UNAUTHENTICATED"; case FORBIDDEN -> "Account inactive.".equals(ex.getReason()) ? "ACCOUNT_INACTIVE" : "FORBIDDEN"; case CONFLICT -> "CONFLICT"; case TOO_MANY_REQUESTS -> "RATE_LIMITED"; case UNPROCESSABLE_ENTITY -> "VALIDATION_ERROR"; default -> status == HttpStatus.NOT_FOUND ? "NOT_FOUND" : "REQUEST_FAILED"; };
+        return error(status, code, ex.getReason() == null ? "Request failed." : ex.getReason(), request, List.of());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    ResponseEntity<ApiResponse<Void>> denied(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.message("Access denied."));
-    }
+    ResponseEntity<ApiError> denied(AccessDeniedException ex, HttpServletRequest request) { return error(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied.", request, List.of()); }
 
     @ExceptionHandler(Exception.class)
-    ResponseEntity<ApiResponse<Void>> generic(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.message("An unexpected server error occurred."));
+    ResponseEntity<ApiError> generic(Exception ex, HttpServletRequest request) { return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "An unexpected server error occurred.", request, List.of()); }
+
+    private ResponseEntity<ApiError> error(HttpStatus status, String code, String message, HttpServletRequest request, List<ApiError.FieldError> fields) {
+        return ResponseEntity.status(status).body(new ApiError(Instant.now(), status.value(), code, message, request.getRequestURI(), fields));
     }
 }
