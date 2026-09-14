@@ -5,4 +5,5 @@ import com.notifyhub.common.*; import jakarta.validation.Valid; import jakarta.v
  @PostMapping public ResponseEntity<ApiResponse<Void>> submit(@Valid@RequestBody QueryService.QueryRequest r){service.submit(r);return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.message("Query submitted successfully."));}
  @GetMapping public ResponseEntity<ApiResponse<PageResponse<QueryService.QueryDto>>> list(@RequestParam(defaultValue="0")@Min(0)int page,@RequestParam(defaultValue="20")@Min(1)@Max(50)int size,@RequestParam(required=false)QueryStatus status){return ResponseEntity.ok(ApiResponse.ok(service.list(page,size,status)));}
  @PostMapping("/{id}/answer") public ResponseEntity<ApiResponse<QueryService.QueryDto>> answer(@PathVariable Long id,@Valid@RequestBody QueryService.AnswerRequest r){return ResponseEntity.ok(ApiResponse.ok(service.answer(id,r.response())));}
+ @DeleteMapping("/{id}") public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id){service.delete(id);return ResponseEntity.ok(ApiResponse.message("Query deleted."));}
 }

@@ -1,5 +1,5 @@
 package com.notifyhub.event;
-import org.springframework.data.domain.*;
-import org.springframework.data.jpa.repository.JpaRepository;
-import java.time.Instant;
-public interface EventRepository extends JpaRepository<Event,Long>{ Page<Event> findByStartAtGreaterThanEqual(Instant from,Pageable pageable); Page<Event> findByDepartmentIgnoreCase(String department,Pageable pageable); Page<Event> findByDepartmentIgnoreCaseAndStartAtGreaterThanEqual(String department,Instant from,Pageable pageable); }
+import com.notifyhub.auth.Role; import org.springframework.data.domain.*; import org.springframework.data.jpa.repository.*;
+public interface EventRepository extends JpaRepository<Event,Long>{ @Query("select e from Event e where e.status = 'PUBLISHED' and (e.targetType = 'GLOBAL' or (e.targetType = 'ROLE' and e.targetRole = :role) or (e.targetType = 'DEPARTMENT' and e.targetDepartment.id = :departmentId) or (e.targetType = 'BRANCH' and e.targetBranch.id = :branchId) or (e.targetType = 'SECTION' and e.targetSection.id = :sectionId) or (e.targetType = 'HOSTEL' and e.targetHostel.id = :hostelId) or (e.targetType = 'USER' and e.targetUser.id = :userId))") Page<Event> visible(Role role,Long departmentId,Long branchId,Long sectionId,Long hostelId,Long userId,Pageable pageable);
+ @Query("select e from Event e where e.status = 'PUBLISHED' and e.targetType = 'GLOBAL'") Page<Event> publicGlobal(Pageable pageable);
+ @Query("select e from Event e where e.status = 'PUBLISHED' and e.startAt >= CURRENT_TIMESTAMP order by e.startAt asc") Page<Event> upcoming(Pageable pageable); }

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -39,15 +40,16 @@ public class AdminInvitationService {
     private final PasswordEncoder encoder;
     private final SecureTokenService secureTokens;
     private final long invitationHours;
+    private final ApplicationEventPublisher events;
 
     public AdminInvitationService(UserRepository users, DepartmentRepository departments, BranchRepository branches, SectionRepository sections,
                                   StudentProfileRepository students, FacultyProfileRepository faculty, HostelRepository hostels,
                                   HostelBlockRepository blocks, RoomRepository rooms, InvitationRepository invitations,
-                                  PasswordEncoder encoder, SecureTokenService secureTokens,
+                                  PasswordEncoder encoder, SecureTokenService secureTokens, ApplicationEventPublisher events,
                                   @Value("${notifyhub.invitation-hours:48}") long invitationHours) {
         this.users = users; this.departments = departments; this.branches = branches; this.sections = sections; this.students = students; this.faculty = faculty;
         this.hostels = hostels; this.blocks = blocks; this.rooms = rooms;
-        this.invitations = invitations; this.encoder = encoder; this.secureTokens = secureTokens; this.invitationHours = invitationHours;
+        this.invitations = invitations; this.encoder = encoder; this.secureTokens = secureTokens; this.events = events; this.invitationHours = invitationHours;
     }
 
     @Transactional
@@ -56,12 +58,32 @@ public class AdminInvitationService {
         ProfileRequest profile = request.profile();
         if (profile == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profile details are required.");
         User user = new User(); user.setUsername(request.email()); user.setEmail(request.email()); user.setRole(request.role());
+        user.setPublicId(UUID.randomUUID());
         user.setAccountStatus(AccountStatus.INVITED); user.setPasswordHash(encoder.encode(UUID.randomUUID().toString())); user.setMustChangePassword(true);
         users.save(user);
         if (request.role() == Role.STUDENT) createStudent(user, profile); else if (request.role() == Role.FACULTY) createFaculty(user, profile); else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ADMIN invitations are not supported.");
-        String rawToken = secureTokens.rawToken(); Invitation invitation = new Invitation(); invitation.setUser(user); invitation.setCreatedBy(admin(adminUsername));
-        invitation.setTokenHash(secureTokens.hash(rawToken)); invitation.setExpiresAt(Instant.now().plus(invitationHours, ChronoUnit.HOURS)); invitations.save(invitation);
-        return new InvitationResult(invitation.getId().toString(), user.getPublicId().toString(), user.getEmail(), user.getRole().name(), invitation.getExpiresAt(), rawToken);
+        String rawToken = secureTokens.rawToken();
+        Invitation invitation = new Invitation();
+        invitation.setUser(user);
+        invitation.setCreatedBy(admin(adminUsername));
+        invitation.setTokenHash(secureTokens.hash(rawToken));
+        invitation.setExpiresAt(Instant.now().plus(invitationHours, ChronoUnit.HOURS));
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setEmailStatus(InvitationEmailStatus.PENDING);
+        invitations.save(invitation);
+        events.publishEvent(new InvitationCreatedEvent(invitation.getId(), user.getEmail(), user.getRole().name(), rawToken, invitation.getExpiresAt()));
+        return new InvitationResult(invitation.getId().toString(), user.getPublicId().toString(), user.getEmail(), user.getRole().name(), invitation.getExpiresAt());
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<InvitationView> list() {
+        Instant now = Instant.now();
+        return invitations.findAllByOrderByCreatedAtDesc().stream().map(invitation -> {
+            InvitationStatus status = invitation.getUsedAt() != null ? InvitationStatus.USED
+                    : invitation.getExpiresAt().isBefore(now) ? InvitationStatus.EXPIRED : InvitationStatus.PENDING;
+            return new InvitationView(invitation.getId().toString(), invitation.getUser().getEmail(), invitation.getUser().getRole().name(),
+                    status.name(), invitation.getEmailStatus().name(), invitation.getExpiresAt(), invitation.getCreatedAt(), invitation.getUsedAt());
+        }).toList();
     }
 
     private void createStudent(User user, ProfileRequest request) {
@@ -94,5 +116,6 @@ public class AdminInvitationService {
 
     public record InvitationRequest(String email, Role role, ProfileRequest profile) { }
     public record ProfileRequest(String studentId, String facultyId, String name, String phone, String personalEmail, Long departmentId, Long branchId, Long sectionId, Integer year, Integer semester, String batch, Boolean hosteller, Long hostelId, Long blockId, Long roomId, String designation) { }
-    public record InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt, String invitationToken) { }
+    public record InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt) { }
+    public record InvitationView(String invitationId, String email, String role, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt) { }
 }

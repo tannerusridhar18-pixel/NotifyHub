@@ -2,6 +2,7 @@ package com.notifyhub.common;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -37,8 +40,14 @@ public class GlobalExceptionHandler {
         return error(status, code, ex.getReason() == null ? "Request failed." : ex.getReason(), request, List.of());
     }
 
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    ResponseEntity<ApiError> notFound(Exception ex, HttpServletRequest request) { return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Resource not found.", request, List.of()); }
+
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ApiError> denied(AccessDeniedException ex, HttpServletRequest request) { return error(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied.", request, List.of()); }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ApiError> conflict(DataIntegrityViolationException ex, HttpServletRequest request) { return error(HttpStatus.CONFLICT, "CONFLICT", "The request conflicts with existing data.", request, List.of()); }
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> generic(Exception ex, HttpServletRequest request) { return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "An unexpected server error occurred.", request, List.of()); }

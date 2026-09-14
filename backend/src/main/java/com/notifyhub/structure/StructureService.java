@@ -45,6 +45,7 @@ public class StructureService {
     @Transactional public BranchView updateBranch(Long id, Long departmentId, String name, String courseNote, Integer maxYear, Boolean active) {
         Branch entity = branch(id); Department department = department(departmentId); requireActive(department.isActive(), "Department"); requireText(name, "Branch name"); if (maxYear != null) validateMaxYear(maxYear);
         if ((!java.util.Objects.equals(entity.getDepartment().getId(), departmentId) || !entity.getName().equalsIgnoreCase(name.trim())) && branches.existsByDepartmentIdAndNameIgnoreCase(departmentId, name)) conflict("Branch name already exists in this department.");
+        if (maxYear != null && maxYear < entity.getMaxYear() && sections.existsByBranchIdAndAcademicYearGreaterThan(id, maxYear)) conflict("Cannot lower maximum academic year below sections that already exist.");
         entity.setDepartment(department); entity.setName(name.trim()); entity.setCourseNote(courseNote); if (maxYear != null) entity.setMaxYear(maxYear); if (active != null) entity.setActive(active); return BranchView.from(branches.save(entity));
     }
 

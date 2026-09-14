@@ -43,7 +43,7 @@ public class AdminSeeder implements CommandLineRunner {
             return;
         }
 
-        User user = users.findByUsername(username).orElseGet(User::new);
+        User user = users.findByUsername(username).orElseGet(() -> users.findByEmailIgnoreCase(email).orElseGet(User::new));
         user.setUsername(username);
         user.setEmail(email);
         user.setRole(Role.ADMIN);
@@ -52,8 +52,10 @@ public class AdminSeeder implements CommandLineRunner {
 
         if (syncPassword || user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
             user.setPasswordHash(encoder.encode(password));
+            user.setFailedLoginAttempts(0);
+            user.setLockedUntil(null);
             users.save(user);
-            log.info("Initial NotifyHub admin account created for username '{}'.", username);
+            log.info("NotifyHub admin account ready for username '{}' and email '{}'.", username, email);
         } else if (user.getId() == null) {
             users.save(user);
         }

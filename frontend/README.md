@@ -7,7 +7,7 @@ A production-oriented Next.js frontend for the NotifyHub Smart Campus Announceme
 - Next.js 16.3
 - React 19.2
 - TypeScript
-- Native CSS (no starter-template UI dependency)
+- Tailwind CSS v4 (utility-first design system, see `app/globals.css` and `components/ui/`)
 - Real Spring Boot REST API; no mocked data
 
 Next.js 16 is an Active LTS release, and React 19.2 is the current React major documented by React. See the official release/support pages for current security updates.

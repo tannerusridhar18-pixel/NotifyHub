@@ -1,0 +1,63 @@
+### ---- Root / General ----
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+.env
+.env.*
+!.env.example
+
+### ---- Frontend (Next.js / React / Node) ----
+node_modules/
+.next/
+out/
+build/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnp/
+.pnp.js
+coverage/
+.eslintcache
+.turbo/
+next-env.d.ts
+
+### ---- Backend (Java / Spring Boot / Maven) ----
+backend/target/
+target/
+*.class
+*.jar
+*.war
+*.ear
+HELP.md
+.mvn/wrapper/maven-wrapper.jar
+
+### ---- Application config / secrets ----
+application-local.yml
+application-local.properties
+application-secrets.yml
+application-secrets.properties
+*.pem
+*.key
+
+### ---- IDE / Editor ----
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+*.swp
+
+### ---- OS ----
+.DS_Store
+desktop.ini
+
+### ---- Database ----
+*.sql.bak
+*.db
+*.sqlite3
+
+*.docs

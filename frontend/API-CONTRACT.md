@@ -1,19 +1,40 @@
 # NotifyHub Frontend API Contract
 
-This file records the current legacy MVP routes used by the canonical `frontend/` working tree. The target conventions and final authentication contract are defined in `docs/NotifyHub_API_Contract_Phase0.md`.
+Base URL: `NEXT_PUBLIC_API_URL` (default `http://localhost:8080/api/v1`). Authentication uses HttpOnly cookies; the frontend never stores access or refresh tokens in localStorage.
 
-Base URL: `NEXT_PUBLIC_API_URL` (default `http://localhost:8080/api/v1`).
+## Public feed
+- `GET /announcements` — published global announcements for unauthenticated visitors; authenticated users receive their targeted visible feed.
+- `GET /announcements/urgent` — published urgent announcements.
+- `GET /events` — published global events for unauthenticated visitors; authenticated users receive their targeted visible feed.
+- `GET /events/upcoming` — published future events.
+- `POST /queries` — public campus query submission.
 
-Current legacy routes:
+## Authentication
+- `POST /auth/login`
+- `POST /auth/register` — completes an admin-issued invitation; the token is supplied in the emailed registration link.
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `POST /auth/forgot-password`
+- `POST /auth/reset-password`
+- `GET /users/me` — authenticated current identity.
 
-- Public: `GET /announcements`, `GET /announcements/urgent`, `GET /events`, `GET /events/upcoming`, `POST /queries`
-- Admin/JWT: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`
-- Admin/JWT: `POST/PUT/DELETE /announcements`, `POST/PUT/DELETE /events`, `GET /queries`, `POST /queries/{id}/answer`
+## Admin
+- `GET /announcements/management`
+- `POST /announcements`
+- `PUT /announcements/{id}`
+- `POST /announcements/{id}/publish`
+- `POST /announcements/{id}/unpublish`
+- `POST /announcements/{id}/archive`
+- `GET /events/management`
+- `POST /events`
+- `PUT /events/{id}`
+- `POST /events/{id}/publish`
+- `POST /events/{id}/unpublish`
+- `POST /events/{id}/cancel`
+- `GET /queries` and `POST /queries/{id}/answer`
+- Academic/hostel structure management endpoints under `/academic-structure/**` and `/hostels/**`.
+- User status/role management under `/admin/users/**`.
 
-Known compatibility gaps intentionally left for Phase 1:
+The frontend treats the backend as the authority for validation, authorization, persistence, and security.
 
-- The legacy backend accepts `{ username, password }`; the target contract uses institutional email/ID and cookie-based credentials.
-- The legacy frontend stores bearer tokens in localStorage; the target contract uses HttpOnly cookies and CSRF protection.
-- The frontend references `/auth/register`, but the legacy backend does not provide it. Registration remains deferred until the approved identity phase.
-
-The client never treats its own validation as a security boundary; authorization remains on the Spring Boot backend.
+- `POST /admin/invitations` — admin-only; creates a Student/Faculty account and sends the invitation email through configured SMTP.

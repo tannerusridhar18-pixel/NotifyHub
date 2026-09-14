@@ -6,14 +6,15 @@ Java 21 is the supported project runtime and the Maven compiler release. A newer
 
 ## Features
 
-- Public announcement feed with pagination, search, category and department filtering
+- Public announcement feed with pagination, urgent-only filtering, and role/department/branch/section targeting for signed-in users
 - Urgent-announcement feed
 - Public event feed and upcoming-event filtering
 - Public campus-query submission
 - Admin login with BCrypt password hashing
 - Short-lived JWT access tokens
 - Rotating, hashed refresh tokens with logout/revocation
-- Admin-only announcement/event management
+- Admin-only announcement/event management, including deletion of draft/archived-or-cancelled items
+- Email notifications sent to an announcement's target audience when it is published (role/department/branch/section-aware)
 - Admin-only query listing and responses
 - Server-side Bean Validation
 - CORS allowlist
@@ -61,7 +62,14 @@ For deployment, configure the following variables in the hosting provider instea
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 
-Never commit `application-local.yml`, `.env`, or real secrets. The committed configuration has no JWT fallback secret; `JWT_SECRET` must be supplied through environment configuration or the ignored local file.
+Email delivery (invitation emails and announcement-publish notifications) is off by default. To enable it, set:
+
+- `MAIL_ENABLED=true`
+- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`
+- `MAIL_FROM`
+- `INVITATION_PATH` (default `/auth/register`) and `ANNOUNCEMENT_PATH` (default `/announcements`) — frontend routes used to build links in emails
+
+Never commit `application-local.yml`, `.env`, or real secrets. The committed configuration has no JWT fallback secret and no default mail/admin/database credentials; every secret must be supplied through environment configuration or the ignored local file.
 
 ## Build and run
 

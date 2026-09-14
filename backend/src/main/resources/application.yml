@@ -1,8 +1,14 @@
 spring:
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:true}
   config:
     import: optional:file:./application-local.yml
-  profiles:
-    active: local
   application:
     name: notifyhub-backend
   datasource:
@@ -45,7 +51,7 @@ management:
 
 notifyhub:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
-  jwt-secret: ${JWT_SECRET:}
+  jwt-secret: ${JWT_SECRET:"NotifyHubProjectSecretKeyApplicationCollege"}
   jwt-access-minutes: ${JWT_ACCESS_MINUTES:15}
   jwt-refresh-days: ${JWT_REFRESH_DAYS:7}
   password-reset-minutes: ${PASSWORD_RESET_MINUTES:30}
@@ -57,6 +63,14 @@ notifyhub:
   admin-email: ${ADMIN_EMAIL:admin@notifyhub.local}
   admin-password: ${ADMIN_PASSWORD:}
   admin-sync-password: ${ADMIN_SYNC_PASSWORD:false}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:notifyhub@localhost}
+    invitation-path: ${INVITATION_PATH:/auth/register}
+    password-reset-path: ${PASSWORD_RESET_PATH:/auth/reset-password}
+    announcement-path: ${ANNOUNCEMENT_PATH:/announcements}
   rate-limit-public-per-minute: ${RATE_LIMIT_PUBLIC_PER_MINUTE:120}
   rate-limit-auth-per-minute: ${RATE_LIMIT_AUTH_PER_MINUTE:10}
   rate-limit-query-per-minute: ${RATE_LIMIT_QUERY_PER_MINUTE:10}
+  query-retention-days: ${QUERY_RETENTION_DAYS:30}
+  query-cleanup-cron: ${QUERY_CLEANUP_CRON:0 0 2 * * *}

@@ -10,6 +10,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -40,7 +44,9 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource(@Value("${notifyhub.frontend-origin:http://localhost:3000}") String frontendOrigin) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(frontendOrigin));
+        List<String> allowedOrigins = List.of(frontendOrigin.split(",")).stream()
+                .map(String::trim).filter(origin -> !origin.isEmpty()).toList();
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-XSRF-TOKEN"));
         configuration.setExposedHeaders(List.of("Retry-After"));
@@ -69,7 +75,9 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint).accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/api/v1/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/announcements/**", "/api/v1/events/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/announcements/management", "/api/v1/events/management").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/urgent", "/api/v1/events", "/api/v1/events/upcoming").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/announcements/**", "/api/v1/events/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/queries").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/users/me").authenticated()
@@ -81,15 +89,24 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/announcements/**", "/api/v1/events/**", "/api/v1/queries/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(jwtFilter, RateLimitFilter.class);
+                    .addFilterBefore(jwtFilter, CsrfFilter.class);
         return http.build();
     }
 
     @Bean AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, exception) -> { response.setStatus(401); response.setContentType("application/json"); response.getWriter().write("{\"success\":false,\"data\":null,\"message\":\"Authentication required.\"}"); };
     }
-    @Bean AccessDeniedHandler accessDeniedHandler() {
-        return (request, response, exception) -> { response.setStatus(403); response.setContentType("application/json"); response.getWriter().write("{\"success\":false,\"data\":null,\"message\":\"Access denied.\"}"); };
+    @Bean AccessDeniedHandler accessDeniedHandler(AuthenticationEntryPoint authenticationEntryPoint) {
+        return (request, response, exception) -> {
+            Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+                authenticationEntryPoint.commence(request, response, new InsufficientAuthenticationException("Authentication required.", exception));
+                return;
+            }
+            response.setStatus(403);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false,\"data\":null,\"message\":\"Access denied.\"}");
+        };
     }
 
     /**

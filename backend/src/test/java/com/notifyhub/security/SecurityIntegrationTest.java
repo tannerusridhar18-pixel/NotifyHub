@@ -34,6 +34,45 @@ class SecurityIntegrationTest {
     }
 
     @Test
+    void anonymousStateChangingRequestWithoutCsrfIsUnauthorized() throws Exception {
+        mvc.perform(post("/api/v1/admin/invitations").contentType("application/json").content("{}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @Transactional
+    void authenticatedStateChangingRequestWithoutCsrfRemainsForbidden() throws Exception {
+        User user = new User();
+        user.setUsername("csrf-test-" + System.nanoTime() + "@example.edu");
+        user.setEmail(user.getUsername());
+        user.setPasswordHash("test-hash");
+        user.setRole(Role.ADMIN);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(user);
+        String token = jwt.accessToken(user);
+
+        mvc.perform(post("/api/v1/admin/invitations").cookie(new Cookie("NH_ACCESS", token))
+                        .contentType("application/json").content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    void unknownAuthenticatedRouteReturnsNotFound() throws Exception {
+        User user = new User();
+        user.setUsername("not-found-test-" + System.nanoTime() + "@example.edu");
+        user.setEmail(user.getUsername());
+        user.setPasswordHash("test-hash");
+        user.setRole(Role.ADMIN);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(user);
+        String token = jwt.accessToken(user);
+
+        mvc.perform(get("/api/v1/no-such-endpoint").cookie(new Cookie("NH_ACCESS", token)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @Transactional
     void authenticatedUserReadsOwnIdentityAndStudentCannotOpenAdminEndpoint() throws Exception {
         User user = new User();

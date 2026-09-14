@@ -6,7 +6,7 @@ import com.notifyhub.auth.User;
 import com.notifyhub.auth.UserRepository;
 import com.notifyhub.faculty.FacultyProfile;
 import com.notifyhub.faculty.FacultyProfileRepository;
-import com.notifyhub.security.NotifyHubPrincipal;
+//import com.notifyhub.security.NotifyHubPrincipal;
 import com.notifyhub.student.StudentProfile;
 import com.notifyhub.student.StudentProfileRepository;
 import org.springframework.http.HttpStatus;

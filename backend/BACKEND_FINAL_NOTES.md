@@ -5,8 +5,7 @@ This package is the cleaned backend package intended to be used before the front
 ## Fixes included from the development session
 
 - Fixed `JwtFilter` / `JwtService` API mismatch by providing a safe `parse(String)` method.
-- JWT configuration now has a long development fallback so a missing local environment variable does not repeatedly break startup.
-- JWT still rejects unsafe secrets shorter than 32 bytes.
+- `JwtService` fails fast at startup if `JWT_SECRET` is missing or shorter than 32 bytes; there is intentionally no fallback secret, so a missing variable is caught immediately instead of silently signing tokens with a weak or default key.
 - MySQL refresh-token schema uses `VARCHAR(64)` consistently with the JPA entity.
 - Local secrets can be kept in ignored `application-local.yml`; `application.yml` automatically imports it when present.
 - Database password is not stored in `application.yml`.

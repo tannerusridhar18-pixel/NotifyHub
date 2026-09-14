@@ -9,4 +9,5 @@ public interface InvitationRepository extends JpaRepository<Invitation, java.uti
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from Invitation i join fetch i.user where i.tokenHash = :tokenHash")
     Optional<Invitation> findForUpdateByTokenHash(@Param("tokenHash") String tokenHash);
+    java.util.List<Invitation> findAllByOrderByCreatedAtDesc();
 }

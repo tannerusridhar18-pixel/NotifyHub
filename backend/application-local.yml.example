@@ -4,7 +4,7 @@
 spring:
   datasource:
     username: root
-    password: YOUR_MYSQL_PASSWORD
+    password: REPLACE_WITH_YOUR_LOCAL_MYSQL_PASSWORD
 
 notifyhub:
   jwt-secret: REPLACE_WITH_A_RANDOM_SECRET_AT_LEAST_32_BYTES
@@ -13,6 +13,6 @@ notifyhub:
     cookie-same-site: Lax
   frontend-origin: http://localhost:3000
   admin-username: admin
-  admin-email: admin@notifyhub.local
+  admin-email: admin@notifyhub.com
   admin-password: REPLACE_WITH_A_STRONG_LOCAL_ADMIN_PASSWORD
   admin-sync-password: true

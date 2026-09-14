@@ -1,10 +1,5 @@
 package com.notifyhub.announcement;
-import org.springframework.data.domain.*;
-import org.springframework.data.jpa.repository.JpaRepository;
-public interface AnnouncementRepository extends JpaRepository<Announcement,Long>{
- Page<Announcement> findByUrgentTrue(Pageable pageable);
- Page<Announcement> findByCategoryIgnoreCase(String category, Pageable pageable);
- Page<Announcement> findByDepartmentIgnoreCase(String department, Pageable pageable);
- Page<Announcement> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String title,String content,Pageable pageable);
- Page<Announcement> findByCategoryIgnoreCaseAndDepartmentIgnoreCase(String category,String department,Pageable pageable);
-}
+import com.notifyhub.auth.Role; import org.springframework.data.domain.*; import org.springframework.data.jpa.repository.*;
+public interface AnnouncementRepository extends JpaRepository<Announcement,Long>{ @Query("select a from Announcement a where a.status = 'PUBLISHED' and (a.targetType = 'GLOBAL' or (a.targetType = 'ROLE' and a.targetRole = :role) or (a.targetType = 'DEPARTMENT' and a.targetDepartment.id = :departmentId) or (a.targetType = 'BRANCH' and a.targetBranch.id = :branchId) or (a.targetType = 'SECTION' and a.targetSection.id = :sectionId) or (a.targetType = 'HOSTEL' and a.targetHostel.id = :hostelId) or (a.targetType = 'USER' and a.targetUser.id = :userId))") Page<Announcement> visible(Role role,Long departmentId,Long branchId,Long sectionId,Long hostelId,Long userId,Pageable pageable);
+ @Query("select a from Announcement a where a.status = 'PUBLISHED' and a.targetType = 'GLOBAL'") Page<Announcement> publicGlobal(Pageable pageable);
+ @Query("select a from Announcement a where a.status = 'PUBLISHED' and a.urgent = true order by a.publishedAt desc") Page<Announcement> urgent(Pageable pageable); }

@@ -25,6 +25,7 @@ class AuthServiceTest {
     @Mock RefreshTokenRepository tokens;
     @Mock InvitationRepository invitations;
     @Mock PasswordResetTokenRepository resetTokens;
+    @Mock PasswordResetEmailService resetEmail;
 
     private AuthService service;
     private BCryptPasswordEncoder encoder;
@@ -34,7 +35,7 @@ class AuthServiceTest {
     void setUp() {
         encoder = new BCryptPasswordEncoder(4);
         JwtService jwt = new JwtService("NotifyHub_Test_JWT_Secret_At_Least_32_Bytes_123456", 15);
-        service = new AuthService(users, tokens, invitations, resetTokens, encoder, jwt, new SecureTokenService(), 7, 30);
+        service = new AuthService(users, tokens, invitations, resetTokens, encoder, jwt, new SecureTokenService(), resetEmail, 7, 30);
         user = new User();
         user.setPublicId(UUID.randomUUID());
         user.setUsername("student@example.edu");

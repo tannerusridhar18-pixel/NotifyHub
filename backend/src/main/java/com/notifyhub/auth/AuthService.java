@@ -25,17 +25,18 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final JwtService jwt;
     private final SecureTokenService secureTokens;
+    private final PasswordResetEmailService resetEmail;
     private final long refreshDays;
     private final long resetMinutes;
 
     public AuthService(UserRepository users, RefreshTokenRepository tokens, InvitationRepository invitations,
                        PasswordResetTokenRepository resetTokens, PasswordEncoder encoder, JwtService jwt,
-                       SecureTokenService secureTokens, @Value("${notifyhub.jwt-refresh-days:7}") long refreshDays,
+                       SecureTokenService secureTokens, PasswordResetEmailService resetEmail, @Value("${notifyhub.jwt-refresh-days:7}") long refreshDays,
                        @Value("${notifyhub.password-reset-minutes:30}") long resetMinutes) {
         if (refreshDays < 1 || refreshDays > 90) throw new IllegalStateException("JWT refresh lifetime must be between 1 and 90 days.");
         if (resetMinutes < 5 || resetMinutes > 120) throw new IllegalStateException("Password reset lifetime must be between 5 and 120 minutes.");
         this.users = users; this.tokens = tokens; this.invitations = invitations; this.resetTokens = resetTokens;
-        this.encoder = encoder; this.jwt = jwt; this.secureTokens = secureTokens;
+        this.encoder = encoder; this.jwt = jwt; this.secureTokens = secureTokens; this.resetEmail = resetEmail;
         this.refreshDays = refreshDays; this.resetMinutes = resetMinutes;
     }
 
@@ -84,7 +85,7 @@ public class AuthService {
         }
         User user = invitation.getUser();
         user.setPasswordHash(encoder.encode(password)); user.setAccountStatus(AccountStatus.ACTIVE); user.setMustChangePassword(false);
-        invitation.setUsedAt(Instant.now()); users.save(user); invitations.save(invitation);
+        invitation.setUsedAt(Instant.now()); invitation.setStatus(InvitationStatus.USED); users.save(user); invitations.save(invitation);
         return new RegistrationResult(user.getEmail());
     }
 
@@ -95,6 +96,7 @@ public class AuthService {
             String rawToken = secureTokens.rawToken();
             PasswordResetToken token = new PasswordResetToken(); token.setUser(user); token.setTokenHash(secureTokens.hash(rawToken));
             token.setExpiresAt(Instant.now().plus(resetMinutes, ChronoUnit.MINUTES)); resetTokens.save(token);
+            resetEmail.send(user.getEmail(), rawToken, resetMinutes);
         });
     }
 

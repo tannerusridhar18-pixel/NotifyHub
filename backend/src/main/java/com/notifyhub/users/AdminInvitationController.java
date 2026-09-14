@@ -16,6 +16,11 @@ public class AdminInvitationController {
     private final AdminInvitationService invitations;
     public AdminInvitationController(AdminInvitationService invitations) { this.invitations = invitations; }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<java.util.List<AdminInvitationService.InvitationView>>> list() {
+        return ResponseEntity.ok(ApiResponse.ok(invitations.list()));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<AdminInvitationService.InvitationResult>> create(Authentication authentication, @Valid @RequestBody Request request) {
         AdminInvitationService.InvitationRequest command = new AdminInvitationService.InvitationRequest(request.email(), request.role(), request.profile());
