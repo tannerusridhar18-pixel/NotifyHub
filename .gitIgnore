@@ -60,4 +60,4 @@ desktop.ini
 *.db
 *.sqlite3
 
-*.docs
+docs/**
