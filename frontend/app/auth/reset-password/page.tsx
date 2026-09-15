@@ -46,21 +46,37 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="grid min-h-[calc(100vh-70px)] place-items-center bg-bg px-5 py-12 sm:min-h-[calc(100vh-78px)]">
+    <div className="relative grid min-h-[calc(100vh-72px)] place-items-center bg-bg px-5 py-12 sm:min-h-[calc(100vh-80px)]">
+      <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
       <AuthCard>
         <form onSubmit={submit}>
-          <span className="text-[11px] font-bold text-brand">Secure recovery</span>
-          <h2 className="my-2 text-3xl">Choose a new password.</h2>
-          <p className="mb-5 text-sm text-muted">Use the secure link from your NotifyHub recovery email. The token stays hidden from the form.</p>
-          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-surface-2 p-3.5">
-            <span className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-success-soft font-extrabold text-[#8ff0c8]">✓</span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold tracking-widest text-brand uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            Security Recovery
+          </span>
+          <h2 className="my-2 text-3xl font-extrabold tracking-tight">New Password</h2>
+          <p className="mb-5 text-sm text-muted">
+            Enter and confirm your new secure account password.
+          </p>
+
+          <div className="mb-5 flex items-center gap-3.5 rounded-2xl border border-white/10 bg-surface-2/80 p-4 backdrop-blur-md">
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-success-soft font-extrabold text-[#6ee7b7] border border-success/30">
+              {token ? "✓" : "!"}
+            </span>
             <div>
-              <b className="block text-sm">Secure password recovery</b>
-              <small className="block text-xs text-muted">The recovery token will be checked when you submit the new password.</small>
+              <b className="block text-sm font-bold text-white">
+                {token ? "Token authenticated" : "Missing reset token"}
+              </b>
+              <small className="block text-xs text-muted">
+                {token
+                  ? "Your recovery token will be verified upon submission."
+                  : "Please click the link inside your NotifyHub recovery email."}
+              </small>
             </div>
           </div>
+
           <div className="grid gap-4">
-            <Field label="New password" htmlFor="password">
+            <Field label="New Password (min 8 chars)" htmlFor="password">
               <input
                 required
                 minLength={8}
@@ -70,9 +86,10 @@ export default function ResetPassword() {
                 className={inputBase}
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="••••••••"
               />
             </Field>
-            <Field label="Confirm password" htmlFor="confirm">
+            <Field label="Confirm New Password" htmlFor="confirm">
               <input
                 required
                 minLength={8}
@@ -82,16 +99,21 @@ export default function ResetPassword() {
                 className={inputBase}
                 value={form.confirm}
                 onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+                placeholder="••••••••"
               />
             </Field>
           </div>
-          {error && <div className={`${errorBox} mt-4`}>{error}</div>}
-          {success && <div className={`${successBox} mt-4`}>{success}</div>}
-          <Button className="mt-5 w-full" disabled={busy || !token}>
-            {busy ? "Updating…" : "Reset password"}
+
+          {error && <div className={`${errorBox} mt-5`}>{error}</div>}
+          {success && <div className={`${successBox} mt-5`}>{success}</div>}
+
+          <Button className="mt-6 w-full !py-3 !text-sm" disabled={busy || !token}>
+            {busy ? "Updating Credentials…" : "Save New Password →"}
           </Button>
-          <p className="mt-5 text-center text-sm text-muted">
-            <Link className="font-bold text-brand" href="/auth/login">
+
+          <p className="mt-6 text-center text-xs text-muted">
+            Remembered password?{" "}
+            <Link className="font-bold text-brand hover:underline" href="/auth/login">
               Back to sign in
             </Link>
           </p>
@@ -100,3 +122,4 @@ export default function ResetPassword() {
     </div>
   );
 }
+

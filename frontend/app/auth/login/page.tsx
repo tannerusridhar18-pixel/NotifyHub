@@ -32,55 +32,74 @@ export default function UserLogin() {
 
   return (
     <AuthSplit
-      kicker="Campus communication, simplified"
+      kicker="Unified Campus Identity"
       title={
         <>
           One signal.
           <br />
-          <em className="not-italic text-brand-2">Everyone informed.</em>
+          <em className="not-italic text-gradient-animated">Everyone informed.</em>
         </>
       }
-      description="Announcements, urgent alerts, events and campus questions — organized around the people who need them."
+      description="Access your personalized campus feed, faculty broadcasts, academic calendars, and department inquiries."
       metrics={[
-        { value: "24/7", label: "Campus signal" },
-        { value: "1 place", label: "Every update" },
-        { value: "Secure", label: "Identity first" },
+        { value: "24/7", label: "Campus Signal" },
+        { value: "0 ms", label: "Delay Delivery" },
+        { value: "Encrypted", label: "Secure Auth" },
       ]}
-      orbitLabels={["ANNOUNCEMENT", "URGENT", "EVENT"]}
+      orbitLabels={["ANNOUNCEMENTS", "PRIORITY ALERTS", "CALENDAR"]}
     >
       <AuthCard>
         <form onSubmit={submit}>
-          <span className="text-[11px] font-bold text-brand">Campus identity</span>
-          <h2 className="my-2 text-3xl">Welcome back.</h2>
-          <p className="mb-5 text-sm text-muted">Sign in with your registered campus email and password.</p>
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold tracking-widest text-brand uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            Portal Sign In
+          </span>
+          <h2 className="my-2 text-3xl font-extrabold tracking-tight">Welcome back</h2>
+          <p className="mb-6 text-sm text-muted">Sign in with your registered campus credentials.</p>
           <div className="grid gap-4">
-            <Field label="Email" htmlFor="email">
-              <input id="email" required type="email" autoComplete="email" className={inputBase} value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Field label="Campus Email" htmlFor="email">
+              <input
+                id="email"
+                required
+                type="email"
+                autoComplete="email"
+                className={inputBase}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@campus.edu"
+              />
             </Field>
             <Field label="Password" htmlFor="password">
-              <input id="password" required type="password" autoComplete="current-password" className={inputBase} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <input
+                id="password"
+                required
+                type="password"
+                autoComplete="current-password"
+                className={inputBase}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
             </Field>
           </div>
-          {error && <div className={`${errorBox} mt-4`}>{error}</div>}
-          <Button className="mt-5 w-full" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
+          {error && <div className={`${errorBox} mt-5`}>{error}</div>}
+          <Button className="mt-6 w-full !py-3 !text-sm" disabled={busy}>
+            {busy ? "Authenticating…" : "Sign in to Dashboard →"}
           </Button>
-          <div className="mt-5 grid gap-2 text-center text-sm text-muted">
-            <Link className="font-bold text-brand" href="/auth/forgot-password">
+          <div className="mt-6 grid gap-2.5 text-center text-xs text-muted">
+            <Link className="font-bold text-brand hover:underline" href="/auth/forgot-password">
               Forgot your password?
             </Link>
             <p>
               Have an invitation?{" "}
-              <Link className="font-bold text-brand" href="/auth/register">
+              <Link className="font-bold text-brand hover:underline" href="/auth/register">
                 Complete account setup
               </Link>
             </p>
-            <Link className="font-bold text-brand" href="/admin">
-              Admin portal →
-            </Link>
           </div>
         </form>
       </AuthCard>
     </AuthSplit>
   );
 }
+

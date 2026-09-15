@@ -6,12 +6,14 @@ export default function Reveal({
   children,
   className,
   delay = 0,
+  variant = "up",
   as: Tag = "div",
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  as?: "div" | "section" | "li";
+  variant?: "up" | "scale" | "fade";
+  as?: "div" | "section" | "li" | "article";
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -20,7 +22,7 @@ export default function Reveal({
     const el = ref.current;
     if (!el) return;
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- reduced-motion bypass, sets initial visibility once
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reduced-motion bypass
       setVisible(true);
       return;
     }
@@ -31,20 +33,34 @@ export default function Reveal({
           io.disconnect();
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
+  const variantStyles =
+    variant === "scale"
+      ? visible
+        ? "opacity-100 scale-100 translate-y-0"
+        : "opacity-0 scale-95 translate-y-4"
+      : variant === "fade"
+      ? visible
+        ? "opacity-100"
+        : "opacity-0"
+      : visible
+      ? "opacity-100 translate-y-0"
+      : "opacity-0 translate-y-6";
+
   const Comp = Tag as unknown as "div";
   return (
     <Comp
       ref={ref}
-      className={cx("transition-all duration-700 ease-out", visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0", className)}
+      className={cx("transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]", variantStyles, className)}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
     </Comp>
   );
 }
+

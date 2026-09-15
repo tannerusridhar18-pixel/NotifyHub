@@ -10,7 +10,17 @@ import { buttonClasses } from "@/components/ui/Button";
 import Reveal from "@/components/ui/Reveal";
 import Counter from "@/components/ui/Counter";
 
-const chips = ["Announcements", "Urgent alerts", "Events calendar", "Campus questions", "Role-aware feeds", "One login"];
+const chips = [
+  "Campus Announcements",
+  "Priority Urgent Alerts",
+  "Events Calendar",
+  "Student Inquiries",
+  "Role-Aware Dashboards",
+  "Zero Noise Feed",
+  "Real-Time Delivery",
+  "Encrypted Channels",
+  "Instant Push Sync",
+];
 
 export default function Home() {
   const [items, setItems] = useState<Announcement[]>([]);
@@ -18,7 +28,6 @@ export default function Home() {
   const [urgent, setUrgent] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [spot, setSpot] = useState({ x: 50, y: 50 });
 
   useEffect(() => {
     Promise.all([announcements({ size: 3 }), upcomingEvents(0, 2), announcements({ size: 2, urgent: true })])
@@ -32,182 +41,227 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
-      <section
-        className="relative overflow-hidden"
-        onMouseMove={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          setSpot({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
-        }}
-      >
-        {/* Mesh-gradient blobs — decorative, purely CSS-animated */}
+    <div className="overflow-x-hidden">
+      <section className="relative overflow-hidden">
+        {/* High-performance GPU-friendly static ambient lighting */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -left-20 top-[-120px] h-[380px] w-[380px] rounded-full bg-brand/25 blur-3xl animate-blob" />
-          <div className="absolute right-[-100px] top-[80px] h-[420px] w-[420px] rounded-full bg-brand-2/20 blur-3xl animate-blob [animation-delay:-6s]" />
-          <div className="absolute bottom-[-140px] left-1/3 h-[320px] w-[320px] rounded-full bg-[#6be2ff]/12 blur-3xl animate-blob [animation-delay:-11s]" />
-          <div
-            className="absolute inset-0 opacity-40 transition-[background] duration-300"
-            style={{ background: `radial-gradient(600px circle at ${spot.x}% ${spot.y}%, color-mix(in srgb, var(--color-brand) 8%, transparent), transparent 60%)` }}
-          />
+          <div className="absolute -left-20 -top-24 h-[450px] w-[450px] rounded-full bg-[radial-gradient(circle,rgba(79,70,229,0.2)_0%,transparent_70%)]" />
+          <div className="absolute -right-20 top-10 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(147,51,234,0.18)_0%,transparent_70%)]" />
+          <div className="absolute bottom-[-80px] left-1/3 h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(0,210,255,0.12)_0%,transparent_70%)]" />
         </div>
 
-        <div className="mx-auto w-full max-w-[1180px] px-4 py-14 sm:py-16 lg:py-20">
-          <div className="grid items-center gap-10 lg:min-h-[560px] lg:grid-cols-[1.06fr_0.94fr] lg:gap-14">
+        <div className="mx-auto w-full max-w-[1240px] px-4 py-16 sm:py-20 lg:py-28 sm:px-6">
+          <div className="grid items-center gap-12 lg:min-h-[600px] lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-surface-2/70 px-3 py-1.5 text-[11px] font-bold text-brand backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" /> Smart campus signal
-              </span>
-              <h1 className="my-4 text-[42px] leading-[1.04] tracking-tight sm:text-6xl lg:text-[74px]">
-                Know what matters.
-                <br />
-                <em className="not-italic text-gradient-animated font-semibold">Before it is missed.</em>
-              </h1>
-              <p className="max-w-[650px] text-base leading-relaxed text-muted sm:text-lg">
-                NotifyHub brings announcements, urgent alerts, events and campus questions into one calm, searchable place.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-2.5">
-                <Link className={buttonClasses("primary")} href="/announcements">
-                  Explore the feed
+              <Reveal variant="fade" className="inline-flex items-center gap-2.5 rounded-full border border-brand/40 bg-brand-50/90 px-4 py-1.5 text-xs font-extrabold text-brand-light shadow-sm">
+                <span className="relative flex h-2.5 w-2.5 items-center justify-center">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-light opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-light" />
+                </span>
+                <span className="tracking-wide uppercase text-[11px]">Next-Gen Campus Broadcast Signal</span>
+              </Reveal>
+
+              <Reveal delay={100}>
+                <h1 className="my-6 text-[46px] leading-[1.02] tracking-tight font-extrabold sm:text-6xl lg:text-[76px]">
+                  Know what matters.
+                  <br />
+                  <em className="not-italic text-gradient-animated">Before it is missed.</em>
+                </h1>
+              </Reveal>
+
+              <Reveal delay={200}>
+                <p className="max-w-[620px] text-base leading-relaxed text-muted/95 sm:text-xl font-normal">
+                  NotifyHub unifies circulars, urgent priority alerts, scheduled academic events, and direct campus inquiries into one high-vibrancy, zero-latency signal.
+                </p>
+              </Reveal>
+
+              <Reveal delay={300} className="mt-8 flex flex-wrap gap-4">
+                <Link className={buttonClasses("primary", "!px-7 !py-3.5 !text-base")} href="/announcements">
+                  Explore Public Feed →
                 </Link>
-                <Link className={buttonClasses("secondary")} href="/auth/login">
-                  Sign in
+                <Link className={buttonClasses("secondary", "!px-7 !py-3.5 !text-base")} href="/auth/login">
+                  Sign In to Workspace
                 </Link>
-              </div>
+              </Reveal>
 
               {!loading && !error && (
-                <div className="mt-10 flex flex-wrap gap-8">
-                  <div>
-                    <strong className="font-display text-3xl">
+                <Reveal delay={400} className="mt-12 flex flex-wrap gap-6 sm:gap-12 pt-8 border-t border-white/[0.08]">
+                  <div className="flex flex-col">
+                    <strong className="font-display text-3xl sm:text-4xl font-extrabold text-white">
                       <Counter value={urgent.length + items.length + upcoming.length} />+
                     </strong>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Live items right now</p>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted mt-1 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-light" /> Live Items Today
+                    </span>
                   </div>
-                  <div>
-                    <strong className="font-display text-3xl">
+                  <div className="flex flex-col">
+                    <strong className="font-display text-3xl sm:text-4xl font-extrabold text-brand-2-light drop-shadow-[0_0_12px_rgba(168,85,247,0.4)]">
                       <Counter value={upcoming.length} />
                     </strong>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Events coming up</p>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted mt-1 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-2" /> Upcoming Events
+                    </span>
                   </div>
-                  <div>
-                    <strong className="font-display text-3xl text-danger">
+                  <div className="flex flex-col">
+                    <strong className="font-display text-3xl sm:text-4xl font-extrabold text-[#fb7185] drop-shadow-[0_0_12px_rgba(244,63,94,0.4)]">
                       <Counter value={urgent.length} />
                     </strong>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Urgent right now</p>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted mt-1 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-danger" /> Urgent Broadcasts
+                    </span>
                   </div>
-                </div>
+                </Reveal>
               )}
             </div>
 
-            <div className="relative min-h-[380px] overflow-hidden rounded-[26px] border border-white/[0.06] bg-gradient-to-br from-ink-900 to-ink-700 p-7 text-ink shadow-glow transition-transform duration-500 hover:-rotate-1 hover:scale-[1.01] sm:min-h-[450px]">
-              <div className="pointer-events-none absolute -right-[170px] -top-40 h-[400px] w-[400px] rounded-full border border-white/10" />
-              <div className="pointer-events-none absolute -bottom-36 -left-36 h-[230px] w-[230px] rounded-full border border-white/10" />
-              <div className="relative z-10 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-brand-2">NOTIFYHUB / LIVE</span>
-                <span className="flex items-center gap-1.5 text-[11px] font-bold before:h-2 before:w-2 before:animate-pulse before:rounded-full before:bg-success before:shadow-[0_0_0_5px_rgba(61,220,155,0.16)]">
-                  LIVE SIGNAL
+            {/* 3D Isometric Live Signal Showcase Board */}
+            <Reveal variant="scale" delay={200} className="relative min-h-[440px] overflow-hidden rounded-[30px] border border-white/12 bg-gradient-to-br from-surface/98 via-surface-2/98 to-ink-900/98 p-7 sm:p-9 text-ink shadow-lift transition-all duration-300 hover:shadow-card-hover hover:border-brand-light/50">
+              <div className="relative z-10 flex items-center justify-between pb-6 border-b border-white/[0.08]">
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-xs font-bold text-white shadow-glow">◈</span>
+                  <span className="text-xs font-extrabold tracking-widest uppercase text-white">SIGNAL / LIVE STREAM</span>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft px-3 py-1 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.3)]">
+                  <span className="relative flex h-2 w-2 items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
+                  </span>
+                  ACTIVE
                 </span>
               </div>
-              <div className="relative z-10 mt-16 grid gap-3">
-                <div className="rounded-2xl border border-white/[0.06] bg-surface/95 p-4.5 text-ink shadow-[0_20px_45px_rgba(0,0,0,0.45)] animate-float transition-transform duration-300 hover:scale-[1.03]">
-                  <strong className="font-display">New campus update</strong>
-                  <p className="text-sm text-muted">One place. Every important message.</p>
-                  <div className="mt-2.5 h-1.5 rounded-full bg-white/10">
-                    <span className="block h-full w-[62%] rounded-full bg-gradient-to-r from-brand to-brand-2" />
+
+              <div className="relative z-10 mt-6 grid gap-4">
+                {/* Notification Tile 1 - Announcement */}
+                <div className="rounded-2xl border border-white/10 bg-surface-2 p-5 shadow-card animate-float transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.02] hover:border-brand-light/60 hover:shadow-glow">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <strong className="font-display text-sm font-extrabold text-white">Midterm Circular Published</strong>
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-light border border-brand/40">New</span>
+                  </div>
+                  <p className="text-xs text-muted/95 leading-relaxed">Examination schedules and hall allocations updated for all departments.</p>
+                  <div className="mt-3.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <span className="block h-full w-[75%] rounded-full bg-gradient-to-r from-brand via-brand-light to-brand-2 animate-pulse" />
                   </div>
                 </div>
-                <div className="ml-8 rounded-2xl border border-white/[0.06] bg-surface/95 p-4.5 text-ink shadow-[0_20px_45px_rgba(0,0,0,0.45)] animate-float transition-transform duration-300 [animation-delay:-1.5s] hover:scale-[1.03]">
-                  <strong className="font-display">Upcoming event</strong>
-                  <p className="text-sm text-muted">Your calendar, without the clutter.</p>
+
+                {/* Notification Tile 2 - Event */}
+                <div className="ml-5 sm:ml-8 rounded-2xl border border-white/10 bg-surface-2 p-5 shadow-card animate-float-reverse transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.02] hover:border-brand-2/60 hover:shadow-glow-violet">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <strong className="font-display text-sm font-extrabold text-white">Annual Tech Hackathon 2026</strong>
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-2-light border border-brand-2/40">Event</span>
+                  </div>
+                  <p className="text-xs text-muted/95 leading-relaxed">Main Auditorium · Starts in 2d 14h (Registrations open)</p>
                 </div>
-                <div className="ml-16 rounded-2xl border border-white/[0.06] bg-surface/95 p-4.5 text-ink shadow-[0_20px_45px_rgba(0,0,0,0.45)] animate-float transition-transform duration-300 [animation-delay:-3s] hover:scale-[1.03]">
-                  <strong className="font-display">Priority alert</strong>
-                  <p className="text-sm text-muted">Urgent information stays visible.</p>
+
+                {/* Notification Tile 3 - Urgent Alert */}
+                <div className="ml-10 sm:ml-16 rounded-2xl border border-danger/45 bg-gradient-to-r from-[#2e0e1d] via-surface-2 to-surface-2 p-5 shadow-card animate-float transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] [animation-delay:-3s] hover:scale-[1.02] hover:border-danger/70 hover:shadow-glow-danger">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <strong className="font-display text-sm font-extrabold text-[#ff8ba0]">Campus South Gate Advisory</strong>
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-danger-soft text-[#ff8ba0] border border-danger/40">Urgent</span>
+                  </div>
+                  <p className="text-xs text-muted/95 leading-relaxed">Scheduled civil maintenance active tonight from 10:00 PM onwards.</p>
                 </div>
               </div>
-            </div>
+            </Reveal>
           </div>
         </div>
 
-        {/* Marquee trust strip */}
-        <div className="overflow-hidden border-y border-border bg-surface/60 py-3.5">
-          <div className="marquee-track gap-10">
+        {/* Marquee trust & features strip */}
+        <div className="overflow-hidden border-y border-white/[0.08] bg-surface/90 py-4">
+          <div className="marquee-track gap-12">
             {[...chips, ...chips].map((c, i) => (
-              <span key={i} className="flex items-center gap-2 whitespace-nowrap px-4 text-xs font-bold text-muted">
-                <span className="h-1 w-1 rounded-full bg-brand/60" /> {c}
+              <span key={i} className="flex items-center gap-3 whitespace-nowrap text-xs font-extrabold tracking-wider text-muted/90 uppercase">
+                <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-brand via-brand-2 to-cyan shadow-[0_0_8px_rgba(79,70,229,0.8)]" />
+                {c}
               </span>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-[1180px] px-4 py-16">
+      {/* Main Feed Sections */}
+      <section className="mx-auto w-full max-w-[1240px] px-4 py-16 sm:py-24 sm:px-6">
         {loading ? (
           <CardSkeletons count={3} />
         ) : error ? (
           <ErrorState message={error} />
         ) : (
           <>
-            <Reveal className="mb-5 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+            {/* Urgent Alerts Section */}
+            <Reveal className="mb-8 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
               <div>
-                <span className="text-[11px] font-bold text-brand">Attention now</span>
-                <h2 className="mt-1.5 text-2xl sm:text-3xl">Urgent signals</h2>
+                <span className="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-[#ff8ba0]">
+                  <span className="relative flex h-2 w-2 items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-danger" />
+                  </span>
+                  Priority Attention
+                </span>
+                <h2 className="mt-1.5 text-3xl sm:text-4xl font-extrabold">Urgent broadcasts</h2>
               </div>
               <Link href="/urgent" className={buttonClasses("secondary")}>
-                View all
+                View all priority alerts →
               </Link>
             </Reveal>
             {urgent.length ? (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-2">
                 {urgent.map((x, i) => (
-                  <Reveal key={x.id} delay={i * 80}>
+                  <Reveal key={x.id} delay={i * 90}>
                     <AnnouncementCard item={x} />
                   </Reveal>
                 ))}
               </div>
             ) : (
-              <p className="text-muted">No urgent alerts right now.</p>
+              <p className="text-muted text-sm py-4">No urgent alerts right now.</p>
             )}
 
-            <Reveal className="mb-5 mt-20 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+            {/* Campus Announcements Section */}
+            <Reveal className="mb-8 mt-24 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
               <div>
-                <span className="text-[11px] font-bold text-brand">Latest</span>
-                <h2 className="mt-1.5 text-2xl sm:text-3xl">Campus announcements</h2>
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-brand-light flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-light shadow-[0_0_8px_rgba(129,140,248,0.8)]" />
+                  Latest Published Stream
+                </span>
+                <h2 className="mt-1.5 text-3xl sm:text-4xl font-extrabold">Campus announcements</h2>
               </div>
               <Link href="/announcements" className={buttonClasses("secondary")}>
-                Open feed
+                Open full feed →
               </Link>
             </Reveal>
             {items.length ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((x, i) => (
-                  <Reveal key={x.id} delay={i * 80}>
+                  <Reveal key={x.id} delay={i * 90}>
                     <AnnouncementCard item={x} />
                   </Reveal>
                 ))}
               </div>
             ) : (
-              <p className="text-muted">No announcements are published yet.</p>
+              <p className="text-muted text-sm py-4">No announcements are published yet.</p>
             )}
 
-            <Reveal className="mb-5 mt-20 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
+            {/* Upcoming Events Section */}
+            <Reveal className="mb-8 mt-24 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
               <div>
-                <span className="text-[11px] font-bold text-brand">On the calendar</span>
-                <h2 className="mt-1.5 text-2xl sm:text-3xl">Upcoming events</h2>
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-brand-2-light flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-2 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                  Academic & Campus Calendar
+                </span>
+                <h2 className="mt-1.5 text-3xl sm:text-4xl font-extrabold">Upcoming events</h2>
               </div>
               <Link href="/events" className={buttonClasses("secondary")}>
-                See events
+                See all events →
               </Link>
             </Reveal>
             {upcoming.length ? (
-              <div className="grid gap-4">
+              <div className="grid gap-5">
                 {upcoming.map((x, i) => (
-                  <Reveal key={x.id} delay={i * 80}>
+                  <Reveal key={x.id} delay={i * 90}>
                     <EventCard item={x} />
                   </Reveal>
                 ))}
               </div>
             ) : (
-              <p className="text-muted">No upcoming events are scheduled.</p>
+              <p className="text-muted text-sm py-4">No upcoming events are scheduled.</p>
             )}
           </>
         )}
@@ -215,3 +269,5 @@ export default function Home() {
     </div>
   );
 }
+
+

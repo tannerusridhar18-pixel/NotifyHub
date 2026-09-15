@@ -1,77 +1,109 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
 /*
  * NotifyHub design system — Tailwind v4 theme tokens.
- * Everything under --color-*, --font-*, --shadow-*, --radius-*, --animate-*
- * is auto-exposed as Tailwind utilities (bg-brand, font-display, shadow-glow, ...).
+ * High-vibrancy, dark-mode-first SaaS theme with electric indigo, radiant violet,
+ * aurora cyan/teal, warm amber pops, holographic glass layers, and GPU-accelerated 3D transforms.
  */
 @theme {
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Dark-mode-first base: deep navy-charcoal, not flat black */
-  --color-bg: #0a0b12;
-  --color-surface: #14151f;
-  --color-surface-2: #1b1d2b;
-  --color-ink: #edeffa;
-  --color-muted: #9498b3;
-  --color-border: #262939;
+  /* Deep cosmic obsidian midnight navy base */
+  --color-bg: #060816;
+  --color-surface: #0c1229;
+  --color-surface-2: #121a3a;
+  --color-surface-3: #18234e;
+  --color-surface-elevated: #202e64;
+  --color-ink: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-border: #1e2952;
+  --color-border-glow: #3b4d8f;
 
-  /* Glowing periwinkle/violet accent pair */
-  --color-brand: #7c8cff;
-  --color-brand-2: #b98cff;
-  --color-brand-50: #191c3a;
-  --color-brand-100: #232752;
+  /* High-vibrancy electric hyper-cobalt & luminous ultraviolet */
+  --color-brand: #4f46e5;
+  --color-brand-light: #7c3aed;
+  --color-brand-2: #9333ea;
+  --color-brand-2-light: #c084fc;
+  --color-brand-magenta: #ec4899;
+  --color-brand-50: #12183e;
+  --color-brand-100: #1b245a;
 
-  --color-success: #3ddc9b;
-  --color-success-soft: #12291f;
-  --color-danger: #ff7369;
-  --color-danger-soft: #34181a;
-  --color-warning: #ffc659;
-  --color-warning-soft: #352910;
+  /* Bioluminescent Aurora Aqua & Vivid Mint */
+  --color-cyan: #00d2ff;
+  --color-cyan-light: #38bdf8;
+  --color-teal: #0d9488;
+  --color-teal-light: #00f5a0;
+  --color-teal-soft: #052e26;
 
-  /* Deepest tone — reserved for hero panels / admin sidebar, distinct from card surface */
-  --color-ink-900: #05060b;
-  --color-ink-800: #0b0c16;
-  --color-ink-700: #11121e;
+  /* Vibrant solar amber & electric sunfire coral */
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+  --color-success-soft: #062b1e;
 
-  --shadow-soft: 0 2px 16px rgba(0, 0, 0, 0.35);
-  --shadow-card: 0 20px 50px rgba(0, 0, 0, 0.45);
-  --shadow-lift: 0 30px 80px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 0 1px rgba(124, 140, 255, 0.16), 0 0 34px rgba(124, 140, 255, 0.26);
-  --shadow-glow-violet: 0 0 44px rgba(185, 140, 255, 0.24);
+  --color-danger: #ff2a5f;
+  --color-danger-light: #ff6b8b;
+  --color-danger-soft: #380d19;
 
-  --radius-card: 18px;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fde047;
+  --color-warning-soft: #2e1d08;
 
-  --animate-float: float 5s ease-in-out infinite;
-  --animate-toast-in: toast-in 0.22s ease-out;
-  --animate-spin-slow: spin 1.4s linear infinite;
-  --animate-marquee: marquee 26s linear infinite;
-  --animate-blob: blob 14s ease-in-out infinite;
+  --color-amber: #f59e0b;
+  --color-amber-light: #fde047;
+
+  /* Deepest command tones for hero panels and admin sidebar */
+  --color-ink-900: #03050c;
+  --color-ink-800: #060816;
+  --color-ink-700: #0a0f24;
+
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 16px 40px -10px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+  --shadow-card-hover: 0 24px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(124, 58, 237, 0.35);
+  --shadow-lift: 0 25px 60px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --shadow-glow: 0 0 0 1px rgba(79, 70, 229, 0.4), 0 0 35px -4px rgba(79, 70, 229, 0.5);
+  --shadow-glow-violet: 0 0 0 1px rgba(147, 51, 234, 0.4), 0 0 40px -4px rgba(147, 51, 234, 0.5);
+  --shadow-glow-cyan: 0 0 0 1px rgba(0, 210, 255, 0.4), 0 0 35px -4px rgba(0, 210, 255, 0.5);
+  --shadow-glow-danger: 0 0 0 1px rgba(255, 42, 95, 0.4), 0 0 35px -4px rgba(255, 42, 95, 0.5);
+  --shadow-glow-amber: 0 0 0 1px rgba(245, 158, 11, 0.4), 0 0 35px -4px rgba(245, 158, 11, 0.5);
+
+  --radius-card: 20px;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-slow: float-slow 8s ease-in-out infinite;
+  --animate-float-reverse: float-reverse 7s ease-in-out infinite;
+  --animate-toast-in: toast-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-spin-slow: spin 4s linear infinite;
+  --animate-marquee: marquee 28s linear infinite;
+  --animate-blob: blob 16s ease-in-out infinite;
   --animate-gradient-x: gradient-x 6s ease infinite;
+  --animate-pulse-glow: pulse-glow 2.4s ease-in-out infinite;
+  --animate-radar: radar 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-shimmer: shimmer 2.2s ease-in-out infinite;
 }
 
 @keyframes marquee {
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
+
 @keyframes blob {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
   }
   33% {
-    transform: translate(30px, -40px) scale(1.1);
+    transform: translate3d(40px, -50px, 0) scale(1.15) rotate(10deg);
   }
   66% {
-    transform: translate(-24px, 24px) scale(0.95);
+    transform: translate3d(-35px, 35px, 0) scale(0.92) rotate(-8deg);
   }
 }
+
 @keyframes gradient-x {
-  0%,
-  100% {
+  0%, 100% {
     background-position: 0% 50%;
   }
   50% {
@@ -80,18 +112,71 @@
 }
 
 @keyframes float {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0) rotate(0deg);
+  }
   50% {
-    transform: translateY(-7px);
+    transform: translate3d(0, -9px, 0) rotate(0.6deg);
   }
 }
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, 9px, 0) rotate(-0.6deg);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale3d(1, 1, 1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale3d(1.06, 1.06, 1);
+  }
+}
+
+@keyframes radar {
+  0% {
+    transform: scale3d(1, 1, 1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale3d(2.6, 2.6, 1);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate3d(0, 20px, 0) scale(0.94) rotate(-1deg);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
   }
 }
 
@@ -101,57 +186,81 @@
   }
   html {
     scroll-behavior: smooth;
-    /* Every input in this UI is custom-styled except native date/time pickers
-       (datetime-local calendar icon, spinner arrows, popup). Without this,
-       browsers render that native chrome in light mode by default, which looks
-       broken/misaligned against this site's dark theme. */
     color-scheme: dark;
   }
   body {
     background-color: var(--color-bg);
     background-image:
-      radial-gradient(720px circle at 86% -6%, color-mix(in srgb, var(--color-brand) 16%, transparent), transparent 60%),
-      radial-gradient(620px circle at -6% 30%, color-mix(in srgb, var(--color-brand-2) 12%, transparent), transparent 55%);
+      radial-gradient(900px circle at 85% -10%, color-mix(in srgb, var(--color-brand) 25%, transparent), transparent 65%),
+      radial-gradient(800px circle at -8% 30%, color-mix(in srgb, var(--color-brand-2) 20%, transparent), transparent 60%),
+      radial-gradient(650px circle at 90% 65%, color-mix(in srgb, var(--color-cyan) 15%, transparent), transparent 55%),
+      radial-gradient(700px circle at 40% 100%, color-mix(in srgb, var(--color-brand-magenta) 12%, transparent), transparent 60%);
     background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1,
-  h2,
-  h3 {
+  h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
   a {
     color: inherit;
+    text-decoration: none;
   }
   button {
     cursor: pointer;
   }
   ::selection {
-    background: color-mix(in srgb, var(--color-brand) 40%, transparent);
-    color: var(--color-ink);
+    background: color-mix(in srgb, var(--color-brand) 55%, transparent);
+    color: #ffffff;
   }
   :focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--color-brand) 55%, transparent);
+    outline: 2px solid var(--color-brand-light);
     outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  input[type="datetime-local"] {
+    color-scheme: dark;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.75;
+    margin-left: 6px;
+    padding: 3px;
     border-radius: 4px;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    transform: scale(1.1);
   }
 }
 
-/* Custom scrollbar for dense admin tables — cosmetic only, degrades gracefully */
+/* Custom scrollbars */
 .scroll-thin::-webkit-scrollbar {
   height: 6px;
   width: 6px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 999px;
 }
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
 
-/* Cursor-tracking spotlight glow — set via --spot-x/--spot-y from a mousemove handler */
+/* 3D tilt & cursor-tracking spotlight container */
+.spotlight-wrap {
+  perspective: 1000px;
+}
 .spotlight {
   position: relative;
   isolation: isolate;
@@ -163,51 +272,118 @@
   z-index: 0;
   border-radius: inherit;
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
+/* Holographic specular light reflection on hover */
+.spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(255, 255, 255, 0.1), transparent 70%);
+}
+.spotlight:hover::after {
+  opacity: 1;
+}
+
 .spotlight-brand::before {
-  background: radial-gradient(320px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--color-brand) 14%, transparent), transparent 68%);
+  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--color-brand) 28%, transparent), transparent 70%);
+}
+.spotlight-violet::before {
+  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--color-brand-2) 28%, transparent), transparent 70%);
+}
+.spotlight-cyan::before {
+  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--color-cyan) 26%, transparent), transparent 70%);
+}
+.spotlight-danger::before {
+  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--color-danger) 28%, transparent), transparent 70%);
+}
+.spotlight-amber::before {
+  background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--color-amber) 28%, transparent), transparent 70%);
 }
 .spotlight-white::before {
-  background: radial-gradient(280px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(255, 255, 255, 0.14), transparent 68%);
+  background: radial-gradient(380px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(255, 255, 255, 0.15), transparent 70%);
 }
 .spotlight:hover::before {
   opacity: 1;
 }
 .spotlight > * {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
-/* Gradient-sweep shine on primary buttons */
+/* Surfaces */
+.glass-panel {
+  background: rgba(12, 18, 41, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(18, 26, 58, 0.95) 0%, rgba(12, 18, 41, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-pill {
+  background: rgba(18, 26, 58, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 3D button press and luminous shine effect */
 .btn-shine {
   position: relative;
   overflow: hidden;
+  transform: translate3d(0, 0, 0);
 }
 .btn-shine::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.35) 35%, transparent 50%);
-  transform: translateX(-120%);
-  transition: transform 0.7s ease;
+  background: linear-gradient(115deg, transparent 15%, rgba(255, 255, 255, 0.35) 40%, rgba(255, 255, 255, 0.55) 45%, transparent 65%);
+  transform: translate3d(-150%, 0, 0);
+  transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 .btn-shine:hover::after {
-  transform: translateX(120%);
+  transform: translate3d(150%, 0, 0);
 }
 
-/* Animated gradient text for hero emphasis */
+/* Animated multi-color gradient text */
 .text-gradient-animated {
-  background: linear-gradient(90deg, var(--color-brand), var(--color-brand-2), #6be2ff, var(--color-brand));
-  background-size: 300% 100%;
+  background: linear-gradient(90deg, #7c3aed 0%, #c084fc 25%, #00d2ff 50%, #ec4899 75%, #7c3aed 100%);
+  background-size: 280% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: var(--animate-gradient-x);
 }
 
-/* Marquee strip */
+.text-gradient-cyan {
+  background: linear-gradient(90deg, #00d2ff 0%, #00f5a0 50%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-amber {
+  background: linear-gradient(90deg, #fde047 0%, #f59e0b 50%, #ff2a5f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-danger {
+  background: linear-gradient(90deg, #ff6b8b 0%, #ff2a5f 50%, #fda4af 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Marquee track */
 .marquee-track {
   display: flex;
   width: max-content;
@@ -215,6 +391,32 @@
 }
 .marquee-track:hover {
   animation-play-state: paused;
+}
+
+/* Grid background pattern */
+.bg-grid-pattern {
+  background-size: 36px 36px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+.bg-dot-pattern {
+  background-size: 24px 24px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1.2px, transparent 1.2px);
+}
+
+/* Radar beacon pulse rings */
+.radar-beacon {
+  position: relative;
+}
+.radar-beacon::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 1.5px solid currentColor;
+  animation: var(--animate-radar);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -225,5 +427,8 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    transform: none !important;
   }
 }
+
+

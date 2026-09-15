@@ -22,7 +22,7 @@ export default function AdminLogin() {
     setError("");
     try {
       const x = await login(email, password);
-      if (x.role !== "ADMIN") throw new Error("Access denied.");
+      if (x.role !== "ADMIN") throw new Error("Access denied. Administrator privileges required.");
       router.push("/admin/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed.");
@@ -34,41 +34,62 @@ export default function AdminLogin() {
   return (
     <AuthSplit
       tone="admin"
-      kicker="Control room"
+      kicker="Control Room Operations"
       title={
         <>
           Run the campus
           <br />
-          <em className="not-italic text-success">signal.</em>
+          <em className="not-italic text-[#6ee7b7]">signal.</em>
         </>
       }
-      description="Publish trusted updates, manage events, answer questions and invite campus members from one protected workspace."
+      description="Publish trusted broadcasts, manage academic calendars, review campus queries, and manage directory structures from one protected workspace."
       metrics={[
-        { value: "ADMIN", label: "Protected access" },
-        { value: "LIVE", label: "Campus operations" },
+        { value: "ADMIN", label: "Privileged Access" },
+        { value: "ACTIVE", label: "Campus Signal" },
       ]}
     >
       <AuthCard>
         <form onSubmit={submit}>
-          <span className="text-[11px] font-bold text-brand">Restricted area</span>
-          <h2 className="my-2 text-3xl">Admin portal</h2>
-          <p className="mb-5 text-sm text-muted">Use the admin email and password configured by the NotifyHub backend.</p>
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold tracking-widest text-success uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+            Restricted Control Room
+          </span>
+          <h2 className="my-2 text-3xl font-extrabold tracking-tight">Admin Portal</h2>
+          <p className="mb-6 text-sm text-muted">Sign in with authorized administrator credentials.</p>
           <div className="grid gap-4">
-            <Field label="Admin email" htmlFor="email">
-              <input id="email" required type="email" className={inputBase} value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Field label="Admin Email" htmlFor="email">
+              <input
+                id="email"
+                required
+                type="email"
+                className={inputBase}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@notifyhub.local"
+                suppressHydrationWarning
+              />
             </Field>
-            <Field label="Password" htmlFor="password">
-              <input id="password" required type="password" className={inputBase} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Field label="Security Key / Password" htmlFor="password">
+              <input
+                id="password"
+                required
+                type="password"
+                className={inputBase}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                suppressHydrationWarning
+              />
             </Field>
           </div>
-          {error && <div className={`${errorBox} mt-4`}>{error}</div>}
-          <Button className="mt-5 w-full" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in as admin"}
+          {error && <div className={`${errorBox} mt-5`}>{error}</div>}
+          <Button className="mt-6 w-full !py-3 !text-sm" disabled={busy}>
+            {busy ? "Validating Session…" : "Enter Control Room →"}
           </Button>
-          <p className="mt-5 text-center text-sm text-muted">
-            Student or faculty?{" "}
-            <Link className="font-bold text-brand" href="/auth/login">
-              Sign in here
+          <p className="mt-6 text-center text-xs text-muted">
+            Student or faculty member?{" "}
+            <Link className="font-bold text-brand hover:underline" href="/auth/login">
+              Sign in via User Portal
             </Link>
           </p>
         </form>
@@ -76,3 +97,4 @@ export default function AdminLogin() {
     </AuthSplit>
   );
 }
+

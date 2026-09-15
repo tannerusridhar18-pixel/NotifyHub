@@ -34,6 +34,7 @@ import { StatusBadge, SoftBadge } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Counter from "@/components/ui/Counter";
 import Field from "@/components/ui/Field";
+import DetailModal from "@/components/ui/DetailModal";
 import { inputBase, textareaBase, cx } from "@/components/ui/classes";
 
 const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" as "" | "STUDENT" | "FACULTY" };
@@ -76,6 +77,7 @@ export default function DashboardClient() {
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [evs, setEvs] = useState<EventItem[]>([]);
   const [queries, setQueries] = useState<CampusQuery[]>([]);
+  const [modalItem, setModalItem] = useState<{ type: "announcement"; data: Announcement } | { type: "event"; data: EventItem } | { type: "query"; data: CampusQuery } | null>(null);
   const [identity, setIdentity] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -293,81 +295,104 @@ export default function DashboardClient() {
   return (
     <div className="mx-auto w-full max-w-[1450px] px-4 py-8 sm:px-8 sm:py-10 lg:px-[clamp(20px,4vw,60px)]">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      <header className="mb-7 flex flex-col items-start justify-between gap-6 sm:flex-row">
+      <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:flex-row">
         <div>
-          <span className="text-[11px] font-extrabold text-brand">Operations</span>
-          <h1 className="mt-1.5 text-[32px] leading-tight sm:text-4xl lg:text-[46px]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_12px_rgba(99,102,241,0.2)] backdrop-blur-md">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-light animate-pulse" />
+            Operations Control Room
+          </span>
+          <h1 className="mt-2 text-[32px] leading-tight sm:text-4xl lg:text-[46px] font-extrabold">
             {tab === "announcements" ? "Campus announcements" : tab === "events" ? "Campus events" : tab === "queries" ? "Questions inbox" : "People & invitations"}
           </h1>
-          <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted">A focused workspace for publishing, scheduling and provisioning campus communication.</p>
+          <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted/90">A focused workspace for publishing, scheduling, and provisioning real-time campus communication.</p>
         </div>
         <div className="flex items-center gap-3 pt-1">
-          <span className="flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-2.5 py-2 text-[10px] font-bold text-muted">
-            <i className="h-1.5 w-1.5 rounded-full bg-success shadow-[0_0_0_4px_rgba(61,220,155,0.18)]" /> System live
+          <span className="flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3 py-1.5 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
+            <span className="relative flex h-2 w-2 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
+            </span>
+            System live
           </span>
-          <span className="text-[10px] text-muted">{identity}</span>
+          <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
         </div>
       </header>
 
       {error && <ErrorState message={error} onRetry={() => void load().catch((e) => setError(e instanceof Error ? e.message : "Unable to reload."))} />}
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <button
           className={cx(
-            "rounded-2xl border p-5 text-left transition duration-200 hover:-translate-y-0.5",
-            "min-h-[142px] border-white/[0.06] bg-gradient-to-br from-ink-900 to-ink-700 text-ink shadow-[0_18px_40px_rgba(0,0,0,0.4)]",
-            tab === "announcements" ? "border-brand-100" : "border-transparent"
+            "rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover",
+            "min-h-[148px] backdrop-blur-xl",
+            tab === "announcements"
+              ? "border-brand-light/60 bg-gradient-to-br from-surface-2 via-brand-50 to-surface-3 shadow-glow"
+              : "border-white/[0.08] bg-gradient-to-br from-surface/95 to-surface-2/95 text-ink"
           )}
           onClick={() => setTab("announcements")}
         >
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted">Published signal</span>
-          <strong className="my-4 block font-display text-4xl"><Counter value={anns.filter((x) => x.status === "PUBLISHED").length} /></strong>
-          <small className="text-[10px] text-muted">Announcement records</small>
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-light">Published signal</span>
+          <strong className="my-3 block font-display text-4xl sm:text-5xl font-extrabold text-white"><Counter value={anns.filter((x) => x.status === "PUBLISHED").length} /></strong>
+          <small className="text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-light" /> Announcement records
+          </small>
         </button>
         <button
           className={cx(
-            "min-h-[142px] rounded-2xl border bg-surface p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-card",
-            tab === "events" ? "border-brand-100 shadow-glow" : "border-border"
+            "min-h-[148px] rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover backdrop-blur-xl",
+            tab === "events"
+              ? "border-brand-2/60 bg-gradient-to-br from-surface-2 via-brand-50 to-surface-3 shadow-glow-violet"
+              : "border-white/[0.08] bg-gradient-to-br from-surface/95 to-surface-2/95 text-ink"
           )}
           onClick={() => setTab("events")}
         >
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted">Published activity</span>
-          <strong className="my-4 block font-display text-4xl"><Counter value={evs.filter((x) => x.status === "PUBLISHED").length} /></strong>
-          <small className="text-[10px] text-muted">Event records</small>
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-2-light">Published activity</span>
+          <strong className="my-3 block font-display text-4xl sm:text-5xl font-extrabold text-white"><Counter value={evs.filter((x) => x.status === "PUBLISHED").length} /></strong>
+          <small className="text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-2" /> Event records
+          </small>
         </button>
         <button
           className={cx(
-            "min-h-[142px] rounded-2xl border bg-surface p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-card",
-            tab === "queries" ? "border-brand-100 shadow-glow" : "border-border"
+            "min-h-[148px] rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover backdrop-blur-xl",
+            tab === "queries"
+              ? "border-amber/60 bg-gradient-to-br from-surface-2 via-warning-soft to-surface-3 shadow-glow-amber"
+              : "border-white/[0.08] bg-gradient-to-br from-surface/95 to-surface-2/95 text-ink"
           )}
           onClick={() => setTab("queries")}
         >
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-muted">Needs attention</span>
-          <strong className="my-4 block font-display text-4xl"><Counter value={pending} /></strong>
-          <small className="text-[10px] text-muted">Unanswered questions</small>
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-amber-light">Needs attention</span>
+          <strong className="my-3 block font-display text-4xl sm:text-5xl font-extrabold text-white"><Counter value={pending} /></strong>
+          <small className="text-[10px] font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber" /> Unanswered questions
+          </small>
         </button>
-        <div className="flex min-h-[142px] items-start gap-3 rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-surface p-5 sm:col-span-2 lg:col-span-1">
-          <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-surface-2 text-brand shadow-[0_6px_16px_rgba(124,140,255,0.2)]">✦</span>
+        <div className="flex min-h-[148px] items-start gap-3.5 rounded-2xl border border-brand/40 bg-gradient-to-br from-brand-50/95 via-surface-2/90 to-surface/95 p-5 sm:col-span-2 lg:col-span-1 shadow-lift backdrop-blur-xl">
+          <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-surface-2 text-brand-light shadow-glow text-base">✦</span>
           <div>
-            <strong className="font-display">Control-room rule</strong>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-muted">Draft first. Publish only after audience, timing and wording are ready.</p>
+            <strong className="font-display font-bold text-ink">Control-room rule</strong>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-muted/90 font-medium">Draft first. Publish only after audience, timing and wording are ready.</p>
           </div>
         </div>
       </div>
 
-      <div role="tablist" className="mb-5 flex w-max max-w-full gap-1 overflow-auto rounded-xl bg-surface-2 p-1">
+      <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
         {(["announcements", "events", "queries", "people"] as Tab[]).map((x) => (
           <button
             key={x}
             role="tab"
             aria-selected={tab === x}
-            className={cx("whitespace-nowrap rounded-lg px-3.5 py-2.5 text-[11px] font-bold text-muted", tab === x && "bg-surface text-ink shadow-soft")}
+            className={cx(
+              "whitespace-nowrap rounded-xl px-4 py-2.5 text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200",
+              tab === x ? "bg-brand-50 text-white shadow-soft border border-brand/50" : "text-muted hover:bg-surface/60 hover:text-white"
+            )}
             onClick={() => setTab(x)}
           >
             {x === "people" ? "People & invites" : x[0].toUpperCase() + x.slice(1)}
           </button>
         ))}
       </div>
+
 
       {tab === "announcements" && (
         <div className="grid items-start gap-3.5 lg:grid-cols-[minmax(330px,0.7fr)_minmax(0,1.3fr)]">
@@ -470,8 +495,8 @@ export default function DashboardClient() {
       )}
 
       {tab === "events" && (
-        <div className="grid items-start gap-3.5 lg:grid-cols-[minmax(330px,0.7fr)_minmax(0,1.3fr)]">
-          <form className="min-w-0 rounded-[18px] border-t-[3px] border-brand bg-surface p-5 shadow-soft" onSubmit={submitE}>
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(400px,0.85fr)_minmax(0,1.15fr)]">
+          <form className="min-w-0 rounded-[18px] border-t-[3px] border-brand bg-surface p-6 shadow-soft" onSubmit={submitE}>
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <span className="text-[11px] font-extrabold text-brand">Scheduler</span>
@@ -486,14 +511,28 @@ export default function DashboardClient() {
             <Field label="Venue" htmlFor="event-location" className="mb-4">
               <input id="event-location" required className={inputBase} maxLength={180} value={ev.location} onChange={(e) => setEv((v) => ({ ...v, location: e.target.value }))} />
             </Field>
-            <div className="mb-4 grid gap-4 sm:grid-cols-2">
-              <Field label="Time · Starts" htmlFor="event-start">
-                <input id="event-start" required className={`${inputBase} h-[46px]`} type="datetime-local" value={ev.startAt} onChange={(e) => setEv((v) => ({ ...v, startAt: e.target.value }))} />
-                <small className="mt-1 block text-[9px] text-muted">Local time, 24-hour format</small>
+            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Time · Starts" htmlFor="event-start" className="min-w-0">
+                <input
+                  id="event-start"
+                  required
+                  className={`${inputBase} h-[46px] min-w-0 text-xs sm:text-sm`}
+                  type="datetime-local"
+                  value={ev.startAt}
+                  onChange={(e) => setEv((v) => ({ ...v, startAt: e.target.value }))}
+                />
+                <small className="mt-1 block text-[10px] text-muted">Local time, 24-hour format</small>
               </Field>
-              <Field label="Time · Ends" htmlFor="event-end">
-                <input id="event-end" required className={`${inputBase} h-[46px]`} type="datetime-local" value={ev.endAt} onChange={(e) => setEv((v) => ({ ...v, endAt: e.target.value }))} />
-                <small className="mt-1 block text-[9px] text-muted">Local time, 24-hour format</small>
+              <Field label="Time · Ends" htmlFor="event-end" className="min-w-0">
+                <input
+                  id="event-end"
+                  required
+                  className={`${inputBase} h-[46px] min-w-0 text-xs sm:text-sm`}
+                  type="datetime-local"
+                  value={ev.endAt}
+                  onChange={(e) => setEv((v) => ({ ...v, endAt: e.target.value }))}
+                />
+                <small className="mt-1 block text-[10px] text-muted">Local time, 24-hour format</small>
               </Field>
             </div>
             <Field label="Description" htmlFor="event-description" className="mb-4">
@@ -595,7 +634,14 @@ export default function DashboardClient() {
                 <p className="text-[10px] text-muted">
                   {q.name} · {q.email}
                 </p>
-                <p className="mt-2 text-[13px] leading-relaxed text-muted">{q.message}</p>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted line-clamp-3">{q.message}</p>
+                <button
+                  type="button"
+                  onClick={() => setModalItem({ type: "query", data: q })}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-extrabold text-brand-light hover:underline"
+                >
+                  Read full query / details →
+                </button>
                 {q.adminResponse && (
                   <div className="mt-3 rounded-xl bg-success-soft p-3 text-[11px] leading-relaxed text-[#8ff0c8]">
                     <span className="mb-1 block text-[8px] font-extrabold uppercase tracking-[0.1em]">Response</span>
@@ -834,6 +880,7 @@ export default function DashboardClient() {
           </form>
         </section>
       )}
+      <DetailModal item={modalItem} onClose={() => setModalItem(null)} />
     </div>
   );
 }

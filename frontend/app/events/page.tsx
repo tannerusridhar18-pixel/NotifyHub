@@ -19,19 +19,30 @@ export default function EventsPage() {
   }, []);
 
   return (
-    <section className="mx-auto w-full max-w-[1180px] px-4 py-14 sm:py-16">
-      <span className="text-[11px] font-bold text-brand">Campus calendar</span>
-      <h1 className="my-3 text-4xl sm:text-5xl">Events</h1>
-      <p className="max-w-[700px] text-base leading-relaxed text-muted sm:text-lg">See what is next, where it happens, and how long remains before it begins.</p>
-      <div className="mt-8">
+    <section className="mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
+      <Reveal className="max-w-[760px]">
+        <span className="inline-flex items-center gap-2 rounded-full border border-brand-2/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-2-light uppercase shadow-[0_0_16px_rgba(168,85,247,0.25)] backdrop-blur-xl">
+          <span className="relative flex h-2 w-2 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-2-light opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-2-light" />
+          </span>
+          Campus Activity Stream
+        </span>
+        <h1 className="my-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Upcoming Campus Events</h1>
+        <p className="text-base sm:text-lg leading-relaxed text-muted/95">
+          Track academic milestones, tech symposiums, workshops, and campus gatherings with synchronized real-time start countdowns.
+        </p>
+      </Reveal>
+
+      <div className="mt-12">
         {loading ? (
           <CardSkeletons count={4} />
         ) : error ? (
           <ErrorState message={error} />
         ) : items.length ? (
-          <div className="grid gap-4">
+          <div className="grid gap-5">
             {items.map((x, i) => (
-              <Reveal key={x.id} delay={Math.min(i, 6) * 70}>
+              <Reveal key={x.id} delay={Math.min(i, 8) * 70}>
                 <EventCard item={x} />
               </Reveal>
             ))}
@@ -43,3 +54,5 @@ export default function EventsPage() {
     </section>
   );
 }
+
+

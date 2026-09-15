@@ -67,7 +67,7 @@ public class SecurityConfig {
         CsrfTokenRequestHandler csrfHandler = new SpaCsrfTokenRequestHandler();
 
         http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokens).csrfTokenRequestHandler(csrfHandler)
-                        .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password"))
+                        .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password", "/api/v1/queries"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"))
                         .frameOptions(frame -> frame.deny()).httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000)))
@@ -79,6 +79,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/urgent", "/api/v1/events", "/api/v1/events/upcoming").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements/**", "/api/v1/events/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/queries").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/queries/my").authenticated()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/academic-structure/**", "/api/v1/hostels/**").authenticated()

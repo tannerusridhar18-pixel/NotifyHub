@@ -24,7 +24,11 @@ function friendlyMessage(status:number, body:ApiResponse<unknown>|null, path:str
 }
 
 function isPublicRead(path:string, method:string){
-  return method==="GET"&&(path==="/announcements"||path==="/announcements/urgent"||path==="/events"||path==="/events/upcoming");
+  const cleanPath = path.split("?")[0];
+  return (
+    (method==="GET" && (cleanPath==="/announcements"||cleanPath==="/announcements/urgent"||cleanPath==="/events"||cleanPath==="/events/upcoming"||cleanPath==="/users/me"||cleanPath==="/queries/my")) ||
+    (method==="POST" && cleanPath==="/queries")
+  );
 }
 
 async function refresh(){
@@ -88,6 +92,7 @@ export async function announcements(params:{page?:number;size?:number;urgent?:bo
 export async function events(params:{page?:number;size?:number}={}){const q=new URLSearchParams({page:String(params.page??0),size:String(params.size??12)});return request<PageResponse<EventItem>>(`/events?${q}`);}
 export const upcomingEvents=(page=0,size=12)=>{const q=new URLSearchParams({page:String(page),size:String(size)});return request<PageResponse<EventItem>>(`/events/upcoming?${q}`)};
 export const submitQuery=(payload:{name:string;email:string;department:string;subject:string;message:string})=>request<void>("/queries",{method:"POST",body:JSON.stringify(payload)});
+export const myQueries=(page=0,size=50)=>{const q=new URLSearchParams({page:String(page),size:String(size)});return request<PageResponse<CampusQuery>>(`/queries/my?${q}`)};
 export const adminQueries=(page=0,size=50,status?:"OPEN"|"ANSWERED")=>{const q=new URLSearchParams({page:String(page),size:String(size)});if(status)q.set("status",status);return request<PageResponse<CampusQuery>>(`/queries?${q}`)};
 export const answerQuery=(id:number,response:string)=>request<CampusQuery>(`/queries/${id}/answer`,{method:"POST",body:JSON.stringify({response})});
 export const deleteQuery=(id:number)=>request<void>(`/queries/${id}`,{method:"DELETE"});

@@ -1,9 +1,14 @@
-import Spotlight from "./Spotlight";
+import { cx } from "./classes";
 
-export default function AuthCard({ children }: { children: React.ReactNode }) {
+export default function AuthCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <Spotlight className="relative w-full max-w-[455px] overflow-hidden rounded-[22px] border border-border bg-surface p-7 shadow-lift transition-shadow duration-300 hover:shadow-glow after:absolute after:inset-x-0 after:top-0 after:z-10 after:h-1 after:bg-gradient-to-r after:from-brand after:via-brand-2 after:to-[#6be2ff] sm:p-8">
+    <div
+      className={cx(
+        "relative w-full max-w-[480px] overflow-hidden rounded-[26px] border border-white/12 bg-surface/98 p-7 shadow-2xl transition-[border-color,box-shadow] duration-200 ease-out hover:border-brand-light/40 hover:shadow-card-hover after:absolute after:inset-x-0 after:top-0 after:z-10 after:h-1.5 after:bg-gradient-to-r after:from-brand after:via-brand-magenta after:to-cyan sm:p-10",
+        className
+      )}
+    >
       {children}
-    </Spotlight>
+    </div>
   );
 }

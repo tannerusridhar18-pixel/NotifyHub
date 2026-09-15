@@ -184,14 +184,14 @@ export default function StructurePage() {
 
 function Shell({ number, title, subtitle, count, children }: { number: string; title: string; subtitle: string; count: number; children: React.ReactNode }) {
   return (
-    <article className="min-w-0 rounded-[18px] border border-border bg-surface p-5">
-      <div className="mb-4 flex items-start justify-between gap-4">
+    <article className="min-w-0 rounded-[22px] border border-white/10 bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 shadow-soft backdrop-blur-xl transition-all duration-300 hover:border-brand-light/40 hover:shadow-card-hover">
+      <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <span className="text-[8px] font-extrabold tracking-[0.14em] text-brand">{number}</span>
-          <h2 className="mt-1.5 text-lg">{title}</h2>
-          <p className="mt-0.5 text-[10px] text-muted">{subtitle}</p>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50/90 px-2.5 py-0.5 text-[9px] font-black tracking-[0.16em] text-brand-light uppercase">{number}</span>
+          <h2 className="mt-2 text-xl font-extrabold">{title}</h2>
+          <p className="mt-0.5 text-[11px] font-semibold text-muted">{subtitle}</p>
         </div>
-        <strong className="font-display text-xl text-muted"><Counter value={count} /></strong>
+        <strong className="font-display text-2xl font-extrabold text-brand-light bg-surface-2/90 px-3 py-1 rounded-xl border border-white/[0.06] shadow-sm"><Counter value={count} /></strong>
       </div>
       {children}
     </article>
@@ -200,19 +200,20 @@ function Shell({ number, title, subtitle, count, children }: { number: string; t
 
 function Row({ children, onEdit, onDelete }: { children: React.ReactNode; onEdit: () => void; onDelete: () => void }) {
   return (
-    <div className="group flex items-center gap-2.5 rounded-lg p-2 hover:bg-surface-2">
+    <div className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-surface-2/90 hover:shadow-sm">
       <div className="min-w-0 flex-1">{children}</div>
-      <div className="flex gap-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-        <button className="rounded-lg border border-brand-100 bg-brand-50 px-2 py-1.5 text-[8px] font-extrabold text-brand-2" onClick={onEdit} aria-label="Edit">
+      <div className="flex gap-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <button className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light hover:bg-brand-50/80 transition-colors" onClick={onEdit} aria-label="Edit">
           Edit
         </button>
-        <button className="rounded-lg border border-danger-soft bg-danger-soft px-2 py-1.5 text-[8px] font-extrabold text-[#ffb4ac]" onClick={onDelete} aria-label="Deactivate">
+        <button className="rounded-lg border border-danger/40 bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ff8ba0] hover:bg-danger-soft/80 transition-colors" onClick={onDelete} aria-label="Deactivate">
           Delete
         </button>
       </div>
     </div>
   );
 }
+
 
 function DepartmentCard({
   items,

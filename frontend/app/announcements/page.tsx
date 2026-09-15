@@ -23,29 +23,49 @@ export default function AnnouncementsPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return items.filter((x) => (!urgentOnly || x.urgent) && (!q || x.title.toLowerCase().includes(q) || x.content.toLowerCase().includes(q)));
+    return items.filter(
+      (x) => (!urgentOnly || x.urgent) && (!q || x.title.toLowerCase().includes(q) || x.content.toLowerCase().includes(q))
+    );
   }, [items, query, urgentOnly]);
 
   return (
-    <section className="mx-auto w-full max-w-[1180px] px-4 py-14 sm:py-16">
-      <span className="text-[11px] font-bold text-brand">Campus signal</span>
-      <h1 className="my-3 text-4xl sm:text-5xl">Announcements</h1>
-      <p className="max-w-[700px] text-base leading-relaxed text-muted sm:text-lg">Important updates, published centrally and presented in one dependable feed.</p>
+    <section className="mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
+      <Reveal className="max-w-[760px]">
+        <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_16px_rgba(99,102,241,0.25)] backdrop-blur-xl">
+          <span className="relative flex h-2 w-2 items-center justify-center">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-light opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-light" />
+          </span>
+          Campus Broadcast Stream
+        </span>
+        <h1 className="my-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Campus Announcements</h1>
+        <p className="text-base sm:text-lg leading-relaxed text-muted/95">
+          Official campus updates, academic circulars, and departmental notices, unified into a real-time, searchable feed.
+        </p>
+      </Reveal>
 
       {!loading && !error && items.length > 0 && (
-        <div className="my-6 flex flex-wrap gap-2.5">
-          <input
-            className={`${inputBase} min-w-[240px] flex-[2]`}
-            placeholder="Search announcements…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search announcements"
-          />
-          <label className="flex flex-1 min-w-[160px] items-center gap-2 rounded-xl border border-border bg-surface-2 px-3.5 py-3 text-sm font-semibold text-muted">
-            <input type="checkbox" className="accent-brand" checked={urgentOnly} onChange={(e) => setUrgentOnly(e.target.checked)} />
-            Urgent only
+        <Reveal delay={100} className="my-8 flex flex-wrap items-center gap-3.5 rounded-2xl border border-white/12 bg-surface/85 p-3.5 shadow-lift backdrop-blur-2xl">
+          <div className="relative min-w-[260px] flex-[3]">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-light text-sm pointer-events-none">🔍</span>
+            <input
+              className={`${inputBase} !pl-10 !bg-surface-2/95 focus:!border-brand-light`}
+              placeholder="Search announcements by keyword, topic, or department…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search announcements"
+            />
+          </div>
+          <label className="flex min-w-[150px] cursor-pointer select-none items-center gap-2.5 rounded-xl border border-white/10 bg-surface-2/90 px-4 py-3 text-xs font-bold text-muted hover:text-white hover:border-white/20 transition-all duration-200">
+            <input
+              type="checkbox"
+              className="accent-brand h-4 w-4 rounded"
+              checked={urgentOnly}
+              onChange={(e) => setUrgentOnly(e.target.checked)}
+            />
+            <span className="tracking-wide">Urgent only</span>
           </label>
-        </div>
+        </Reveal>
       )}
 
       <div className="mt-8">
@@ -54,9 +74,9 @@ export default function AnnouncementsPage() {
         ) : error ? (
           <ErrorState message={error} />
         ) : filtered.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((x, i) => (
-              <Reveal key={x.id} delay={Math.min(i, 6) * 70}>
+              <Reveal key={x.id} delay={Math.min(i, 8) * 60}>
                 <AnnouncementCard item={x} />
               </Reveal>
             ))}
@@ -70,3 +90,5 @@ export default function AnnouncementsPage() {
     </section>
   );
 }
+
+

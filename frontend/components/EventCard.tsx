@@ -1,31 +1,75 @@
+"use client";
+import { useState } from "react";
 import type { EventItem } from "@/types";
 import Countdown from "./Countdown";
 import { StatusBadge } from "@/components/ui/Badge";
 import Spotlight from "@/components/ui/Spotlight";
+import DetailModal from "@/components/ui/DetailModal";
 
 export default function EventCard({ item }: { item: EventItem }) {
+  const [open, setOpen] = useState(false);
+  const startDate = new Date(item.startAt);
+  const dayStr = startDate.toLocaleDateString(undefined, { day: "2-digit" });
+  const monthStr = startDate.toLocaleDateString(undefined, { month: "short" });
+
   return (
-    <Spotlight
-      as="article"
-      className="group grid min-w-0 grid-cols-[64px_1fr] gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card sm:grid-cols-[84px_1fr] sm:gap-6"
-    >
-      <div className="grid h-16 place-content-center place-items-center rounded-2xl bg-brand-50 text-brand transition-transform duration-300 group-hover:scale-105 sm:h-[84px]">
-        <b className="font-display text-xl leading-none sm:text-3xl">{new Date(item.startAt).toLocaleDateString(undefined, { day: "2-digit" })}</b>
-        <span className="text-[10px] font-extrabold uppercase">{new Date(item.startAt).toLocaleDateString(undefined, { month: "short" })}</span>
-      </div>
-      <div className="min-w-0">
-        <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-bold text-brand">{item.targetType}</span>
-          <StatusBadge status={item.status} />
+    <>
+      <Spotlight
+        as="article"
+        tone="violet"
+        className="group relative grid min-w-0 grid-cols-[76px_1fr] sm:grid-cols-[100px_1fr] gap-4 sm:gap-6 overflow-hidden rounded-[22px] border border-border/90 bg-gradient-to-br from-surface via-surface-2 to-surface p-5 sm:p-6 cursor-pointer transition-[transform,opacity,border-color,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-brand-2/70 hover:shadow-card-hover hover:shadow-glow-violet/50"
+      >
+        {/* 3D Calendar date badge */}
+        <div
+          onClick={() => setOpen(true)}
+          className="flex flex-col items-center justify-center rounded-2xl border border-brand-2/40 bg-gradient-to-b from-brand-50 via-surface-2 to-[#1b1438] p-3 text-center text-brand-2-light shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_8px_20px_-4px_rgba(147,51,234,0.35)] transition-[transform,border-color,box-shadow] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 group-hover:-rotate-2 group-hover:border-brand-2/70 group-hover:shadow-[0_12px_28px_-4px_rgba(147,51,234,0.55)]"
+        >
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-2-light">{monthStr}</span>
+          <b className="font-display text-2xl sm:text-3xl font-extrabold leading-none text-white my-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">{dayStr}</b>
+          <span className="text-[9px] font-extrabold uppercase tracking-wider text-muted/90">EVENT</span>
         </div>
-        <h3 className="mb-1.5 text-xl font-semibold tracking-tight [overflow-wrap:anywhere] transition-colors duration-200 group-hover:text-brand">{item.title}</h3>
-        <p className="text-[15px] leading-relaxed text-muted [overflow-wrap:anywhere]">{item.description}</p>
-        <div className="mt-3.5 flex flex-wrap gap-4 text-xs text-muted">
-          <span>⌖ {item.location}</span>
-          <span>◷ {new Date(item.startAt).toLocaleString()}</span>
+
+        <div className="min-w-0 flex flex-col justify-between" onClick={() => setOpen(true)}>
+          <div>
+            <div className="mb-2.5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2/95 px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase text-muted transition-[transform,border-color] duration-200 ease-out group-hover:scale-105 group-hover:border-white/25">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-2 shadow-[0_0_8px_rgba(147,51,234,0.85)]" />
+                {item.targetType}
+              </span>
+              <StatusBadge status={item.status} />
+            </div>
+            <h3 className="mb-2 text-xl font-extrabold tracking-tight text-ink [overflow-wrap:anywhere] transition-colors duration-200 group-hover:text-brand-2-light">
+              {item.title}
+            </h3>
+            <p className="text-[14px] leading-relaxed text-muted/95 [overflow-wrap:anywhere]">
+              {item.description}
+            </p>
+          </div>
+
+          <div className="mt-5">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-muted/90">
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-surface-2/90 px-3 py-1.5 border border-white/[0.06] transition-colors group-hover:border-white/20">
+                <span className="text-cyan-light font-bold">⌖</span> {item.location}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-surface-2/90 px-3 py-1.5 border border-white/[0.06] transition-colors group-hover:border-white/20">
+                <span className="text-brand-2-light font-bold">◷</span> {startDate.toLocaleString()}
+              </span>
+              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-bold text-muted/80 group-hover:text-brand-2-light transition-colors">
+                <span>View details</span>
+                <span>→</span>
+              </span>
+            </div>
+            {item.status === "PUBLISHED" && <Countdown target={item.startAt} />}
+          </div>
         </div>
-        {item.status === "PUBLISHED" && <Countdown target={item.startAt} />}
-      </div>
-    </Spotlight>
+
+        {/* Hover bottom light accent — GPU accelerated scale-x */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[2px] w-full origin-left scale-x-0 bg-gradient-to-r from-brand-2 via-brand-magenta to-cyan transition-transform duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100" />
+      </Spotlight>
+
+      {open && <DetailModal item={{ type: "event", data: item }} onClose={() => setOpen(false)} />}
+    </>
   );
 }
+
+
