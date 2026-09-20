@@ -8,7 +8,6 @@ pipeline {
     tools {
         // Names must match Manage Jenkins -> Tools
         jdk    'JDK-25'
-        maven  'Maven3'
         nodejs 'Node-24'
     }
 
