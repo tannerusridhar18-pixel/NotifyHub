@@ -1,0 +1,50 @@
+name: Frontend Verification and Package
+
+on:
+  push:
+    branches:
+      - frontend-production-cleanup
+  workflow_dispatch:
+
+jobs:
+  verify-and-package:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Package clean frontend
+        working-directory: .
+        run: |
+          rm -rf frontend/node_modules frontend/.next frontend/coverage
+          find frontend -name '*.tsbuildinfo' -delete
+          zip -r notifyhub-frontend-production.zip frontend             -x 'frontend/.git/*'                'frontend/node_modules/*'                'frontend/.next/*'                'frontend/coverage/*'                'frontend/*.tsbuildinfo'                'frontend/**/.DS_Store'
+
+      - name: Upload frontend ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: notifyhub-frontend-production
+          path: notifyhub-frontend-production.zip
+          retention-days: 7
