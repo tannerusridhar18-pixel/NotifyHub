@@ -1,10 +1,84 @@
 package com.notifyhub.event;
-import com.notifyhub.academicstructure.*; import com.notifyhub.auth.*; import com.notifyhub.hostel.Hostel; import com.notifyhub.targeting.TargetType; import jakarta.persistence.*; import java.time.Instant;
-@Entity @Table(name="events",indexes=@Index(name="ix_event_visibility",columnList="status,target_type,start_at")) public class Event {
- @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id; @Column(nullable=false,length=180) private String title; @Column(nullable=false,columnDefinition="TEXT") private String description; @Column(name="venue",nullable=false,length=180) private String location; @Column(name="start_at",nullable=false) private Instant startAt; @Column(name="end_at",nullable=false) private Instant endAt;
- @Enumerated(EnumType.STRING) @Column(nullable=false,length=20) private EventStatus status=EventStatus.DRAFT; @Enumerated(EnumType.STRING) @Column(name="target_type",nullable=false,length=20) private TargetType targetType=TargetType.GLOBAL; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_department_id") private Department targetDepartment; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_branch_id") private Branch targetBranch; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_section_id") private Section targetSection; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_hostel_id") private Hostel targetHostel; @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_user_id") private User targetUser; @Enumerated(EnumType.STRING) @Column(name="target_role",length=20) private Role targetRole;
- @Column(name="published_at") private Instant publishedAt; @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt; @Column(name="updated_at",nullable=false) private Instant updatedAt; @Column(name="status_changed_at",nullable=false) private Instant statusChangedAt; @ManyToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="created_by",nullable=false) private User createdBy;
- @PrePersist void pre(){Instant n=Instant.now();createdAt=n;updatedAt=n;statusChangedAt=n;} @PreUpdate void upd(){updatedAt=Instant.now();}
- public Long getId(){return id;} public String getTitle(){return title;} public String getDescription(){return description;} public String getLocation(){return location;} public Instant getStartAt(){return startAt;} public Instant getEndAt(){return endAt;} public EventStatus getStatus(){return status;} public TargetType getTargetType(){return targetType;} public Department getTargetDepartment(){return targetDepartment;} public Branch getTargetBranch(){return targetBranch;} public Section getTargetSection(){return targetSection;} public Hostel getTargetHostel(){return targetHostel;} public User getTargetUser(){return targetUser;} public Role getTargetRole(){return targetRole;} public Instant getPublishedAt(){return publishedAt;} public Instant getCreatedAt(){return createdAt;} public Instant getUpdatedAt(){return updatedAt;} public User getCreatedBy(){return createdBy;}
- public void setTitle(String v){title=v;} public void setDescription(String v){description=v;} public void setLocation(String v){location=v;} public void setStartAt(Instant v){startAt=v;} public void setEndAt(Instant v){endAt=v;} public void setStatus(EventStatus v){status=v;statusChangedAt=Instant.now();} public void setTargetType(TargetType v){targetType=v;} public void setTargetDepartment(Department v){targetDepartment=v;} public void setTargetBranch(Branch v){targetBranch=v;} public void setTargetSection(Section v){targetSection=v;} public void setTargetHostel(Hostel v){targetHostel=v;} public void setTargetUser(User v){targetUser=v;} public void setTargetRole(Role v){targetRole=v;} public void setPublishedAt(Instant v){publishedAt=v;} public void setCreatedBy(User v){createdBy=v;}
+
+import com.notifyhub.academicstructure.*;
+import com.notifyhub.auth.*;
+import com.notifyhub.hostel.Hostel;
+import com.notifyhub.targeting.TargetType;
+import jakarta.persistence.*;
+import java.time.Instant;
+
+@Entity
+@Table(name="events", indexes=@Index(name="ix_event_visibility",columnList="status,target_type,start_at"))
+public class Event {
+    @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
+    @Column(nullable=false,length=180) private String title;
+    @Column(nullable=false,columnDefinition="TEXT") private String description;
+    @Column(name="venue",nullable=false,length=180) private String location;
+    @Column(name="start_at",nullable=false) private Instant startAt;
+    @Column(name="end_at",nullable=false) private Instant endAt;
+    @Enumerated(EnumType.STRING) @Column(nullable=false,length=20) private EventStatus status=EventStatus.DRAFT;
+    @Enumerated(EnumType.STRING) @Column(name="target_type",nullable=false,length=20) private TargetType targetType=TargetType.GLOBAL;
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_department_id") private Department targetDepartment;
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_branch_id") private Branch targetBranch;
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_section_id") private Section targetSection;
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_hostel_id") private Hostel targetHostel;
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="target_user_id") private User targetUser;
+    @Enumerated(EnumType.STRING) @Column(name="target_role",length=20) private Role targetRole;
+
+    @Column(name="recipient_type", length=40) private String recipientType = "all";
+    @Column(name="recipient_targets", columnDefinition="TEXT") private String recipientTargets;
+
+    @Column(name="published_at") private Instant publishedAt;
+    @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt;
+    @Column(name="updated_at",nullable=false) private Instant updatedAt;
+    @Column(name="status_changed_at",nullable=false) private Instant statusChangedAt;
+    @ManyToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="created_by",nullable=false) private User createdBy;
+    @Column(name="photo_url", length=2048) private String photoUrl;
+    @Column(name="external_link", length=2048) private String externalLink;
+    @Column(name="registration_enabled", nullable=false) private boolean registrationEnabled;
+    @Column(name="registration_deadline") private Instant registrationDeadline;
+
+    @PrePersist void pre(){Instant n=Instant.now();createdAt=n;updatedAt=n;statusChangedAt=n;}
+    @PreUpdate void upd(){updatedAt=Instant.now();}
+
+    public Long getId(){return id;}
+    public String getTitle(){return title;}
+    public String getDescription(){return description;}
+    public String getLocation(){return location;}
+    public Instant getStartAt(){return startAt;}
+    public Instant getEndAt(){return endAt;}
+    public EventStatus getStatus(){return status;}
+    public TargetType getTargetType(){return targetType;}
+    public Department getTargetDepartment(){return targetDepartment;}
+    public Branch getTargetBranch(){return targetBranch;}
+    public Section getTargetSection(){return targetSection;}
+    public Hostel getTargetHostel(){return targetHostel;}
+    public User getTargetUser(){return targetUser;}
+    public Role getTargetRole(){return targetRole;}
+    public String getRecipientType(){return recipientType;}
+    public String getRecipientTargets(){return recipientTargets;}
+    public Instant getPublishedAt(){return publishedAt;}
+    public Instant getCreatedAt(){return createdAt;}
+    public Instant getUpdatedAt(){return updatedAt;}
+    public User getCreatedBy(){return createdBy;}
+    public String getPhotoUrl(){return photoUrl;} public String getExternalLink(){return externalLink;} public boolean isRegistrationEnabled(){return registrationEnabled;} public Instant getRegistrationDeadline(){return registrationDeadline;}
+
+    public void setTitle(String v){title=v;}
+    public void setDescription(String v){description=v;}
+    public void setLocation(String v){location=v;}
+    public void setStartAt(Instant v){startAt=v;}
+    public void setEndAt(Instant v){endAt=v;}
+    public void setStatus(EventStatus v){status=v;statusChangedAt=Instant.now();}
+    public void setTargetType(TargetType v){targetType=v;}
+    public void setTargetDepartment(Department v){targetDepartment=v;}
+    public void setTargetBranch(Branch v){targetBranch=v;}
+    public void setTargetSection(Section v){targetSection=v;}
+    public void setTargetHostel(Hostel v){targetHostel=v;}
+    public void setTargetUser(User v){targetUser=v;}
+    public void setTargetRole(Role v){targetRole=v;}
+    public void setRecipientType(String v){recipientType=v;}
+    public void setRecipientTargets(String v){recipientTargets=v;}
+    public void setPublishedAt(Instant v){publishedAt=v;}
+    public void setCreatedBy(User v){createdBy=v;}
+    public void setPhotoUrl(String v){photoUrl=v;} public void setExternalLink(String v){externalLink=v;} public void setRegistrationEnabled(boolean v){registrationEnabled=v;} public void setRegistrationDeadline(Instant v){registrationDeadline=v;}
 }

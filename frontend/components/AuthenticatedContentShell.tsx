@@ -13,8 +13,10 @@ export default function AuthenticatedContentShell({ children, role }: { children
 
   useEffect(() => {
     currentUser().then((u) => {
-      if (u?.role === "FACULTY" || u?.role === "STUDENT") {
-        setResolvedRole(u.role);
+      if (u?.roleLevel === 4) {
+        setResolvedRole("FACULTY");
+      } else if (u?.roleLevel === 5) {
+        setResolvedRole("STUDENT");
       }
     }).catch(() => {});
   }, []);

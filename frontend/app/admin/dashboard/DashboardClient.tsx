@@ -19,6 +19,7 @@ import {
   deleteEvent,
   deleteQuery,
   createInvitation,
+  invitableRoles,
   structureDepartments,
   structureBranches,
   structureSections,
@@ -26,7 +27,7 @@ import {
   structureBlocks,
   structureRooms,
 } from "@/lib/api";
-import type { StructureDepartment, StructureBranch, StructureSection, StructureHostel, StructureBlock, StructureRoom } from "@/lib/api";
+import type { StructureDepartment, StructureBranch, StructureSection, StructureHostel, StructureBlock, StructureRoom, InvitableRole } from "@/lib/api";
 import type { Announcement, CampusQuery, EventItem, TargetType } from "@/types";
 import { ErrorState, Empty } from "@/components/States";
 import { Toast } from "@/components/Toast";
@@ -36,8 +37,9 @@ import Counter from "@/components/ui/Counter";
 import Field from "@/components/ui/Field";
 import DetailModal from "@/components/ui/DetailModal";
 import { inputBase, textareaBase, cx } from "@/components/ui/classes";
+import EventRegistrationFields from "@/components/EventRegistrationFields";
 
-const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" as "" | "STUDENT" | "FACULTY" };
+const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
 const blankE = {
   title: "",
   description: "",
@@ -50,11 +52,15 @@ const blankE = {
   sectionId: "",
   hostelId: "",
   userEmail: "",
-  role: "" as "" | "STUDENT" | "FACULTY",
+  role: "",
+  photoUrl: "",
+  externalLink: "",
+  registrationEnabled: false,
+  registrationDeadline: "",
 };
 const blankInvite = {
   email: "",
-  role: "STUDENT" as "STUDENT" | "FACULTY",
+  role: "STUDENT",
   name: "",
   studentId: "",
   facultyId: "",
@@ -92,9 +98,10 @@ export default function DashboardClient() {
   const [hostels, setHostels] = useState<StructureHostel[]>([]);
   const [blocks, setBlocks] = useState<StructureBlock[]>([]);
   const [rooms, setRooms] = useState<StructureRoom[]>([]);
+  const [invitableRoleList, setInvitableRoleList] = useState<InvitableRole[]>([]);
 
   const load = useCallback(async () => {
-    const [x, y, z, d, b, s, h, bl, r] = await Promise.all([
+    const [x, y, z, d, b, s, h, bl, r, rl] = await Promise.all([
       managedAnnouncements(),
       managedEvents(),
       adminQueries(),
@@ -104,6 +111,7 @@ export default function DashboardClient() {
       structureHostels(),
       structureBlocks(),
       structureRooms(),
+      invitableRoles().catch(() => []),
     ]);
     setAnns(x.content);
     setEvs(y.content);
@@ -114,6 +122,7 @@ export default function DashboardClient() {
     setHostels(h);
     setBlocks(bl);
     setRooms(r);
+    setInvitableRoleList(rl);
   }, []);
 
   useEffect(() => {
@@ -122,7 +131,7 @@ export default function DashboardClient() {
       try {
         const u = await currentUser();
         if (cancelled) return;
-        if (u.role !== "ADMIN") {
+        if (u.roleLevel !== 0) {
           router.replace("/");
           return;
         }
@@ -235,6 +244,10 @@ export default function DashboardClient() {
         hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
         userEmail: ev.userEmail || undefined,
         role: ev.role || undefined,
+        photoUrl: ev.photoUrl || undefined,
+        externalLink: ev.externalLink || undefined,
+        registrationEnabled: ev.registrationEnabled,
+        registrationDeadline: ev.registrationDeadline ? new Date(ev.registrationDeadline).toISOString() : undefined,
       });
       setEv(blankE);
     }, "Event draft saved.");
@@ -266,20 +279,25 @@ export default function DashboardClient() {
 
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
+    const selectedRoleObj = invitableRoleList.find((r) => r.name.toUpperCase() === invite.role.toUpperCase());
     await act(async () => {
       await createInvitation({
         email: invite.email,
         role: invite.role,
+        roleId: selectedRoleObj?.id,
+        departmentId: invite.departmentId ? Number(invite.departmentId) : undefined,
+        branchId: invite.branchId ? Number(invite.branchId) : undefined,
+        sectionId: invite.sectionId ? Number(invite.sectionId) : undefined,
         profile: {
           name: invite.name,
           studentId: invite.role === "STUDENT" ? invite.studentId : undefined,
-          facultyId: invite.role === "FACULTY" ? invite.facultyId : undefined,
+          facultyId: invite.role !== "STUDENT" ? invite.facultyId : undefined,
           departmentId: invite.departmentId ? Number(invite.departmentId) : undefined,
           branchId: invite.branchId ? Number(invite.branchId) : undefined,
           sectionId: invite.sectionId ? Number(invite.sectionId) : undefined,
           year: invite.role === "STUDENT" ? Number(invite.year) : undefined,
           semester: invite.role === "STUDENT" ? Number(invite.semester) : undefined,
-          designation: invite.role === "FACULTY" ? invite.designation : undefined,
+          designation: invite.role !== "STUDENT" && invite.designation ? invite.designation : undefined,
           hosteller: invite.role === "STUDENT" ? invite.hosteller : undefined,
           hostelId: invite.hosteller && invite.hostelId ? Number(invite.hostelId) : undefined,
           blockId: invite.hosteller && invite.blockId ? Number(invite.blockId) : undefined,
@@ -505,6 +523,7 @@ export default function DashboardClient() {
               <SoftBadge>DRAFT</SoftBadge>
             </div>
             <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} />
+            <EventRegistrationFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} />
             <Field label="Event title" htmlFor="event-title" className="mb-4">
               <input id="event-title" required className={inputBase} maxLength={180} value={ev.title} onChange={(e) => setEv((v) => ({ ...v, title: e.target.value }))} />
             </Field>
@@ -700,35 +719,67 @@ export default function DashboardClient() {
                 id="invite-role"
                 className={inputBase}
                 value={invite.role}
-                onChange={(e) => setInvite((v) => ({ ...v, role: e.target.value as "STUDENT" | "FACULTY", branchId: "", sectionId: "" }))}
+                onChange={(e) => setInvite((v) => ({ ...v, role: e.target.value, branchId: "", sectionId: "" }))}
               >
-                <option value="STUDENT">Student</option>
-                <option value="FACULTY">Faculty</option>
+                {invitableRoleList.length > 0 ? (
+                  invitableRoleList
+                    .filter((r) => r.name !== "SUPER_ADMIN")
+                    .map((r) => (
+                      <option key={r.id} value={r.name}>
+                        {r.name.replace(/_/g, " ")} {r.level !== undefined ? `(L${r.level})` : ""}
+                      </option>
+                    ))
+                ) : (
+                  <>
+                    <option value="ADMIN">Admin (L1)</option>
+                    <option value="DEPARTMENT_ADMIN">Department Admin (L3)</option>
+                    <option value="PRINCIPAL">Principal (L1)</option>
+                    <option value="DEAN">Dean (L2)</option>
+                    <option value="HOD">HOD / Head of Department (L3)</option>
+                    <option value="FACULTY">Faculty (L4)</option>
+                    <option value="STUDENT">Student (L5)</option>
+                  </>
+                )}
               </select>
             </Field>
             <Field label="Full name" htmlFor="invite-name">
               <input id="invite-name" required className={inputBase} value={invite.name} onChange={(e) => setInvite((v) => ({ ...v, name: e.target.value }))} />
             </Field>
-            <Field label={invite.role === "STUDENT" ? "Student ID" : "Faculty ID"} htmlFor="invite-idnum">
+            <Field
+              label={
+                invite.role === "STUDENT"
+                  ? "Student ID"
+                  : invite.role === "PRINCIPAL"
+                  ? "Principal ID (Optional)"
+                  : invite.role === "DEAN"
+                  ? "Dean ID (Optional)"
+                  : invite.role === "ADMIN"
+                  ? "Admin ID (Optional)"
+                  : invite.role === "FACULTY" || invite.role === "HOD"
+                  ? "Faculty ID"
+                  : `${invite.role.replace(/_/g, " ")} Identifier (Optional)`
+              }
+              htmlFor="invite-idnum"
+            >
               <input
                 id="invite-idnum"
-                required
+                required={invite.role === "STUDENT" || invite.role === "FACULTY" || invite.role === "HOD"}
                 className={inputBase}
                 value={invite.role === "STUDENT" ? invite.studentId : invite.facultyId}
                 onChange={(e) => setInvite((v) => ({ ...v, [invite.role === "STUDENT" ? "studentId" : "facultyId"]: e.target.value }))}
               />
             </Field>
 
-            <SectionHeading number="02" title="Academic placement" subtitle="Names come from Structure. No database IDs to remember." />
+            <SectionHeading number="02" title="Academic placement" subtitle="Names come from Structure. Admin, Principal and Dean are campus-wide." />
             <Field label="Department" htmlFor="invite-department">
               <select
                 id="invite-department"
-                required
+                required={invite.role !== "PRINCIPAL" && invite.role !== "DEAN" && invite.role !== "ADMIN"}
                 className={inputBase}
                 value={invite.departmentId}
                 onChange={(e) => setInvite((v) => ({ ...v, departmentId: e.target.value, branchId: "", sectionId: "" }))}
               >
-                <option value="">Choose department</option>
+                <option value="">{invite.role === "PRINCIPAL" || invite.role === "DEAN" || invite.role === "ADMIN" ? "None (Campus-wide)" : "Choose department"}</option>
                 {departments.filter((x) => x.active).map((x) => (
                   <option key={x.id} value={x.id}>
                     {x.name}
@@ -917,7 +968,7 @@ function AudienceFields({
   sections,
   hostels,
 }: {
-  value: { targetType: TargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: "" | "STUDENT" | "FACULTY" };
+  value: { targetType: TargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
   onChange: (v: Partial<typeof value>) => void;
   departments: StructureDepartment[];
   branches: StructureBranch[];
@@ -947,10 +998,13 @@ function AudienceFields({
       </Field>
       {target === "ROLE" && (
         <Field label="Role" htmlFor="audience-role" className="mt-3">
-          <select id="audience-role" className={inputBase} value={value.role} onChange={(e) => onChange({ role: e.target.value as "STUDENT" | "FACULTY" })}>
-            <option value="">Choose role</option>
-            <option value="STUDENT">Student</option>
-            <option value="FACULTY">Faculty</option>
+          <select id="audience-role" className={inputBase} value={value.role} onChange={(e) => onChange({ role: e.target.value })}>
+            <option value="">Choose target role</option>
+            <option value="PRINCIPAL">Principal (L1)</option>
+            <option value="DEAN">Dean (L2)</option>
+            <option value="HOD">HOD / Department Heads (L3)</option>
+            <option value="FACULTY">Faculty (L4)</option>
+            <option value="STUDENT">Student (L5)</option>
           </select>
         </Field>
       )}

@@ -97,9 +97,8 @@ export default function ProfileClient() {
     );
   }
 
-  const role = user.role;
-  const isStudent = role === "STUDENT";
-  const isFaculty = role === "FACULTY";
+  const isStudent = user.roleLevel === 5;
+  const isFaculty = user.roleLevel === 4;
   const student = user.student;
   const faculty = user.faculty;
 
@@ -164,7 +163,7 @@ export default function ProfileClient() {
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-brand-light">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-light" />
-                {role} ROLE
+                {user.role} ROLE
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/30 bg-teal-soft px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-teal-light">
                 {user.accountStatus || "ACTIVE"}

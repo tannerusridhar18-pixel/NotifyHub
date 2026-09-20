@@ -431,4 +431,41 @@
   }
 }
 
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    background-image: none !important;
+  }
+  header, footer, nav, aside, .print-hide {
+    display: none !important;
+  }
+  .print-area {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .print-area table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    color: #000000 !important;
+  }
+  .print-area th, .print-area td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px 12px !important;
+    color: #0f172a !important;
+    text-align: left !important;
+  }
+  .print-area th {
+    background: #f1f5f9 !important;
+    font-weight: 700 !important;
+  }
+}
+
 

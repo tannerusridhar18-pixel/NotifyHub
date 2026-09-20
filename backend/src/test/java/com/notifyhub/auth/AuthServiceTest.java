@@ -59,6 +59,26 @@ class AuthServiceTest {
     }
 
     @Test
+    void loginIssuesSessionForSuperAdmin() {
+        User superAdmin = new User();
+        superAdmin.setPublicId(UUID.randomUUID());
+        superAdmin.setUsername("superadmin@notifyhub.local");
+        superAdmin.setEmail("superadmin@notifyhub.local");
+        superAdmin.setPasswordHash(encoder.encode("SuperSecret123!"));
+        superAdmin.setRole(Role.SUPER_ADMIN);
+        superAdmin.setAccountStatus(AccountStatus.ACTIVE);
+
+        when(users.findByEmailIgnoreCase("superadmin@notifyhub.local")).thenReturn(Optional.of(superAdmin));
+        when(tokens.save(any(RefreshToken.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AuthService.IssuedSession session = service.login("superadmin@notifyhub.local", "SuperSecret123!");
+
+        assertThat(session.accessToken()).isNotBlank();
+        assertThat(session.roleLevel()).isEqualTo(0);
+        assertThat(session.role()).isEqualTo(Role.SUPER_ADMIN);
+    }
+
+    @Test
     void loginDoesNotRevealUnknownAccount() {
         when(users.findByEmailIgnoreCase("missing@example.edu")).thenReturn(Optional.empty());
         when(users.findByUsername("missing@example.edu")).thenReturn(Optional.empty());

@@ -20,6 +20,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoggedIn(typeof document !== "undefined" && document.cookie.includes("NH_ACCESS="));
   }, [path]);
 

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { currentUser, myQueries, submitQuery, type CurrentUser } from "@/lib/api";
+import { currentUser, myQueries, submitQuery, submitStudentQuery, type CurrentUser } from "@/lib/api";
 import type { CampusQuery } from "@/types";
 import Field from "@/components/ui/Field";
 import Button from "@/components/ui/Button";
@@ -28,6 +28,7 @@ export default function AskPage() {
     try {
       const saved = sessionStorage.getItem(KEY);
       if (saved) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm((prev) => ({ ...prev, ...JSON.parse(saved) }));
       }
     } catch {}
@@ -83,7 +84,11 @@ export default function AskPage() {
     setStatus("");
     setError("");
     try {
-      await submitQuery(form);
+      if (user?.role === "STUDENT") {
+        await submitStudentQuery({ subject: form.subject, message: form.message });
+      } else {
+        await submitQuery(form);
+      }
       setStatus("Your inquiry has been submitted. The campus administration team will respond shortly.");
       setForm((prev) => ({
         ...initial,
@@ -326,6 +331,5 @@ export default function AskPage() {
     </section>
   );
 }
-
 
 

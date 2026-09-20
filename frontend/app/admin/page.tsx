@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login } from "@/lib/api";
+import { currentUser, login } from "@/lib/api";
 import AuthSplit from "@/components/ui/AuthSplit";
 import AuthCard from "@/components/ui/AuthCard";
 import Field from "@/components/ui/Field";
@@ -16,13 +16,30 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const u = await currentUser();
+        if (alive && u.roleLevel === 0) {
+          router.replace("/admin/dashboard");
+        }
+      } catch {}
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [router]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError("");
     try {
       const x = await login(email, password);
-      if (x.role !== "ADMIN") throw new Error("Access denied. Administrator privileges required.");
+      if (x.roleLevel !== 0) {
+        throw new Error("Access denied. Administrator privileges required.");
+      }
       router.push("/admin/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed.");
@@ -97,4 +114,3 @@ export default function AdminLogin() {
     </AuthSplit>
   );
 }
-

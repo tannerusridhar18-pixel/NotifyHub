@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
-  if (request.cookies.has("NH_ACCESS")) return NextResponse.next();
+  const { pathname } = request.nextUrl;
 
-  const destination = request.nextUrl.clone();
-  destination.pathname = request.nextUrl.pathname.startsWith("/admin/") ? "/admin" : "/auth/login";
-  destination.search = "";
-  return NextResponse.redirect(destination);
+  // Allow the admin login page itself
+  if (pathname === "/admin" || pathname === "/admin/") {
+    return NextResponse.next();
+  }
+
+  const hasAccess = request.cookies.has("NH_ACCESS");
+  if (!hasAccess) {
+    const destination = request.nextUrl.clone();
+    destination.pathname = pathname.startsWith("/admin") ? "/admin" : "/auth/login";
+    destination.search = "";
+    return NextResponse.redirect(destination);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/dashboard", "/admin/structure", "/dashboard/:path*"],
+  matcher: ["/admin/:path*", "/dashboard/:path*"],
 };

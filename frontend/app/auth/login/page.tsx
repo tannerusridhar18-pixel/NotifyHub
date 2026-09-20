@@ -22,7 +22,19 @@ export default function UserLogin() {
     setError("");
     try {
       const x = await login(email, password);
-      router.push(x.role === "ADMIN" ? "/admin/dashboard" : x.role === "FACULTY" ? "/dashboard/faculty" : "/dashboard/student");
+      if (x.roleLevel === 0) {
+        router.push("/admin/dashboard");
+      } else if (x.roleLevel === 1) {
+        router.push("/dashboard/principal");
+      } else if (x.roleLevel === 2) {
+        router.push("/dashboard/dean");
+      } else if (x.roleLevel === 3) {
+        router.push("/dashboard/hod");
+      } else if (x.roleLevel === 4) {
+        router.push("/dashboard/faculty");
+      } else {
+        router.push("/dashboard/student");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed.");
     } finally {
@@ -102,4 +114,3 @@ export default function UserLogin() {
     </AuthSplit>
   );
 }
-

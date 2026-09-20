@@ -21,6 +21,10 @@ public class AnnouncementController {
     public ResponseEntity<ApiResponse<PageResponse<AnnouncementService.AnnouncementDto>>> list(Authentication a, @RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
         return ResponseEntity.ok(ApiResponse.ok(!authenticated(a) ? service.publicFeed(page, size) : service.visible(a.getName(), page, size)));
     }
+    @GetMapping("/my-posts")
+    public ResponseEntity<ApiResponse<PageResponse<AnnouncementService.AnnouncementDto>>> myPosts(Authentication a, @RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="20") @Min(1) @Max(100) int size) {
+        return ResponseEntity.ok(ApiResponse.ok(service.myPosts(a.getName(), page, size)));
+    }
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> get(@PathVariable Long id, Authentication a) {
         return ResponseEntity.ok(ApiResponse.ok(service.getForViewer(id, authenticated(a) ? a.getName() : null)));
@@ -28,7 +32,7 @@ public class AnnouncementController {
     @GetMapping("/urgent") public ResponseEntity<ApiResponse<PageResponse<AnnouncementService.AnnouncementDto>>> urgent(@RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="20") @Min(1) @Max(100) int size) { return ResponseEntity.ok(ApiResponse.ok(service.urgent(page, size))); }
     @GetMapping("/management") public ResponseEntity<ApiResponse<PageResponse<AnnouncementService.AnnouncementDto>>> manage(@RequestParam(defaultValue="0") @Min(0) int page, @RequestParam(defaultValue="20") @Min(1) @Max(100) int size) { return ResponseEntity.ok(ApiResponse.ok(service.manage(page, size))); }
     @PostMapping public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> create(@Valid @RequestBody AnnouncementService.Request request, Authentication a) { return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(service.create(request, a.getName()))); }
-    @PutMapping("/{id}") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> update(@PathVariable Long id, @Valid @RequestBody AnnouncementService.Request request) { return ResponseEntity.ok(ApiResponse.ok(service.update(id, request))); }
+    @PutMapping("/{id}") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> update(@PathVariable Long id, @Valid @RequestBody AnnouncementService.Request request, Authentication a) { return ResponseEntity.ok(ApiResponse.ok(service.update(id, request, a.getName()))); }
     @PostMapping("/{id}/publish") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> publish(@PathVariable Long id) { return ResponseEntity.ok(ApiResponse.ok(service.publish(id))); }
     @PostMapping("/{id}/unpublish") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> unpublish(@PathVariable Long id) { return ResponseEntity.ok(ApiResponse.ok(service.unpublish(id))); }
     @PostMapping("/{id}/archive") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> archive(@PathVariable Long id) { return ResponseEntity.ok(ApiResponse.ok(service.archive(id))); }

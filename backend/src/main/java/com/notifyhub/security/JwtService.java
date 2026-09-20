@@ -39,10 +39,20 @@ public class JwtService {
 
     public String accessToken(User user) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(user.getUsername())
                 .claim("uid", user.getId())
-                .claim("role", user.getRole().name())
+                .claim("role", user.getEffectiveRoleName())
+                .claim("roleLevel", user.getEffectiveLevel());
+
+        if (user.getRoleEntity() != null) {
+            builder.claim("roleId", user.getRoleEntity().getId());
+        }
+        if (user.getDepartmentEntity() != null) {
+            builder.claim("departmentId", user.getDepartmentEntity().getId());
+        }
+
+        return builder
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(accessMinutes * 60)))
                 .signWith(signingKey)

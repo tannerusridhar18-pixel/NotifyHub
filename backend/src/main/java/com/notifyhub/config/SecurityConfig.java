@@ -75,22 +75,23 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint).accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/api/v1/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/announcements/management", "/api/v1/events/management").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/announcements/management", "/api/v1/events/management").hasAnyRole("ADMIN", "SUPER_ADMIN", "PRINCIPAL", "DEAN", "HOD", "FACULTY")
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/urgent", "/api/v1/events", "/api/v1/events/upcoming").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements/**", "/api/v1/events/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/queries/student").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/queries").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/queries/my").authenticated()
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/academic-structure/**", "/api/v1/hostels/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/academic-structure/**", "/api/v1/hostels/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/academic-structure/**", "/api/v1/hostels/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/academic-structure/**", "/api/v1/hostels/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/queries").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/announcements/**", "/api/v1/events/**", "/api/v1/queries/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/academic-structure/**", "/api/v1/hostels/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/academic-structure/**", "/api/v1/hostels/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/academic-structure/**", "/api/v1/hostels/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/queries").authenticated()
+                        .requestMatchers("/api/v1/announcements/**", "/api/v1/events/**", "/api/v1/queries/**").authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                    .addFilterBefore(jwtFilter, CsrfFilter.class);
+                .addFilterBefore(jwtFilter, CsrfFilter.class);
         return http.build();
     }
 
@@ -110,10 +111,6 @@ public class SecurityConfig {
         };
     }
 
-    /**
-     * Materializes the readable CSRF cookie for the browser and accepts its raw
-     * value in the SPA header, while preserving XOR protection for form posts.
-     */
     private static final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
         private final CsrfTokenRequestHandler plain = new CsrfTokenRequestAttributeHandler();
         private final CsrfTokenRequestHandler xor = new XorCsrfTokenRequestAttributeHandler();

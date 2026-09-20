@@ -52,6 +52,7 @@ public class AuthService {
             users.save(user);
             throw invalidCredentials();
         }
+
         user.setFailedLoginAttempts(0); user.setLockedUntil(null);
         return issue(user, UUID.randomUUID());
     }
@@ -84,6 +85,9 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid invitation.");
         }
         User user = invitation.getUser();
+        if (user.getEffectiveLevel() == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Super Admin accounts cannot be activated via public invite.");
+        }
         user.setPasswordHash(encoder.encode(password)); user.setAccountStatus(AccountStatus.ACTIVE); user.setMustChangePassword(false);
         invitation.setUsedAt(Instant.now()); invitation.setStatus(InvitationStatus.USED); users.save(user); invitations.save(invitation);
         return new RegistrationResult(user.getEmail());
@@ -114,7 +118,15 @@ public class AuthService {
     private IssuedSession issue(User user, UUID familyId) {
         String rawRefresh = secureTokens.rawToken(); RefreshToken token = new RefreshToken(); token.setUser(user); token.setFamilyId(familyId);
         token.setTokenHash(secureTokens.hash(rawRefresh)); token.setExpiresAt(Instant.now().plus(refreshDays, ChronoUnit.DAYS)); tokens.save(token);
-        return new IssuedSession(jwt.accessToken(user), rawRefresh, user.getRole(), user.isMustChangePassword());
+        return new IssuedSession(
+                jwt.accessToken(user),
+                rawRefresh,
+                user.getRole(),
+                user.getRoleEntity() != null ? user.getRoleEntity().getId() : null,
+                user.getEffectiveLevel(),
+                user.getEffectiveRoleName(),
+                user.isMustChangePassword()
+        );
     }
 
     private void revokeFamily(UUID familyId) { List<RefreshToken> family = tokens.findByFamilyId(familyId); family.forEach(token -> token.setRevoked(true)); tokens.saveAll(family); }
@@ -126,6 +138,18 @@ public class AuthService {
     private ResponseStatusException invalidCredentials() { return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password."); }
     private ResponseStatusException invalidRefreshToken() { return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token."); }
 
-    public record IssuedSession(String accessToken, String rawRefreshToken, Role role, boolean mustChangePassword) { }
+    public record IssuedSession(
+            String accessToken,
+            String rawRefreshToken,
+            Role role,
+            Long roleId,
+            int roleLevel,
+            String roleName,
+            boolean mustChangePassword
+    ) {
+        public IssuedSession(String accessToken, String rawRefreshToken, Role role, boolean mustChangePassword) {
+            this(accessToken, rawRefreshToken, role, null, role == Role.SUPER_ADMIN || role == Role.ADMIN ? 0 : role == Role.FACULTY ? 4 : 5, role.name(), mustChangePassword);
+        }
+    }
     public record RegistrationResult(String email) { }
 }

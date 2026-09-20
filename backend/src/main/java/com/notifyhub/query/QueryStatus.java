@@ -1,2 +1,2 @@
 package com.notifyhub.query;
-public enum QueryStatus { OPEN, ANSWERED }
+public enum QueryStatus { OPEN, ANSWERED, CLOSED }

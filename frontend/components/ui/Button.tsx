@@ -30,7 +30,7 @@ export default function Button({
   className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
-  return <button className={cx(base, variants[variant], className)} {...props} />;
+  return <button suppressHydrationWarning className={cx(base, variants[variant], className)} {...props} />;
 }
 
 

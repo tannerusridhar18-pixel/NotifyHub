@@ -12,7 +12,13 @@ import { cx } from "@/components/ui/classes";
 import Counter from "@/components/ui/Counter";
 import Reveal from "@/components/ui/Reveal";
 
-export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" }) {
+import StudentDashboardView from "@/components/dashboards/StudentDashboardView";
+import FacultyDashboardView from "@/components/dashboards/FacultyDashboardView";
+import HodDashboardView from "@/components/dashboards/HodDashboardView";
+import PrincipalDashboardView from "@/components/dashboards/PrincipalDashboardView";
+import DeanDashboardView from "@/components/dashboards/DeanDashboardView";
+
+export default function RoleDashboard({ role }: { role?: string }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -25,12 +31,27 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
     setError("");
     try {
       const u = await currentUser();
-      if (u.role !== role) {
-        if (u.role === "ADMIN") {
+      const currentLevel = u.roleLevel !== undefined ? u.roleLevel : 5;
+      const expectedRole = (role || "").toUpperCase();
+      const expectedLevel =
+        expectedRole === "PRINCIPAL" ? 1 :
+        expectedRole === "DEAN" ? 2 :
+        expectedRole === "HOD" ? 3 :
+        expectedRole === "FACULTY" ? 4 :
+        expectedRole === "STUDENT" ? 5 : 0;
+
+      if (expectedRole && currentLevel !== expectedLevel) {
+        if (currentLevel === 0) {
           router.replace("/admin/dashboard");
-        } else if (u.role === "FACULTY") {
+        } else if (currentLevel === 1) {
+          router.replace("/dashboard/principal");
+        } else if (currentLevel === 2) {
+          router.replace("/dashboard/dean");
+        } else if (currentLevel === 3) {
+          router.replace("/dashboard/hod");
+        } else if (currentLevel === 4) {
           router.replace("/dashboard/faculty");
-        } else if (u.role === "STUDENT") {
+        } else if (currentLevel === 5) {
           router.replace("/dashboard/student");
         } else {
           router.replace("/");
@@ -71,13 +92,31 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
       </div>
     );
 
+  if (user) {
+    const r = (user.role || role || "").toUpperCase();
+    if (r === "STUDENT") return <StudentDashboardView user={user} />;
+    if (r === "FACULTY") return <FacultyDashboardView user={user} />;
+    if (r === "HOD") return <HodDashboardView user={user} />;
+    if (r === "PRINCIPAL") return <PrincipalDashboardView user={user} />;
+    if (r === "DEAN") return <DeanDashboardView user={user} />;
+  }
+
+  const displayRole = (user?.role || role || "MEMBER").toUpperCase();
   const student = user?.student;
   const faculty = user?.faculty;
-  const title = role === "STUDENT" ? student?.name || "Student" : "Faculty Member";
+  const title =
+    displayRole === "STUDENT"
+      ? student?.name || "Student"
+      : displayRole === "FACULTY"
+      ? faculty?.name || "Faculty Member"
+      : `${displayRole.replace(/_/g, " ")}`;
+
   const subtitle =
-    role === "STUDENT"
+    displayRole === "STUDENT"
       ? `${student?.studentId || "Campus student"} · Year ${student?.year || "—"} · Semester ${student?.semester || "—"}`
-      : `${faculty?.designation || "Faculty"} · ${faculty?.facultyId || "Campus staff"}`;
+      : displayRole === "FACULTY"
+      ? `${faculty?.designation || "Faculty"} · ${faculty?.facultyId || "Campus staff"}`
+      : `${user?.department ? user.department + " · " : ""}Campus Executive (Level ${user?.roleLevel ?? "—"})`;
 
   return (
     <div className="min-h-screen bg-bg text-ink">
@@ -94,37 +133,37 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
           <span
             className={cx(
               "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[10px] font-extrabold tracking-wider uppercase backdrop-blur-md shadow-sm",
-              role === "STUDENT"
+              displayRole === "STUDENT"
                 ? "border border-teal-light/40 bg-teal-soft text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)]"
                 : "border border-brand-2/40 bg-brand-50 text-brand-2-light shadow-[0_0_12px_rgba(168,85,247,0.2)]"
             )}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-            {role} WORKSPACE
+            {displayRole.replace(/_/g, " ")} WORKSPACE
           </span>
           <span>Personalized campus feed</span>
         </div>
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <Link
-            href={`/dashboard/feed?from=${role.toLowerCase()}`}
+            href={`/dashboard/feed?from=${displayRole.toLowerCase()}`}
             className="hidden rounded-xl px-3 py-2 text-xs font-extrabold text-muted hover:bg-surface-2 hover:text-white transition-all duration-200 sm:inline-block"
           >
             Feed
           </Link>
           <Link
-            href={`/dashboard/calendar?from=${role.toLowerCase()}`}
+            href={`/dashboard/calendar?from=${displayRole.toLowerCase()}`}
             className="hidden rounded-xl px-3 py-2 text-xs font-extrabold text-muted hover:bg-surface-2 hover:text-white transition-all duration-200 sm:inline-block"
           >
             Calendar
           </Link>
           <Link
-            href={`/dashboard/ask?from=${role.toLowerCase()}`}
+            href={`/dashboard/ask?from=${displayRole.toLowerCase()}`}
             className="rounded-xl px-3 py-2 text-xs font-extrabold text-muted hover:bg-surface-2 hover:text-white transition-all duration-200"
           >
             Ask Campus
           </Link>
           <Link
-            href={`/dashboard/profile?from=${role.toLowerCase()}`}
+            href={`/dashboard/profile?from=${displayRole.toLowerCase()}`}
             className="rounded-xl px-3 py-2 text-xs font-extrabold text-muted hover:bg-surface-2 hover:text-white transition-all duration-200"
           >
             Profile
@@ -143,7 +182,7 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-light opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-light" />
               </span>
-              {role === "STUDENT" ? "Student Workspace" : "Faculty Workspace"}
+              {displayRole.replace(/_/g, " ")} Workspace
             </span>
             <h1 className="my-4 text-4xl sm:text-5xl font-extrabold tracking-tight">
               Good to see you, <em className="not-italic text-gradient-animated">{title}</em>.
@@ -154,7 +193,7 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
             <div className="flex items-center justify-between">
               <span className="block text-[10px] font-extrabold uppercase tracking-widest text-muted/80">Account Overview</span>
               <Link
-                href={`/dashboard/profile?from=${role.toLowerCase()}`}
+                href={`/dashboard/profile?from=${displayRole.toLowerCase()}`}
                 className="text-[10px] font-bold text-brand-light hover:underline"
               >
                 View Profile →
@@ -163,7 +202,9 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
             <strong className="my-2 block text-sm font-extrabold text-ink">{user?.email}</strong>
             <small className="inline-flex items-center gap-2 rounded-xl bg-surface-2/95 px-3 py-1.5 text-[10px] font-bold text-muted border border-white/[0.06]">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-light" />
-              {role === "STUDENT" ? (student?.hosteller ? "Hosteller Resident" : "Day Scholar") : faculty?.departmentId ? `Department ${faculty.departmentId}` : "Faculty Profile"}
+              {displayRole === "STUDENT"
+                ? student?.hosteller ? "Hosteller Resident" : "Day Scholar"
+                : user?.department ? user.department : `${displayRole.replace(/_/g, " ")} Profile`}
             </small>
           </Reveal>
         </section>
@@ -194,10 +235,10 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
               <Reveal delay={160} className="rounded-2xl border border-white/12 bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-teal-light/50 hover:shadow-card-hover hover:shadow-glow-cyan/30">
                 <span className="block text-[10px] font-extrabold uppercase tracking-widest text-teal-light">Access Level</span>
                 <strong className="my-2.5 block font-display text-4xl sm:text-5xl font-extrabold text-white">
-                  {role === "STUDENT" ? "STU" : "FAC"}
+                  {`L${user?.roleLevel ?? "—"}`}
                 </strong>
                 <small className="text-xs font-bold text-muted/90 flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-teal-light" /> {role === "STUDENT" ? "Student portal active" : "Faculty portal active"}
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-light" /> {displayRole.replace(/_/g, " ")} portal active
                 </small>
               </Reveal>
             </section>
@@ -210,7 +251,7 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
                   </span>
                   <h2 className="mt-1.5 text-2xl sm:text-3xl font-extrabold">Recent announcements</h2>
                 </div>
-                <Link href={`/dashboard/feed?from=${role.toLowerCase()}`} className={buttonClasses("secondary")}>
+                <Link href={`/dashboard/feed?from=${displayRole.toLowerCase()}`} className={buttonClasses("secondary")}>
                   View all announcements →
                 </Link>
               </Reveal>
@@ -235,7 +276,7 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
                   </span>
                   <h2 className="mt-1.5 text-2xl sm:text-3xl font-extrabold">Upcoming events</h2>
                 </div>
-                <Link href={`/dashboard/calendar?from=${role.toLowerCase()}`} className={buttonClasses("secondary")}>
+                <Link href={`/dashboard/calendar?from=${displayRole.toLowerCase()}`} className={buttonClasses("secondary")}>
                   Open campus calendar →
                 </Link>
               </Reveal>
@@ -257,5 +298,3 @@ export default function RoleDashboard({ role }: { role: "STUDENT" | "FACULTY" })
     </div>
   );
 }
-
-

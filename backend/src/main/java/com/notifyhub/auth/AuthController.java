@@ -24,14 +24,24 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         AuthService.IssuedSession session = service.login(request.email(), request.password());
         cookies.setSessionCookies(response, session);
-        return ResponseEntity.ok(ApiResponse.ok(new AuthResponse(session.role().name(), session.mustChangePassword())));
+        return ResponseEntity.ok(ApiResponse.ok(new AuthResponse(
+                session.roleName(),
+                session.roleId(),
+                session.roleLevel(),
+                session.mustChangePassword()
+        )));
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(HttpServletRequest request, HttpServletResponse response) {
         AuthService.IssuedSession session = service.refresh(cookie(request, "NH_REFRESH"));
         cookies.setSessionCookies(response, session);
-        return ResponseEntity.ok(ApiResponse.ok(new AuthResponse(session.role().name(), session.mustChangePassword())));
+        return ResponseEntity.ok(ApiResponse.ok(new AuthResponse(
+                session.roleName(),
+                session.roleId(),
+                session.roleLevel(),
+                session.mustChangePassword()
+        )));
     }
 
     @PostMapping("/logout")
@@ -68,5 +78,9 @@ public class AuthController {
     public record RegistrationRequest(@NotBlank @Size(max = 256) String invitationToken, @NotBlank String password, @NotBlank String confirmPassword) { }
     public record ForgotPasswordRequest(@NotBlank @Email @Size(max = 190) String email) { }
     public record ResetPasswordRequest(@NotBlank @Size(max = 256) String token, @NotBlank String password, @NotBlank String confirmPassword) { }
-    public record AuthResponse(String role, boolean mustChangePassword) { }
+    public record AuthResponse(String role, Long roleId, int roleLevel, boolean mustChangePassword) {
+        public AuthResponse(String role, boolean mustChangePassword) {
+            this(role, null, "SUPER_ADMIN".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role) ? 0 : "FACULTY".equalsIgnoreCase(role) ? 4 : 5, mustChangePassword);
+        }
+    }
 }

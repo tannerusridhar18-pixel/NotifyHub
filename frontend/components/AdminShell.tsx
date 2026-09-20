@@ -9,6 +9,8 @@ import { cx } from "@/components/ui/classes";
 
 const nav = [
   { href: "/admin/dashboard", label: "Operations", icon: "⌘" },
+  { href: "/admin/users", label: "Manage Users", icon: "👥" },
+  { href: "/admin/roles", label: "Manage Roles", icon: "🛡️" },
   { href: "/admin/structure", label: "Structure", icon: "▦" },
 ];
 
@@ -24,7 +26,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     setError("");
     try {
       const user = await currentUser();
-      if (user.role !== "ADMIN") {
+      if (user.roleLevel !== 0) {
         router.replace("/");
         return;
       }
@@ -63,7 +65,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               Retry connection
             </button>
             <Link className={buttonClasses("secondary", "!border-white/20 !bg-surface-2 !text-ink")} href="/admin">
-              Admin sign in
+              Super Admin sign in
             </Link>
           </div>
         </div>
@@ -157,5 +159,3 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
-
-
