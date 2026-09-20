@@ -13,7 +13,8 @@ function csrf() {
 function friendlyMessage(status: number, body: ApiResponse<unknown> | null, path: string) {
   if (body?.message) return body.message;
   if (status === 400) return "The information could not be saved. Check the highlighted fields and try again.";
-  if (status === 401 || status === 403) return "Your session has changed — please log in again.";
+  if (status === 401) return "Your session has expired — please log in again.";
+  if (status === 403) return "You do not have permission to perform this action.";
   if (status === 404) return "That NotifyHub resource could not be found.";
   if (status >= 500)
     return path.includes("/announcements") || path.includes("/events")
@@ -70,7 +71,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   }
   const body = (await response.json().catch(() => null)) as ApiResponse<T> | null;
   if (!response.ok || !body?.success) {
-    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined" && !path.startsWith("/auth/") && !isPublicRead(path, method)) {
+    if (response.status === 401 && typeof window !== "undefined" && !path.startsWith("/auth/") && !isPublicRead(path, method)) {
       window.location.assign(`/auth/login?reason=session-changed`);
     }
     throw new Error(friendlyMessage(response.status, body, path));
