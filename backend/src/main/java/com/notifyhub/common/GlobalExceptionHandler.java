@@ -20,6 +20,8 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> validation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<ApiError.FieldError> fields = ex.getBindingResult().getFieldErrors().stream().map(error -> new ApiError.FieldError(error.getField(), "Invalid value.")).toList();
@@ -47,10 +49,10 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> denied(AccessDeniedException ex, HttpServletRequest request) { return error(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied.", request, List.of()); }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    ResponseEntity<ApiError> conflict(DataIntegrityViolationException ex, HttpServletRequest request) { return error(HttpStatus.CONFLICT, "CONFLICT", "The request conflicts with existing data.", request, List.of()); }
+    ResponseEntity<ApiError> conflict(DataIntegrityViolationException ex, HttpServletRequest request) { LOG.warn("Data integrity violation on {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMostSpecificCause().getMessage()); return error(HttpStatus.CONFLICT, "CONFLICT", "The request conflicts with existing data.", request, List.of()); }
 
     @ExceptionHandler(Exception.class)
-    ResponseEntity<ApiError> generic(Exception ex, HttpServletRequest request) { return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "An unexpected server error occurred.", request, List.of()); }
+    ResponseEntity<ApiError> generic(Exception ex, HttpServletRequest request) { LOG.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex); return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "An unexpected server error occurred.", request, List.of()); }
 
     private ResponseEntity<ApiError> error(HttpStatus status, String code, String message, HttpServletRequest request, List<ApiError.FieldError> fields) {
         return ResponseEntity.status(status).body(new ApiError(Instant.now(), status.value(), code, message, request.getRequestURI(), fields));

@@ -80,6 +80,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements/**", "/api/v1/events/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/queries/student").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/queries").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/queries/*/answer").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/queries/*").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/queries/my").authenticated()
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/users/me").authenticated()

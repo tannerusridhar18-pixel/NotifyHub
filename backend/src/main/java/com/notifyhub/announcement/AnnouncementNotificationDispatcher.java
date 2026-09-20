@@ -7,6 +7,7 @@ import com.notifyhub.faculty.FacultyProfile;
 import com.notifyhub.faculty.FacultyProfileRepository;
 import com.notifyhub.student.StudentProfile;
 import com.notifyhub.student.StudentProfileRepository;
+import com.notifyhub.targeting.TargetingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +41,8 @@ public class AnnouncementNotificationDispatcher {
     private final UserRepository users;
     private final StudentProfileRepository students;
     private final FacultyProfileRepository faculty;
+    private final AnnouncementRepository announcements;
+    private final TargetingService targeting;
     private final boolean enabled;
     private final String from;
     private final String frontendOrigin;
@@ -47,6 +50,7 @@ public class AnnouncementNotificationDispatcher {
 
     public AnnouncementNotificationDispatcher(JavaMailSender mailSender, UserRepository users,
                                               StudentProfileRepository students, FacultyProfileRepository faculty,
+                                              AnnouncementRepository announcements, TargetingService targeting,
                                               @Value("${notifyhub.mail.enabled:false}") boolean enabled,
                                               @Value("${notifyhub.mail.from:notifyhub@localhost}") String from,
                                               @Value("${notifyhub.frontend-origin:http://localhost:3000}") String frontendOrigin,
@@ -55,6 +59,8 @@ public class AnnouncementNotificationDispatcher {
         this.users = users;
         this.students = students;
         this.faculty = faculty;
+        this.announcements = announcements;
+        this.targeting = targeting;
         this.enabled = enabled;
         this.from = from;
         this.frontendOrigin = frontendOrigin.replaceAll("/$", "");
@@ -69,7 +75,7 @@ public class AnnouncementNotificationDispatcher {
             log.debug("Announcement notification email delivery is disabled; skipping announcement {}.", event.announcementId());
             return;
         }
-        List<String> recipients = resolveRecipients(event);
+        List<String> recipients = filterByAudience(event, resolveRecipients(event));
         if (recipients.isEmpty()) {
             log.info("Announcement {} published with no notifiable recipients for its target scope.", event.announcementId());
             return;
@@ -94,6 +100,15 @@ public class AnnouncementNotificationDispatcher {
         }
         log.info("Announcement {} notification dispatch complete: {} sent, {} failed, {} total recipients.",
                 event.announcementId(), sent, failed, recipients.size());
+    }
+
+    /** The e-mail must reach only people who are allowed to see the announcement (recipient type, year, faculty-only, ...). */
+    private List<String> filterByAudience(AnnouncementPublishedEvent event, List<String> emails) {
+        Announcement announcement = announcements.findById(event.announcementId()).orElse(null);
+        if (announcement == null) return emails;
+        return emails.stream()
+                .filter(email -> users.findByEmailIgnoreCase(email).map(user -> targeting.matches(announcement, user)).orElse(false))
+                .toList();
     }
 
     private List<String> resolveRecipients(AnnouncementPublishedEvent event) {

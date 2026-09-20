@@ -48,6 +48,9 @@ public class RoleService {
         if (request.level() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role level must be non-negative.");
         }
+        if (request.level() == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Level 0 is reserved for Super Admin.");
+        }
 
         User creator = userRepository.findByUsername(creatorUsername)
                 .orElseGet(() -> userRepository.findByEmailIgnoreCase(creatorUsername).orElse(null));
@@ -69,6 +72,12 @@ public class RoleService {
 
     public RoleDto updateRole(Long id, UpdateRoleRequest request) {
         RoleEntity role = getRole(id);
+        if (role.isSystemRole()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "System roles cannot be edited.");
+        }
+        if (request.level() != null && request.level() == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Level 0 is reserved for Super Admin.");
+        }
         if (role.getLevel() == 0 && request.level() != null && request.level() != 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Super Admin level cannot be altered.");
         }

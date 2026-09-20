@@ -98,11 +98,32 @@ public class TargetingService {
         broadcastPermissionResolver.validate(sender, recipientType, recipientTargets, departmentId);
     }
 
+    /**
+     * Validates the sender against what they are really targeting (targetType and the department that a
+     * section/branch belongs to), not only the free-text recipientType the client sends.
+     */
+    public void validateSenderPermissions(User sender, String recipientType, List<String> recipientTargets,
+                                          Long departmentId, TargetType targetType, Long branchId, Long sectionId) {
+        TargetType effectiveType = targetType != null ? targetType : TargetType.GLOBAL;
+        int level = sender.getEffectiveLevel();
+        if (effectiveType == TargetType.GLOBAL && level >= 2 && level <= 4) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the Principal or Super Admin can broadcast campus-wide.");
+        }
+        Long effectiveDepartmentId = departmentId;
+        if (effectiveDepartmentId == null && effectiveType == TargetType.SECTION && sectionId != null) {
+            effectiveDepartmentId = sections.findById(sectionId).map(s -> s.getDepartment().getId()).orElse(null);
+        }
+        if (effectiveDepartmentId == null && effectiveType == TargetType.BRANCH && branchId != null) {
+            effectiveDepartmentId = branches.findById(branchId).map(b -> b.getDepartment().getId()).orElse(null);
+        }
+        broadcastPermissionResolver.validate(sender, recipientType, recipientTargets, effectiveDepartmentId);
+    }
+
     public boolean matches(Announcement a, User viewer) {
         if (viewer.getEffectiveLevel() == 0) return true;
 
         String rType = a.getRecipientType();
-        if ("all".equalsIgnoreCase(rType) || "all_campus".equalsIgnoreCase(rType) || (a.getTargetType() == TargetType.GLOBAL && (rType == null || rType.isBlank()))) {
+        if ("all".equalsIgnoreCase(rType) || "all_campus".equalsIgnoreCase(rType) || (a.getTargetType() == TargetType.GLOBAL && (rType == null || rType.isBlank() || "global".equalsIgnoreCase(rType)))) {
             return true;
         }
 
@@ -225,7 +246,7 @@ public class TargetingService {
         if (viewer.getEffectiveLevel() == 0) return true;
 
         String rType = e.getRecipientType();
-        if ("all".equalsIgnoreCase(rType) || "all_campus".equalsIgnoreCase(rType) || (e.getTargetType() == TargetType.GLOBAL && (rType == null || rType.isBlank()))) {
+        if ("all".equalsIgnoreCase(rType) || "all_campus".equalsIgnoreCase(rType) || (e.getTargetType() == TargetType.GLOBAL && (rType == null || rType.isBlank() || "global".equalsIgnoreCase(rType)))) {
             return true;
         }
 
@@ -349,7 +370,7 @@ public class TargetingService {
                     : new Scope(u.getRole(), p.getDepartment().getId(), p.getBranch().getId(), p.getSection().getId(), p.getHostel() == null ? null : p.getHostel().getId(), u.getId());
         }
         FacultyProfile p = faculty.findByUserId(u.getId()).orElse(null);
-        return new Scope(u.getRole(), p != null ? p.getDepartment().getId() : (u.getDepartmentEntity() != null ? u.getDepartmentEntity().getId() : null), null, null, null, u.getId());
+        return new Scope(u.getRole(), p != null && p.getDepartment() != null ? p.getDepartment().getId() : (u.getDepartmentEntity() != null ? u.getDepartmentEntity().getId() : null), null, null, null, u.getId());
     }
 
     private List<String> parseTargets(String json) {

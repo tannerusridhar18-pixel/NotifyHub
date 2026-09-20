@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notifyhub.auth.*;
 import com.notifyhub.common.PageResponse;
+import com.notifyhub.rbac.AuditJson;
 import com.notifyhub.rbac.AuditLog;
 import com.notifyhub.rbac.AuditLogRepository;
 import com.notifyhub.targeting.*;
@@ -45,7 +46,20 @@ public class AnnouncementService {
 
     @Transactional(readOnly = true)
     public PageResponse<AnnouncementDto> urgent(int page, int size) {
-        return PageResponse.from(repo.urgent(PageRequest.of(page, size)).map(AnnouncementDto::from));
+        return PageResponse.from(repo.urgentGlobal(PageRequest.of(page, size)).map(AnnouncementDto::from));
+    }
+
+    /** Urgent announcements the signed-in user is actually allowed to see. */
+    @Transactional(readOnly = true)
+    public PageResponse<AnnouncementDto> urgent(String username, int page, int size) {
+        User u = user(username);
+        List<Announcement> all = repo.urgent(org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
+                .filter(a -> u.getEffectiveLevel() == 0 || targeting.matches(a, u))
+                .toList();
+        int start = Math.min(page * size, all.size());
+        int end = Math.min(start + size, all.size());
+        List<AnnouncementDto> paged = all.subList(start, end).stream().map(AnnouncementDto::from).toList();
+        return PageResponse.from(new PageImpl<>(paged, PageRequest.of(page, size), all.size()));
     }
 
     @Transactional(readOnly = true)
@@ -80,13 +94,13 @@ public class AnnouncementService {
     public AnnouncementDto create(Request r, String username) {
         User sender = user(username);
         List<String> targetList = parseTargets(r.recipientTargets());
-        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId());
+        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId(), r.targetType(), r.branchId(), r.sectionId());
 
         Announcement a = new Announcement();
         apply(a, r);
         a.setCreatedBy(sender);
         Announcement saved = repo.save(a);
-        audit.save(new AuditLog(sender, "ANNOUNCEMENT_CREATE", "ANNOUNCEMENT", String.valueOf(saved.getId()), "{\"title\":\"" + saved.getTitle() + "\"}"));
+        audit.save(new AuditLog(sender, "ANNOUNCEMENT_CREATE", "ANNOUNCEMENT", String.valueOf(saved.getId()), AuditJson.title(saved.getTitle())));
         return AnnouncementDto.from(saved);
     }
 
@@ -115,10 +129,10 @@ public class AnnouncementService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only edit announcements you authored.");
         }
         List<String> targetList = parseTargets(r.recipientTargets());
-        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId());
+        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId(), r.targetType(), r.branchId(), r.sectionId());
 
         apply(a, r);
-        audit.save(new AuditLog(sender, "ANNOUNCEMENT_EDIT", "ANNOUNCEMENT", String.valueOf(a.getId()), "{\"title\":\"" + a.getTitle() + "\"}"));
+        audit.save(new AuditLog(sender, "ANNOUNCEMENT_EDIT", "ANNOUNCEMENT", String.valueOf(a.getId()), AuditJson.title(a.getTitle())));
         return AnnouncementDto.from(a);
     }
 
@@ -192,6 +206,20 @@ public class AnnouncementService {
             return s;
         }
     }
+
+    /** Same rule as update(): level-0 admins manage anything; everyone else only what they authored. */
+    private void assertCanManage(Long id, String username) {
+        Announcement a = get(id);
+        User actor = user(username);
+        Long ownerId = a.getCreatedBy() != null ? a.getCreatedBy().getId() : null;
+        if (!actor.hasAdminAccess() && !actor.getId().equals(ownerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage announcements you authored.");
+        }
+    }
+    public AnnouncementDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }
+    public AnnouncementDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
+    public AnnouncementDto archive(Long id, String username) { assertCanManage(id, username); return archive(id); }
+    public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Announcement get(Long id) { return repo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Announcement not found.")); }
     private User user(String n) { return users.findByUsername(n).orElseGet(() -> users.findByEmailIgnoreCase(n).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized."))); }

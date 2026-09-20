@@ -216,9 +216,13 @@ public class IdentityService {
             RoleEntity role = roles.findById(cmd.roleId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role not found."));
             user.setRoleEntity(role);
+            user.setRole(Role.fromName(role.getName()));
         } else if (cmd.role() != null && !cmd.role().isBlank()) {
             RoleEntity role = roles.findByNameIgnoreCase(cmd.role().trim()).orElse(null);
-            if (role != null) user.setRoleEntity(role);
+            if (role != null) {
+                user.setRoleEntity(role);
+                user.setRole(Role.fromName(role.getName()));
+            }
         }
 
         if (cmd.departmentId() != null) {

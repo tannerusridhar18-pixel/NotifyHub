@@ -142,9 +142,8 @@ public class QueryService {
         User actor = user(username);
         Pageable p = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        if (rbac.isSuperAdmin(actor)) {
-            Page<CampusQuery> x = status == null ? repo.findAll(p) : repo.findByStatus(status, p);
-            return filterAndPage(x.getContent(), p, askerType, targetType);
+        if (isAdmin(actor)) {
+            return pageOf(p, askerType, targetType, pg -> status == null ? repo.findAll(pg) : repo.findByStatus(status, pg));
         }
 
         if (actor.getRole() == com.notifyhub.auth.Role.STUDENT) {
@@ -169,11 +168,20 @@ public class QueryService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Missing department query permission.");
         }
 
-        Page<CampusQuery> results = status == null
-                ? repo.findByDepartmentEntityId(deptId, p)
-                : repo.findByDepartmentEntityIdAndStatus(deptId, status, p);
+        return pageOf(p, askerType, targetType, pg -> status == null
+                ? repo.findByDepartmentEntityId(deptId, pg)
+                : repo.findByDepartmentEntityIdAndStatus(deptId, status, pg));
+    }
 
-        return filterAndPage(results.getContent(), p, askerType, targetType);
+    private boolean isAdmin(User actor) { return rbac.isSuperAdmin(actor) || actor.hasAdminAccess(); }
+
+    /** Pages in the database; only falls back to in-memory filtering (over the full list) when filters are used. */
+    private PageResponse<QueryDto> pageOf(Pageable p, String askerType, String targetType,
+                                          java.util.function.Function<Pageable, Page<CampusQuery>> loader) {
+        boolean noFilters = (askerType == null || askerType.isBlank()) && (targetType == null || targetType.isBlank());
+        if (noFilters) return PageResponse.from(loader.apply(p).map(QueryDto::from));
+        List<CampusQuery> all = loader.apply(Pageable.unpaged(p.getSort())).getContent();
+        return filterAndPage(all, p, askerType, targetType);
     }
 
     private PageResponse<QueryDto> filterAndPage(List<CampusQuery> list, Pageable p, String askerType, String targetType) {
@@ -219,7 +227,7 @@ public class QueryService {
         User actor = user(username);
         CampusQuery q = repo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Query not found."));
 
-        if (!rbac.isSuperAdmin(actor)) {
+        if (!isAdmin(actor)) {
             boolean isAssignedFaculty = q.getTargetFaculty() != null && q.getTargetFaculty().getId().equals(actor.getId());
             if (!isAssignedFaculty) {
                 var assignment = rbac.activeAssignment(actor, PermissionKey.QUERY_ANSWER).orElse(null);

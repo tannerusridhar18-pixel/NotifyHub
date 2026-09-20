@@ -90,6 +90,13 @@ public class User {
         return 5;
     }
 
+    /** Legacy admin tier (Super Admin or Admin) - the same rule the JWT filter uses to grant ROLE_ADMIN. */
+    public boolean hasAdminAccess() {
+        String roleName = getEffectiveRoleName();
+        return getEffectiveLevel() == 0 || role == Role.SUPER_ADMIN || role == Role.ADMIN
+                || "SUPER_ADMIN".equalsIgnoreCase(roleName) || "ADMIN".equalsIgnoreCase(roleName);
+    }
+
     public String getEffectiveRoleName() {
         if (roleEntity != null) return roleEntity.getName();
         return role != null ? role.name() : "STUDENT";

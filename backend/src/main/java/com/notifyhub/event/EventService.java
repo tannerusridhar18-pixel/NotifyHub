@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notifyhub.auth.*;
 import com.notifyhub.common.PageResponse;
+import com.notifyhub.rbac.AuditJson;
 import com.notifyhub.rbac.AuditLog;
 import com.notifyhub.rbac.AuditLogRepository;
 import com.notifyhub.targeting.TargetType;
@@ -55,7 +56,20 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public PageResponse<EventDto> upcoming(int page, int size) {
-        return PageResponse.from(repo.upcoming(PageRequest.of(page, size)).map(EventDto::from));
+        return PageResponse.from(repo.upcomingGlobal(PageRequest.of(page, size)).map(EventDto::from));
+    }
+
+    /** Upcoming events the signed-in user is actually allowed to see. */
+    @Transactional(readOnly = true)
+    public PageResponse<EventDto> upcoming(String username, int page, int size) {
+        User u = user(username);
+        List<Event> all = repo.upcoming(org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
+                .filter(e -> u.getEffectiveLevel() == 0 || targeting.matchesEvent(e, u))
+                .toList();
+        int start = Math.min(page * size, all.size());
+        int end = Math.min(start + size, all.size());
+        List<EventDto> paged = all.subList(start, end).stream().map(EventDto::from).toList();
+        return PageResponse.from(new PageImpl<>(paged, PageRequest.of(page, size), all.size()));
     }
 
     @Transactional(readOnly = true)
@@ -89,13 +103,13 @@ public class EventService {
     public EventDto create(Request request, String username) {
         User sender = user(username);
         List<String> targetList = parseTargets(request.recipientTargets());
-        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId());
+        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId(), request.targetType(), request.branchId(), request.sectionId());
 
         Event event = new Event();
         apply(event, request);
         event.setCreatedBy(sender);
         Event saved = repo.save(event);
-        audit.save(new AuditLog(sender, "EVENT_CREATE", "EVENT", String.valueOf(saved.getId()), "{\"title\":\"" + saved.getTitle() + "\"}"));
+        audit.save(new AuditLog(sender, "EVENT_CREATE", "EVENT", String.valueOf(saved.getId()), AuditJson.title(saved.getTitle())));
         return EventDto.from(saved);
     }
 
@@ -123,10 +137,10 @@ public class EventService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only edit events you authored.");
         }
         List<String> targetList = parseTargets(request.recipientTargets());
-        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId());
+        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId(), request.targetType(), request.branchId(), request.sectionId());
 
         apply(event, request);
-        audit.save(new AuditLog(sender, "EVENT_EDIT", "EVENT", String.valueOf(event.getId()), "{\"title\":\"" + event.getTitle() + "\"}"));
+        audit.save(new AuditLog(sender, "EVENT_EDIT", "EVENT", String.valueOf(event.getId()), AuditJson.title(event.getTitle())));
         return EventDto.from(event);
     }
 
@@ -213,7 +227,10 @@ public class EventService {
     public List<RegistrationDto> registrations(Long id, String username) {
         Event event = get(id);
         User actor = user(username);
-        if (actor.getEffectiveLevel() != 0) {
+        if ("STUDENT".equalsIgnoreCase(actor.getEffectiveRoleName()) || actor.getRole() == Role.STUDENT) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view these registrations.");
+        }
+        if (!actor.hasAdminAccess()) {
             Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
             Long eventDeptId = event.getTargetDepartment() != null ? event.getTargetDepartment().getId()
                     : (event.getCreatedBy().getDepartmentEntity() != null ? event.getCreatedBy().getDepartmentEntity().getId() : null);
@@ -275,6 +292,20 @@ public class EventService {
             return s;
         }
     }
+
+    /** Same rule as update(): level-0 admins manage anything; everyone else only what they authored. */
+    private void assertCanManage(Long id, String username) {
+        Event event = get(id);
+        User actor = user(username);
+        Long ownerId = event.getCreatedBy() != null ? event.getCreatedBy().getId() : null;
+        if (!actor.hasAdminAccess() && !actor.getId().equals(ownerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage events you authored.");
+        }
+    }
+    public EventDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }
+    public EventDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
+    public EventDto cancel(Long id, String username) { assertCanManage(id, username); return cancel(id); }
+    public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Event get(Long id) { return repo.findById(id).orElseThrow(this::notFound); }
     private User user(String username) { return users.findByUsername(username).orElseGet(() -> users.findByEmailIgnoreCase(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized."))); }

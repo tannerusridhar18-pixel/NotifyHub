@@ -84,6 +84,9 @@ public class AdminInvitationService {
         }
 
         if (targetRole == null) {
+            if (request.role() != null && !request.role().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown role: " + request.role().trim());
+            }
             targetRole = roles.findByNameIgnoreCase("STUDENT").orElse(null);
         }
 
@@ -93,6 +96,12 @@ public class AdminInvitationService {
 
         if (targetRole != null && targetRole.getLevel() < caller.getEffectiveLevel()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot invite a user into a role higher than your own.");
+        }
+
+        if (targetRole != null && targetRole.getLevel() == 3 && request.departmentId() == null
+                && (request.profile() == null || request.profile().departmentId() == null)) {
+            // Without a department the role assignment below would silently become GLOBAL (all departments).
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A department is required for HOD and Department Admin accounts.");
         }
 
         Department userDept = null;
@@ -192,7 +201,8 @@ public class AdminInvitationService {
     }
 
     private void createStudent(User user, ProfileRequest request) {
-        if (request.studentId() == null || request.name() == null || request.departmentId() == null || request.branchId() == null || request.sectionId() == null || request.year() == null || request.semester() == null) return;
+        if (request.studentId() == null || request.name() == null || request.departmentId() == null || request.branchId() == null || request.sectionId() == null || request.year() == null || request.semester() == null || request.studentId().isBlank() || request.name().isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Complete student profile details are required.");
         Department department = department(request.departmentId()); Branch branch = branch(request.branchId()); Section section = section(request.sectionId());
         if (!branch.getDepartment().getId().equals(department.getId()) || !section.getDepartment().getId().equals(department.getId()) || !section.getBranch().getId().equals(branch.getId()) || request.year() < 1 || request.year() > branch.getMaxYear()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Student academic scope is invalid.");
         boolean hosteller = request.hosteller() != null && request.hosteller();
@@ -203,15 +213,19 @@ public class AdminInvitationService {
             Room room = request.roomId() == null ? null : rooms.findById(request.roomId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Room not found."));
             if (!hostel.isActive() || (block != null && (!block.isActive() || !block.getHostel().getId().equals(hostel.getId()))) || (room != null && (room.getBlock() == null || block == null || !room.getBlock().getId().equals(block.getId())))) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hostel assignment is invalid.");
             profile.setHostel(hostel); profile.setBlock(block); profile.setRoom(room);
+            if (room != null) {
+                if (room.getCurrentOccupancy() >= room.getCapacity()) throw new ResponseStatusException(HttpStatus.CONFLICT, "The selected room is full.");
+                room.setCurrentOccupancy(room.getCurrentOccupancy() + 1);
+                rooms.save(room);
+            }
         }
         students.save(profile);
     }
 
     private void createFaculty(User user, ProfileRequest request) {
-        if (request.facultyId() == null || request.name() == null) return;
+        if (request.facultyId() == null || request.facultyId().isBlank() || request.name() == null || request.name().isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Complete faculty profile details are required.");
         Long homeDeptId = request.homeDepartmentId() != null ? request.homeDepartmentId() : request.departmentId();
-        if (homeDeptId == null) return;
-        Department homeDept = department(homeDeptId);
 
         FacultyProfile profile = new FacultyProfile();
         profile.setUser(user);
@@ -219,6 +233,12 @@ public class AdminInvitationService {
         profile.setName(request.name());
         profile.setPhone(request.phone());
         profile.setDesignation(request.designation());
+        if (homeDeptId == null) {
+            // Allowed since V14: a faculty profile may exist before any department mapping.
+            faculty.save(profile);
+            return;
+        }
+        Department homeDept = department(homeDeptId);
         profile.setDepartment(homeDept);
         FacultyProfile saved = faculty.save(profile);
 

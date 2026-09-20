@@ -18,6 +18,7 @@ public class AdminSeeder implements CommandLineRunner {
 
     private final UserRepository users;
     private final RoleRepository roles;
+    private final com.notifyhub.rbac.UserRoleAssignmentRepository assignments;
     private final PasswordEncoder encoder;
     private final String username;
     private final String email;
@@ -27,6 +28,7 @@ public class AdminSeeder implements CommandLineRunner {
     public AdminSeeder(
             UserRepository users,
             RoleRepository roles,
+            com.notifyhub.rbac.UserRoleAssignmentRepository assignments,
             PasswordEncoder encoder,
             @Value("${notifyhub.admin-username:admin}") String username,
             @Value("${notifyhub.admin-email:admin@notifyhub.local}") String email,
@@ -34,6 +36,7 @@ public class AdminSeeder implements CommandLineRunner {
             @Value("${notifyhub.admin-sync-password:false}") boolean syncPassword) {
         this.users = users;
         this.roles = roles;
+        this.assignments = assignments;
         this.encoder = encoder;
         this.username = username;
         this.email = email;
@@ -72,6 +75,8 @@ public class AdminSeeder implements CommandLineRunner {
             users.save(user);
         }
 
+        ensureSuperAdminAssignment(user, superAdminRole);
+
         if (roles.findByNameIgnoreCase("ADMIN").isEmpty()) {
             RoleEntity adminRole = new RoleEntity("ADMIN", 1, superAdminRole, user, "[1,2,3,4,5]");
             adminRole.setSystemRole(true);
@@ -86,6 +91,27 @@ public class AdminSeeder implements CommandLineRunner {
             deptAdmin.setSuperadmin(false);
             roles.save(deptAdmin);
             log.info("Seeded default custom role DEPARTMENT_ADMIN.");
+        }
+    }
+
+    /**
+     * The V11 migration only backfills assignments for users that already existed. On a fresh database the
+     * seeded Super Admin would otherwise have no RBAC assignment and be refused by every Super-Admin-only endpoint.
+     */
+    private void ensureSuperAdminAssignment(User user, RoleEntity superAdminRole) {
+        if (user.getId() == null || superAdminRole == null || !superAdminRole.isSuperadmin()) return;
+        try {
+            if (!assignments.existsByUserIdAndRoleIdAndRevokedAtIsNull(user.getId(), superAdminRole.getId())) {
+                com.notifyhub.rbac.UserRoleAssignment assignment = new com.notifyhub.rbac.UserRoleAssignment();
+                assignment.setUser(user);
+                assignment.setRole(superAdminRole);
+                assignment.setScopeType(com.notifyhub.rbac.ScopeType.GLOBAL);
+                assignment.setScopeId(null);
+                assignments.save(assignment);
+                log.info("Granted the seeded Super Admin its GLOBAL Super Admin role assignment.");
+            }
+        } catch (RuntimeException ex) {
+            log.warn("Could not ensure the Super Admin role assignment: {}", ex.getMessage());
         }
     }
 }

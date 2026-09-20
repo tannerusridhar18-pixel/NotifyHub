@@ -136,19 +136,28 @@ public class DepartmentLeadershipService {
         RoleEntity hodRole = roles.findByNameIgnoreCase("HOD")
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role HOD not found."));
 
+        if (targetUser.hasAdminAccess() || targetUser.getEffectiveLevel() <= 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only staff below Dean level can be assigned as HOD.");
+        }
+
         targetUser.setRole(Role.HOD);
         targetUser.setRoleEntity(hodRole);
         targetUser.setDepartmentEntity(dept);
         users.save(targetUser);
 
-        // Assign scoped role
-        UserRoleAssignment assignment = new UserRoleAssignment();
-        assignment.setUser(targetUser);
-        assignment.setRole(hodRole);
-        assignment.setScopeType(ScopeType.DEPARTMENT);
-        assignment.setScopeId(departmentId);
-        assignment.setAssignedBy(actor);
-        assignments.save(assignment);
+        boolean alreadyAssigned = assignments.findByUserIdAndRevokedAtIsNull(targetUser.getId()).stream().anyMatch(a ->
+                a.getRole() != null && a.getRole().getId() != null && a.getRole().getId().equals(hodRole.getId())
+                        && a.getScopeType() == ScopeType.DEPARTMENT && Objects.equals(a.getScopeId(), departmentId));
+        if (!alreadyAssigned) {
+            // Assign scoped role
+            UserRoleAssignment assignment = new UserRoleAssignment();
+            assignment.setUser(targetUser);
+            assignment.setRole(hodRole);
+            assignment.setScopeType(ScopeType.DEPARTMENT);
+            assignment.setScopeId(departmentId);
+            assignment.setAssignedBy(actor);
+            assignments.save(assignment);
+        }
 
         audit.save(new AuditLog(actor, "HOD_ASSIGN", "USER", String.valueOf(targetUser.getId()), "{\"departmentId\":" + departmentId + "}"));
     }
@@ -205,13 +214,14 @@ public class DepartmentLeadershipService {
 
         List<Department> allDepts = departments.findAll();
         List<DepartmentOverviewDto> list = new ArrayList<>();
+        List<User> allUsers = users.findAll();
 
         for (Department d : allDepts) {
             long studentCount = students.countByDepartmentId(d.getId());
             long facultyCount = facultyMappings.findByDepartmentId(d.getId()).size();
 
             // Find HOD for this department
-            User hodUser = users.findAll().stream()
+            User hodUser = allUsers.stream()
                     .filter(u -> u.getRole() == Role.HOD && u.getDepartmentEntity() != null && u.getDepartmentEntity().getId().equals(d.getId()))
                     .findFirst()
                     .orElse(null);

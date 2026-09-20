@@ -17,6 +17,7 @@ import java.util.UUID;
 @Service
 public class AuthService {
     private static final String DUMMY_PASSWORD_HASH = "$2a$12$C6UzMDM.H6dfI/f/IKcEe.4kSxK9VQ9W0Qm8GzS4hG1vYfWq8x0m2";
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository users;
     private final RefreshTokenRepository tokens;
@@ -40,7 +41,7 @@ public class AuthService {
         this.refreshDays = refreshDays; this.resetMinutes = resetMinutes;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public IssuedSession login(String email, String password) {
         User user = users.findByEmailIgnoreCase(email).orElseGet(() -> users.findByUsername(email).orElse(null));
         if (user == null) { encoder.matches(password, DUMMY_PASSWORD_HASH); throw invalidCredentials(); }
@@ -57,7 +58,7 @@ public class AuthService {
         return issue(user, UUID.randomUUID());
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public IssuedSession refresh(String rawRefreshToken) {
         if (rawRefreshToken == null || rawRefreshToken.isBlank()) throw invalidRefreshToken();
         RefreshToken current = tokens.findByTokenHash(secureTokens.hash(rawRefreshToken)).orElseThrow(this::invalidRefreshToken);
@@ -100,7 +101,11 @@ public class AuthService {
             String rawToken = secureTokens.rawToken();
             PasswordResetToken token = new PasswordResetToken(); token.setUser(user); token.setTokenHash(secureTokens.hash(rawToken));
             token.setExpiresAt(Instant.now().plus(resetMinutes, ChronoUnit.MINUTES)); resetTokens.save(token);
-            resetEmail.send(user.getEmail(), rawToken, resetMinutes);
+            try {
+                resetEmail.send(user.getEmail(), rawToken, resetMinutes);
+            } catch (RuntimeException ex) {
+                LOG.warn("Password reset email could not be sent: {}", ex.getMessage());
+            }
         });
     }
 

@@ -1,6 +1,7 @@
 package com.notifyhub.academicstructure;
 
 import com.notifyhub.common.ApiResponse;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,7 +21,7 @@ public class DepartmentLeadershipController {
     @PostMapping("/students/batch-promote")
     public ResponseEntity<ApiResponse<DepartmentLeadershipService.BatchPromoteResult>> batchPromote(
             Authentication authentication,
-            @RequestBody BatchPromoteRequest request
+            @Valid @RequestBody BatchPromoteRequest request
     ) {
         var result = leadershipService.batchPromoteStudents(
                 request.departmentId(),
@@ -35,7 +36,7 @@ public class DepartmentLeadershipController {
     public ResponseEntity<ApiResponse<Void>> assignHod(
             @PathVariable Long id,
             Authentication authentication,
-            @RequestBody AssignHodRequest request
+            @Valid @RequestBody AssignHodRequest request
     ) {
         leadershipService.assignHod(id, request.userId(), authentication.getName());
         return ResponseEntity.ok(ApiResponse.message("HOD assigned successfully."));
@@ -45,7 +46,7 @@ public class DepartmentLeadershipController {
     public ResponseEntity<ApiResponse<Void>> reassignSection(
             @PathVariable Long id,
             Authentication authentication,
-            @RequestBody ReassignSectionRequest request
+            @Valid @RequestBody ReassignSectionRequest request
     ) {
         leadershipService.reassignStudentSection(id, request.sectionId(), authentication.getName());
         return ResponseEntity.ok(ApiResponse.message("Student section updated successfully."));
