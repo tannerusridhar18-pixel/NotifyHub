@@ -1,0 +1,17 @@
+# Loaded only with SPRING_PROFILES_ACTIVE=prod (see ProductionSafetyCheck for the startup checks).
+notifyhub:
+  # No default on purpose: the application will not start unless JWT_SECRET is provided.
+  jwt-secret: ${JWT_SECRET}
+  auth:
+    cookie-secure: ${AUTH_COOKIE_SECURE:true}
+
+spring:
+  datasource:
+    # No development defaults in production.
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+logging:
+  level:
+    root: INFO

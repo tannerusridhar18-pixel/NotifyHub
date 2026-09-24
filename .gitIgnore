@@ -61,3 +61,4 @@ desktop.ini
 *.sqlite3
 
 docs/
+*.tsbuildinfo
