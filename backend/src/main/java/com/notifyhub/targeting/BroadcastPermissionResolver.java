@@ -18,10 +18,14 @@ public class BroadcastPermissionResolver {
     }
 
     public void validate(User sender, String recipientType, List<String> recipientTargets, Long departmentId) {
-        validate(sender, recipientType, recipientTargets, departmentId, null);
+        validate(sender, recipientType, recipientTargets, departmentId, null, null, null);
     }
 
     public void validate(User sender, String recipientType, List<String> recipientTargets, Long departmentId, TargetType targetType) {
+        validate(sender, recipientType, recipientTargets, departmentId, targetType, null, null);
+    }
+
+    public void validate(User sender, String recipientType, List<String> recipientTargets, Long departmentId, TargetType targetType, User targetUser, com.notifyhub.auth.Role targetRole) {
         if (sender == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required.");
         int level = sender.getEffectiveLevel();
 
@@ -32,14 +36,20 @@ public class BroadcastPermissionResolver {
 
         if (level == 1) {
             // Principal: Campus-wide broadcasts, Deans, HODs, or specific roles/departments
+            if (targetRole == com.notifyhub.auth.Role.STUDENT || (targetUser != null && targetUser.getRole() == com.notifyhub.auth.Role.STUDENT)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Principals cannot directly post to students via role targeting.");
+            }
             validatePrincipal(recipientType, recipientTargets);
             return;
         }
 
         if (level == 2) {
-            // Dean: Can post to HODs, Faculty, or departments in scope, but never GLOBAL
+            // Dean: Can post to HODs, Faculty, or departments in scope, but never GLOBAL or students
             if (targetType == TargetType.GLOBAL && (recipientType == null || recipientType.isBlank() || "all".equalsIgnoreCase(recipientType) || "all_campus".equalsIgnoreCase(recipientType))) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Deans cannot broadcast campus-wide. Target HODs, Faculty, or specific departments.");
+            }
+            if (targetRole == com.notifyhub.auth.Role.STUDENT || (targetUser != null && targetUser.getRole() == com.notifyhub.auth.Role.STUDENT)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Deans cannot post directly to students.");
             }
             validateDean(recipientType, recipientTargets);
             return;
@@ -49,6 +59,14 @@ public class BroadcastPermissionResolver {
             // HOD or Department Admin: Strictly scoped to their own department
             if (targetType == TargetType.GLOBAL && (recipientType == null || recipientType.isBlank() || "all".equalsIgnoreCase(recipientType) || "all_campus".equalsIgnoreCase(recipientType))) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department leadership cannot broadcast campus-wide.");
+            }
+            Long senderDeptId = sender.getDepartmentEntity() != null ? sender.getDepartmentEntity().getId() : null;
+            if (targetType == TargetType.USER && targetUser != null && senderDeptId != null) {
+                boolean inDept = (targetUser.getDepartmentEntity() != null && Objects.equals(targetUser.getDepartmentEntity().getId(), senderDeptId))
+                        || facultyDepartmentService.isFacultyInDepartment(targetUser.getId(), senderDeptId);
+                if (!inDept) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only target faculty or students within your own department.");
+                }
             }
             validateHodAndDeptAdmin(sender, recipientType, recipientTargets, departmentId);
             return;
@@ -68,13 +86,12 @@ public class BroadcastPermissionResolver {
     }
 
     private void validatePrincipal(String recipientType, List<String> recipientTargets) {
-        // Principal can target all, role, specific_user, department, etc.
         if (recipientType == null || recipientType.isBlank()) return;
         String type = recipientType.trim().toLowerCase();
-        if ("all".equals(type) || "all_campus".equals(type) || "role".equals(type) ||
-            "specific_hod".equals(type) || "specific_dean".equals(type) ||
-            "specific_user".equals(type) || "department".equals(type)) {
-            return;
+        if ("role".equals(type) || "roles".equals(type)) {
+            if (recipientTargets != null && (recipientTargets.contains("STUDENT") || recipientTargets.contains("5"))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Principals cannot directly post to students via role targeting.");
+            }
         }
     }
 
@@ -83,6 +100,11 @@ public class BroadcastPermissionResolver {
         String type = recipientType.trim().toLowerCase();
         if ("all".equals(type) || "all_campus".equals(type)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Deans cannot broadcast campus-wide. Target HODs, Faculty, or specific departments.");
+        }
+        if ("role".equals(type) || "roles".equals(type)) {
+            if (recipientTargets != null && (recipientTargets.contains("STUDENT") || recipientTargets.contains("5"))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Deans cannot post directly to students.");
+            }
         }
     }
 

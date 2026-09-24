@@ -127,7 +127,7 @@ export default function ManageUsersPage() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && u.roleLevel !== 0) {
+        if (alive && (!u || u.roleLevel !== 0)) {
           router.replace("/");
         } else if (alive) {
           await load();

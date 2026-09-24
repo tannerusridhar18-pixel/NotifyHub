@@ -10,10 +10,20 @@ function csrf() {
   return value ? decodeURIComponent(value.split("=").slice(1).join("=")) : null;
 }
 
+export function safeUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+  return undefined;
+}
+
 function friendlyMessage(status: number, body: ApiResponse<unknown> | null, path: string) {
   if (body?.message) return body.message;
   if (status === 400) return "The information could not be saved. Check the highlighted fields and try again.";
-  if (status === 401 || status === 403) return "Your session has changed — please log in again.";
+  if (status === 401) return "Your session has expired — please log in again.";
+  if (status === 403) return "You do not have permission to perform this action.";
   if (status === 404) return "That NotifyHub resource could not be found.";
   if (status >= 500)
     return path.includes("/announcements") || path.includes("/events")
@@ -38,7 +48,10 @@ async function refresh() {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const r = await fetch(`${API_URL}/auth/refresh`, { method: "POST", credentials: "include", cache: "no-store" });
+        const headers = new Headers({ Accept: "application/json" });
+        const token = csrf();
+        if (token) headers.set("X-XSRF-TOKEN", token);
+        const r = await fetch(`${API_URL}/auth/refresh`, { method: "POST", headers, credentials: "include", cache: "no-store" });
         return r.ok;
       } catch {
         return false;
@@ -50,7 +63,29 @@ async function refresh() {
   return refreshPromise;
 }
 
-async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+function safeRedirectToLogin(reason = "session-expired") {
+  if (typeof window === "undefined") return;
+  const path = window.location.pathname || "";
+  if (path.startsWith("/auth/") || path === "/admin" || path === "/admin/") {
+    return;
+  }
+  try {
+    const last = Number(sessionStorage.getItem("last_auth_redirect") || "0");
+    const now = Date.now();
+    if (now - last < 5000) {
+      return;
+    }
+    sessionStorage.setItem("last_auth_redirect", String(now));
+  } catch {}
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.assign(`/auth/login?reason=${encodeURIComponent(reason)}`);
+}
+
+async function request<T>(
+  path: string,
+  init: RequestInit & { redirectOn401?: boolean } = {},
+  retry = true
+): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
@@ -70,8 +105,13 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   }
   const body = (await response.json().catch(() => null)) as ApiResponse<T> | null;
   if (!response.ok || !body?.success) {
-    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined" && !path.startsWith("/auth/") && !isPublicRead(path, method)) {
-      window.location.assign(`/auth/login?reason=session-changed`);
+    if (
+      response.status === 401 &&
+      init.redirectOn401 !== false &&
+      !path.startsWith("/auth/") &&
+      !isPublicRead(path, method)
+    ) {
+      safeRedirectToLogin("session-expired");
     }
     throw new Error(friendlyMessage(response.status, body, path));
   }
@@ -117,7 +157,13 @@ export const login = (email: string, password: string) =>
 export const registerUser = (payload: { invitationToken: string; password: string; confirmPassword: string }) =>
   request<{ email: string }>("/auth/register", { method: "POST", body: JSON.stringify(payload) });
 export const refreshSession = () => request<AuthResponse>("/auth/refresh", { method: "POST" });
-export const currentUser = () => request<CurrentUser>("/users/me");
+export const currentUser = async (): Promise<CurrentUser | null> => {
+  try {
+    return await request<CurrentUser>("/users/me", { redirectOn401: false });
+  } catch {
+    return null;
+  }
+};
 export const logout = () => request<void>("/auth/logout", { method: "POST" });
 export const forgotPassword = (email: string) =>
   request<void>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });

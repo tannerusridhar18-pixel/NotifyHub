@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping({"/api/v1/admin", "/api/v1"})
 public class DepartmentLeadershipController {
     private final DepartmentLeadershipService leadershipService;
 
@@ -60,7 +60,23 @@ public class DepartmentLeadershipController {
         return ResponseEntity.ok(ApiResponse.ok(leadershipService.getDepartmentAnalytics(id, authentication.getName())));
     }
 
-    @GetMapping("/campus/overview")
+    @GetMapping("/departments/{id}/faculty")
+    public ResponseEntity<ApiResponse<List<DepartmentLeadershipService.DepartmentFacultyDto>>> departmentFaculty(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(leadershipService.getDepartmentFaculty(id, authentication.getName())));
+    }
+
+    @GetMapping("/departments/{id}/students")
+    public ResponseEntity<ApiResponse<List<DepartmentLeadershipService.DepartmentStudentDto>>> departmentStudents(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(leadershipService.getDepartmentStudents(id, authentication.getName())));
+    }
+
+    @GetMapping({"/campus/overview", "/departments/campus-overview"})
     public ResponseEntity<ApiResponse<List<DepartmentLeadershipService.DepartmentOverviewDto>>> campusOverview(
             Authentication authentication
     ) {

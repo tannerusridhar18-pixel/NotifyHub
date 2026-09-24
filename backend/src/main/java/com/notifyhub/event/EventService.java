@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -91,6 +92,21 @@ public class EventService {
     @Transactional(readOnly = true)
     public PageResponse<EventDto> myPosts(String username, int page, int size) {
         User user = user(username);
+        boolean isSuperAdmin = user.getRole() == Role.SUPER_ADMIN
+                || "SUPER_ADMIN".equalsIgnoreCase(user.getEffectiveRoleName())
+                || (user.getRoleEntity() != null && user.getRoleEntity().isSuperadmin());
+        if (isSuperAdmin) {
+            Page<Event> paged = repo.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+            return PageResponse.from(paged.map(EventDto::from));
+        }
+
+        boolean isDeptAdmin = user.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(user.getEffectiveRoleName());
+        if (isDeptAdmin && user.getDepartmentEntity() != null) {
+            Page<Event> paged = repo.findByDepartment(user.getDepartmentEntity().getId(), PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+            return PageResponse.from(paged.map(EventDto::from));
+        }
+
         Page<Event> paged = repo.findByCreatedById(user.getId(), PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
         return PageResponse.from(paged.map(EventDto::from));
     }
@@ -103,7 +119,7 @@ public class EventService {
     public EventDto create(Request request, String username) {
         User sender = user(username);
         List<String> targetList = parseTargets(request.recipientTargets());
-        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId(), request.targetType(), request.branchId(), request.sectionId());
+        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId(), request.targetType(), request.branchId(), request.sectionId(), request.userEmail(), request.role());
 
         Event event = new Event();
         apply(event, request);
@@ -130,14 +146,12 @@ public class EventService {
     }
 
     public EventDto update(Long id, Request request, String username) {
+        assertCanManage(id, username);
         Event event = get(id);
         if (event.getStatus() != EventStatus.DRAFT) throw conflict("Only draft events may be edited.");
         User sender = user(username);
-        if (sender.getEffectiveLevel() > 0 && !sender.getId().equals(event.getCreatedBy().getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only edit events you authored.");
-        }
         List<String> targetList = parseTargets(request.recipientTargets());
-        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId(), request.targetType(), request.branchId(), request.sectionId());
+        targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId(), request.targetType(), request.branchId(), request.sectionId(), request.userEmail(), request.role());
 
         apply(event, request);
         audit.save(new AuditLog(sender, "EVENT_EDIT", "EVENT", String.valueOf(event.getId()), AuditJson.title(event.getTitle())));
@@ -293,12 +307,32 @@ public class EventService {
         }
     }
 
-    /** Same rule as update(): level-0 admins manage anything; everyone else only what they authored. */
+    /** Server-side ownership enforcement: author only; Dept Admin only within own department; SuperAdmin any. */
     private void assertCanManage(Long id, String username) {
         Event event = get(id);
         User actor = user(username);
         Long ownerId = event.getCreatedBy() != null ? event.getCreatedBy().getId() : null;
-        if (!actor.hasAdminAccess() && !actor.getId().equals(ownerId)) {
+
+        boolean isSuperAdmin = actor.getRole() == Role.SUPER_ADMIN
+                || "SUPER_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())
+                || (actor.getRoleEntity() != null && actor.getRoleEntity().isSuperadmin());
+        if (isSuperAdmin) {
+            return;
+        }
+
+        boolean isDeptAdmin = actor.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName());
+        if (isDeptAdmin) {
+            Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
+            Long postDeptId = event.getTargetDepartment() != null ? event.getTargetDepartment().getId() :
+                    (event.getCreatedBy() != null && event.getCreatedBy().getDepartmentEntity() != null ? event.getCreatedBy().getDepartmentEntity().getId() : null);
+            if (actorDeptId != null && Objects.equals(actorDeptId, postDeptId)) {
+                return;
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins can only manage events within their department.");
+        }
+
+        if (ownerId == null || !actor.getId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage events you authored.");
         }
     }

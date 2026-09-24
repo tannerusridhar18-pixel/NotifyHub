@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { currentUser } from "@/lib/api";
 import { cx } from "@/components/ui/classes";
 
 const links = [
@@ -20,8 +21,11 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoggedIn(typeof document !== "undefined" && document.cookie.includes("NH_ACCESS="));
+    let alive = true;
+    currentUser()
+      .then(() => { if (alive) setIsLoggedIn(true); })
+      .catch(() => { if (alive) setIsLoggedIn(false); });
+    return () => { alive = false; };
   }, [path]);
 
   if (isAdmin || isDashboard) return <>{children}</>;

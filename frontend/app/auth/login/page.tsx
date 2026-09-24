@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { login } from "@/lib/api";
+import { getRoleRoute } from "@/config/roles";
 import AuthSplit from "@/components/ui/AuthSplit";
 import AuthCard from "@/components/ui/AuthCard";
 import Field from "@/components/ui/Field";
@@ -22,19 +23,8 @@ export default function UserLogin() {
     setError("");
     try {
       const x = await login(email, password);
-      if (x.roleLevel === 0) {
-        router.push("/admin/dashboard");
-      } else if (x.roleLevel === 1) {
-        router.push("/dashboard/principal");
-      } else if (x.roleLevel === 2) {
-        router.push("/dashboard/dean");
-      } else if (x.roleLevel === 3) {
-        router.push("/dashboard/hod");
-      } else if (x.roleLevel === 4) {
-        router.push("/dashboard/faculty");
-      } else {
-        router.push("/dashboard/student");
-      }
+      const targetRoute = getRoleRoute(x.role, x.roleLevel);
+      router.push(targetRoute);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed.");
     } finally {

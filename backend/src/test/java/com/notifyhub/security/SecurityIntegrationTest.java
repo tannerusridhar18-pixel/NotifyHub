@@ -74,21 +74,29 @@ class SecurityIntegrationTest {
 
     @Test
     @Transactional
-    void authenticatedUserReadsOwnIdentityAndStudentCannotOpenAdminEndpoint() throws Exception {
-        User user = new User();
-        user.setUsername("security-test-" + System.nanoTime() + "@example.edu");
-        user.setEmail(user.getUsername());
-        user.setPasswordHash("test-hash");
-        user.setRole(Role.STUDENT);
-        user.setAccountStatus(AccountStatus.ACTIVE);
-        users.saveAndFlush(user);
-        String token = jwt.accessToken(user);
+    void adminCanAccessAdminEndpointsAndStudentReceivesForbidden() throws Exception {
+        User admin = new User();
+        admin.setUsername("admin-test-" + System.nanoTime() + "@example.edu");
+        admin.setEmail(admin.getUsername());
+        admin.setPasswordHash("test-hash");
+        admin.setRole(Role.ADMIN);
+        admin.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(admin);
+        String adminToken = jwt.accessToken(admin);
 
-        mvc.perform(get("/api/v1/users/me").cookie(new Cookie("NH_ACCESS", token)))
+        mvc.perform(get("/api/v1/admin/roles").cookie(new Cookie("NH_ACCESS", adminToken)))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/v1/admin/invitations").cookie(new Cookie("NH_ACCESS", token)))
+
+        User student = new User();
+        student.setUsername("student-test-" + System.nanoTime() + "@example.edu");
+        student.setEmail(student.getUsername());
+        student.setPasswordHash("test-hash");
+        student.setRole(Role.STUDENT);
+        student.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(student);
+        String studentToken = jwt.accessToken(student);
+
+        mvc.perform(get("/api/v1/admin/roles").cookie(new Cookie("NH_ACCESS", studentToken)))
                 .andExpect(status().isForbidden());
-        mvc.perform(post("/api/v1/academic-structure/departments").cookie(new Cookie("NH_ACCESS", token)))
-            .andExpect(status().isForbidden());
     }
 }

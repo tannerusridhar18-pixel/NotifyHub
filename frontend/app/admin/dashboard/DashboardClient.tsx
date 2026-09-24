@@ -131,7 +131,7 @@ export default function DashboardClient() {
       try {
         const u = await currentUser();
         if (cancelled) return;
-        if (u.roleLevel !== 0) {
+        if (!u || u.roleLevel !== 0) {
           router.replace("/");
           return;
         }

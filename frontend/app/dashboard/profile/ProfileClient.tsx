@@ -18,6 +18,7 @@ import {
 import { buttonClasses } from "@/components/ui/Button";
 import Reveal from "@/components/ui/Reveal";
 import { ErrorState } from "@/components/States";
+import { getRoleRoute } from "@/config/roles";
 
 export default function ProfileClient() {
   const router = useRouter();
@@ -109,12 +110,7 @@ export default function ProfileClient() {
   const resolvedBranch = branches.find((b) => b.id === student?.branchId)?.name;
   const resolvedSection = sections.find((s) => s.id === student?.sectionId)?.name;
 
-  const dashboardHref =
-    fromParam === "faculty" || isFaculty
-      ? "/dashboard/faculty"
-      : isStudent || fromParam === "student"
-      ? "/dashboard/student"
-      : "/admin/dashboard";
+  const dashboardHref = getRoleRoute(user.role, user.roleLevel);
 
   const fullName = isStudent ? student?.name : isFaculty ? faculty?.name : user.email.split("@")[0];
 

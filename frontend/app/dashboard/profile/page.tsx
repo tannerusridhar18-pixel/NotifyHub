@@ -1,11 +1,9 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import AuthenticatedContentShell from "@/components/AuthenticatedContentShell";
 import ProfileClient from "./ProfileClient";
 
-export default async function DashboardProfilePage() {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("NH_ACCESS")?.value) redirect("/auth/login");
+export const dynamic = "force-dynamic";
+
+export default function DashboardProfilePage() {
   return (
     <AuthenticatedContentShell role="MEMBER">
       <ProfileClient />

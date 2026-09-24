@@ -54,6 +54,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
@@ -113,6 +114,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
           <span>Executive Level 2 · {user.email}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/dashboard/my-posts" className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all">My Posts</Link>
           <Link
             href="/dashboard/feed?from=dean"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"

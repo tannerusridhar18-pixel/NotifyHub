@@ -81,6 +81,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
   }, [deptId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
@@ -193,6 +194,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
           <span>{user.department ? `${user.department} Department` : "Scoped Governance"}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/dashboard/my-posts" className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all">My Posts</Link>
           <Link
             href="/admin/events"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"

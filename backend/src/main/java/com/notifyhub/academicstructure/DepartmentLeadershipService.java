@@ -242,6 +242,72 @@ public class DepartmentLeadershipService {
         return list;
     }
 
+    @Transactional(readOnly = true)
+    public List<DepartmentFacultyDto> getDepartmentFaculty(Long departmentId, String actorUsername) {
+        User actor = user(actorUsername);
+        validateDepartmentAccess(actor, departmentId);
+
+        Department dept = departments.findById(departmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found."));
+
+        Map<Long, DepartmentFacultyDto> result = new LinkedHashMap<>();
+
+        List<com.notifyhub.faculty.FacultyDepartmentMapping> mappings = facultyMappings.findByDepartmentId(departmentId);
+        for (var m : mappings) {
+            FacultyProfile fp = m.getFaculty();
+            if (fp == null || fp.getUser() == null || !fp.getUser().isActive()) continue;
+            result.put(fp.getId(), new DepartmentFacultyDto(
+                    fp.getId(),
+                    fp.getFacultyId(),
+                    fp.getName(),
+                    fp.getDesignation() != null ? fp.getDesignation() : "Faculty Member",
+                    dept.getId(),
+                    dept.getName(),
+                    m.getRelationship() != null ? m.getRelationship().name() : "HOME",
+                    fp.getUser().getId(),
+                    fp.getUser().getEmail()
+            ));
+        }
+
+        List<FacultyProfile> directFaculty = faculty.findByDepartmentId(departmentId);
+        for (FacultyProfile fp : directFaculty) {
+            if (fp == null || fp.getUser() == null || !fp.getUser().isActive()) continue;
+            result.putIfAbsent(fp.getId(), new DepartmentFacultyDto(
+                    fp.getId(),
+                    fp.getFacultyId(),
+                    fp.getName(),
+                    fp.getDesignation() != null ? fp.getDesignation() : "Faculty Member",
+                    dept.getId(),
+                    dept.getName(),
+                    "HOME",
+                    fp.getUser().getId(),
+                    fp.getUser().getEmail()
+            ));
+        }
+
+        return new ArrayList<>(result.values());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DepartmentStudentDto> getDepartmentStudents(Long departmentId, String actorUsername) {
+        User actor = user(actorUsername);
+        validateDepartmentAccess(actor, departmentId);
+
+        List<StudentProfile> list = students.findByDepartmentId(departmentId);
+        return list.stream().filter(sp -> sp.getUser() == null || sp.getUser().isActive()).map(sp -> new DepartmentStudentDto(
+                sp.getId(),
+                sp.getStudentId(),
+                sp.getName() != null ? sp.getName() : (sp.getUser() != null ? sp.getUser().getUsername() : ""),
+                sp.getUser() != null ? sp.getUser().getEmail() : "",
+                sp.getYear(),
+                sp.getSemester(),
+                sp.getBranch() != null ? sp.getBranch().getId() : null,
+                sp.getBranch() != null ? sp.getBranch().getName() : "",
+                sp.getSection() != null ? sp.getSection().getId() : null,
+                sp.getSection() != null ? sp.getSection().getName() : ""
+        )).toList();
+    }
+
     private void validateDepartmentAccess(User actor, Long departmentId) {
         if (rbac.isSuperAdmin(actor) || actor.getEffectiveLevel() <= 2) return;
         Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
@@ -258,4 +324,6 @@ public class DepartmentLeadershipService {
     public record BatchPromoteResult(Long departmentId, int fromYear, int toYear, int promotedCount, int skippedMaxYearCount, String message) {}
     public record DepartmentAnalyticsDto(Long departmentId, String departmentName, long studentCount, long facultyCount, long openQueries, long answeredQueries) {}
     public record DepartmentOverviewDto(Long departmentId, String departmentName, boolean active, String hodName, String hodEmail, long studentCount, long facultyCount) {}
+    public record DepartmentFacultyDto(Long id, String facultyId, String name, String designation, Long departmentId, String departmentName, String relationship, Long userId, String email) {}
+    public record DepartmentStudentDto(Long id, String studentId, String name, String email, int year, int semester, Long branchId, String branchName, Long sectionId, String sectionName) {}
 }

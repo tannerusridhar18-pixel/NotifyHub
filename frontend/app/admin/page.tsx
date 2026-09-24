@@ -21,7 +21,7 @@ export default function AdminLogin() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && u.roleLevel === 0) {
+        if (alive && u && (u.roleLevel === 0 || u.role === "SUPER_ADMIN" || u.role === "ADMIN")) {
           router.replace("/admin/dashboard");
         }
       } catch {}
@@ -37,7 +37,7 @@ export default function AdminLogin() {
     setError("");
     try {
       const x = await login(email, password);
-      if (x.roleLevel !== 0) {
+      if (x.roleLevel !== 0 && x.role !== "SUPER_ADMIN" && x.role !== "ADMIN") {
         throw new Error("Access denied. Administrator privileges required.");
       }
       router.push("/admin/dashboard");

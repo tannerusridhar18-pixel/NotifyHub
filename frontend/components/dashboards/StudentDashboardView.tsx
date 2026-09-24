@@ -79,6 +79,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
   }, [deptId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
