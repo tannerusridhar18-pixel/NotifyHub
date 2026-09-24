@@ -4,6 +4,8 @@
 
 Stopped before tests. Missing exactly: `QA_BASE_URL`, `QA_API_URL`, `QA_ADMIN_EMAIL`, `QA_ADMIN_PASS`, `QA_USER_PASS`. Frontend/backend probes and all planned tests: NOT RUN. `e2e/node_modules` is ignored and untracked.
 
+Latest headed-auth attempt: stopped before browser launch because `QA_BASE_URL` is unset. No session, credentials, fixtures, or tests were run.
+
 ## Summary
 
 | Severity | Count |
