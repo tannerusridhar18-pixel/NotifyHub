@@ -11,7 +11,7 @@
 
 ## Phase A
 
-No reproducible bugs recorded. Role credentials were not available in the workspace context; the Playwright audience/visibility matrix is unverified until `NOTIFYHUB_QA_USERS_JSON` is supplied. No application source was changed.
+No reproducible bugs recorded. Playwright completed headless Chromium execution with `PASS=0 FAIL=0 UNVERIFIED=12`; role credentials were not available, so the audience/visibility matrix remains unverified. No application source was changed.
 
 ## Coverage
 
@@ -27,3 +27,7 @@ No reproducible bugs recorded. Role credentials were not available in the worksp
 | Cross-role | Direct dashboard URLs and forbidden audiences | unverified |
 
 Everything requiring authenticated dev fixtures is unverified. Phase B is pending Phase A credentials and fixture execution.
+
+## Phase B
+
+Unverified: authenticated role button/link sweep, invitation registration, queries, events, My Posts, rosters, promotion, exports, cross-role URL checks, and SuperAdmin session checks. No credentials or fixture API payloads were available in the workspace context.
