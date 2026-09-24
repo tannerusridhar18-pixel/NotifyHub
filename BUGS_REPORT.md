@@ -1,5 +1,9 @@
 # NotifyHub Manual QA
 
+## QA Re-run Preflight
+
+Stopped before tests. Missing exactly: `QA_BASE_URL`, `QA_API_URL`, `QA_ADMIN_EMAIL`, `QA_ADMIN_PASS`, `QA_USER_PASS`. Frontend/backend probes and all planned tests: NOT RUN. `e2e/node_modules` is ignored and untracked.
+
 ## Summary
 
 | Severity | Count |
@@ -11,7 +15,7 @@
 
 ## Phase A
 
-No reproducible bugs recorded. Playwright completed headless Chromium execution with `PASS=0 FAIL=0 UNVERIFIED=12`; role credentials were not available, so the audience/visibility matrix remains unverified. No application source was changed.
+No bug result reported for this rerun because preflight failed before tests. Previous unauthenticated Playwright result remains unverified.
 
 ## Coverage
 
@@ -27,6 +31,10 @@ No reproducible bugs recorded. Playwright completed headless Chromium execution 
 | Cross-role | Direct dashboard URLs and forbidden audiences | unverified |
 
 Everything requiring authenticated dev fixtures is unverified. Phase B is pending Phase A credentials and fixture execution.
+
+## Re-run Test Totals
+
+Tests run: 0 / planned: NOT RUN (preflight failed).
 
 ## Phase B
 
