@@ -190,7 +190,10 @@ public class AdminInvitationService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<InvitationView> list() {
+    public java.util.List<InvitationView> list(String username) {
+        User caller = admin(username);
+        Long departmentId = (caller.getRole() == Role.DEPARTMENT_ADMIN || "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName()))
+                && caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
         Instant now = Instant.now();
         return invitations.findAllByOrderByCreatedAtDesc().stream().map(invitation -> {
             InvitationStatus status = invitation.getUsedAt() != null ? InvitationStatus.USED
@@ -208,7 +211,10 @@ public class AdminInvitationService {
                     invitation.getUsedAt(),
                     u != null && u.getPublicId() != null ? u.getPublicId().toString() : null
             );
-        }).toList();
+        }).filter(view -> departmentId == null || java.util.Objects.equals(
+            users.findByPublicId(view.userPublicId() == null ? null : java.util.UUID.fromString(view.userPublicId()))
+                .map(u -> u.getDepartmentEntity() == null ? null : u.getDepartmentEntity().getId()).orElse(null), departmentId))
+            .toList();
     }
 
     private void createStudent(User user, ProfileRequest request) {

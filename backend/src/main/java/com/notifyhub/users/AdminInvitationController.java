@@ -23,8 +23,8 @@ public class AdminInvitationController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<java.util.List<AdminInvitationService.InvitationView>>> list() {
-        return ResponseEntity.ok(ApiResponse.ok(invitations.list()));
+    public ResponseEntity<ApiResponse<java.util.List<AdminInvitationService.InvitationView>>> list(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.ok(invitations.list(authentication.getName())));
     }
 
     @PostMapping

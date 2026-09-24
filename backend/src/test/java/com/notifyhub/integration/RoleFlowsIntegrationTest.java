@@ -1005,7 +1005,7 @@ class RoleFlowsIntegrationTest {
 
                         mvc.perform(patch("/api/v1/departments/" + eceDept.getId() + "/students/" + otherProfile.getId())
                                 .with(csrf()).cookie(authCookie(deptAdmin)).contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\":\"Tampered\"}"))
+                                .content("{\"name\":\"Tampered\",\"departmentId\":" + cseDept.getId() + ",\"role\":\"ADMIN\",\"email\":\"admin@example.edu\",\"userId\":1}"))
                                 .andExpect(status().isForbidden());
 
                         mvc.perform(patch("/api/v1/departments/" + eceDept.getId() + "/students/" + otherProfile.getId() + "/status")

@@ -190,11 +190,16 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
     setStudentInviteBusy(true);
     setStudentInviteMsg("");
     try {
+      if (bulkStudents.length > 1_000_000) throw new Error("Bulk CSV is limited to 1 MB.");
       const rows = bulkStudents.trim()
-        ? bulkStudents.trim().split(/\r?\n/).map((line) => line.split(",").map((value) => value.trim())).filter((row) => row.length >= 7)
+        ? bulkStudents.trim().split(/\r?\n/).map((line) => line.split(",").map((value) => value.trim()))
         : [[studentInvite.email, studentInvite.name, studentInvite.studentId, studentInvite.branchId, studentInvite.sectionId, studentInvite.year, studentInvite.semester]];
+      if (rows.length > 100) throw new Error("Bulk CSV is limited to 100 rows.");
+      if (rows.some((row) => row.length !== 7)) throw new Error("Each CSV row must contain exactly 7 fields; department is locked to your department.");
+      if (rows.some((row) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row[0]))) throw new Error("Every student email must be valid.");
+      const sanitize = (value: string) => /^[=+\-@]/.test(value) ? `'${value}` : value;
       for (const row of rows) {
-        await createInvitation({ email: row[0], role: "STUDENT", departmentId: deptId, branchId: Number(row[3]), sectionId: Number(row[4]), profile: { name: row[1], studentId: row[2], departmentId: deptId, branchId: Number(row[3]), sectionId: Number(row[4]), year: Number(row[5]), semester: Number(row[6]) } });
+        await createInvitation({ email: row[0], role: "STUDENT", departmentId: deptId, branchId: Number(row[3]), sectionId: Number(row[4]), profile: { name: sanitize(row[1]), studentId: sanitize(row[2]), departmentId: deptId, branchId: Number(row[3]), sectionId: Number(row[4]), year: Number(row[5]), semester: Number(row[6]) } });
       }
       setStudentInviteMsg(`Created ${rows.length} student invitation${rows.length === 1 ? "" : "s"}.`);
       setBulkStudents("");
