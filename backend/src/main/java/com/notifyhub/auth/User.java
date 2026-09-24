@@ -85,7 +85,7 @@ public class User {
         if (role == Role.SUPER_ADMIN || role == Role.ADMIN) return 0;
         if (role == Role.PRINCIPAL) return 1;
         if (role == Role.DEAN) return 2;
-        if (role == Role.HOD) return 3;
+        if (role == Role.HOD || role == Role.DEPARTMENT_ADMIN) return 3;
         if (role == Role.FACULTY) return 4;
         return 5;
     }

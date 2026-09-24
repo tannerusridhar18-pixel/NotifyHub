@@ -27,7 +27,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
   const [error, setError] = useState("");
 
   // Broadcaster state
-  const [broadcastAudience, setBroadcastAudience] = useState<"GLOBAL" | "HOD" | "DEAN" | "FACULTY" | "STUDENT">("GLOBAL");
+  const [broadcastAudience, setBroadcastAudience] = useState<"HOD" | "DEAN">("HOD");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [urgent, setUrgent] = useState(false);
@@ -67,8 +67,8 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
         title,
         content,
         urgent,
-        targetType: broadcastAudience === "GLOBAL" ? "GLOBAL" : "ROLE",
-        role: broadcastAudience === "GLOBAL" ? undefined : broadcastAudience,
+        targetType: "ROLE",
+        role: broadcastAudience,
         attachmentUrl: attachmentUrl.trim() || undefined,
         attachmentName: attachmentName.trim() || undefined,
       });
@@ -267,11 +267,8 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                     {(
                       [
-                        { key: "GLOBAL", label: "🌐 All Campus" },
                         { key: "HOD", label: "👑 HODs Only" },
                         { key: "DEAN", label: "🏛️ Deans Only" },
-                        { key: "FACULTY", label: "👨‍🏫 Faculty" },
-                        { key: "STUDENT", label: "🎓 Students" },
                       ] as const
                     ).map((aud) => (
                       <button

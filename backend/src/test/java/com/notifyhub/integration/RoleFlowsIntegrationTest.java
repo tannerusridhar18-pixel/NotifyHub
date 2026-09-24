@@ -647,6 +647,14 @@ class RoleFlowsIntegrationTest {
                 ))))
                 .andExpect(status().isCreated());
 
+        // Principal -> Student (403)
+        mvc.perform(post("/api/v1/announcements")
+                .with(csrf()).cookie(authCookie(principal)).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new AnnouncementService.Request(
+                        "Principal to Student", "Directive", false, TargetType.ROLE, null, null, null, null, null, Role.STUDENT, "role", "[\"STUDENT\"]", null, null
+                ))))
+                .andExpect(status().isForbidden());
+
         // 2. Dean: Dean -> HOD (201), Dean -> Global (403)
         mvc.perform(post("/api/v1/announcements")
                 .with(csrf())
@@ -656,6 +664,14 @@ class RoleFlowsIntegrationTest {
                         "Dean to HOD", "Notice", false, TargetType.ROLE, null, null, null, null, null, Role.HOD, "role", "[\"HOD\"]", null, null
                 ))))
                 .andExpect(status().isCreated());
+
+        // Dean -> Student (403)
+        mvc.perform(post("/api/v1/announcements")
+                .with(csrf()).cookie(authCookie(dean)).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new AnnouncementService.Request(
+                        "Dean to Student", "Notice", false, TargetType.ROLE, null, null, null, null, null, Role.STUDENT, "role", "[\"STUDENT\"]", null, null
+                ))))
+                .andExpect(status().isForbidden());
 
         mvc.perform(post("/api/v1/announcements")
                 .with(csrf())
@@ -673,6 +689,14 @@ class RoleFlowsIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(new AnnouncementService.Request(
                         "HOD to CSE", "Notice", false, TargetType.DEPARTMENT, cseDept.getId(), null, null, null, null, null, "department", null, null, null
+                ))))
+                .andExpect(status().isCreated());
+
+        // HOD -> one faculty in own department (201)
+        mvc.perform(post("/api/v1/announcements")
+                .with(csrf()).cookie(authCookie(hod)).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new AnnouncementService.Request(
+                        "HOD to Faculty", "Notice", false, TargetType.USER, null, null, null, null, faculty.getEmail(), null, "user", null, null, null
                 ))))
                 .andExpect(status().isCreated());
 
@@ -721,6 +745,14 @@ class RoleFlowsIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(new AnnouncementService.Request(
                         "Dept Admin to CSE", "Notice", false, TargetType.DEPARTMENT, cseDept.getId(), null, null, null, null, null, "department", null, null, null
+                ))))
+                .andExpect(status().isCreated());
+
+        // Dept Admin -> HOD (201)
+        mvc.perform(post("/api/v1/announcements")
+                .with(csrf()).cookie(authCookie(deptAdmin)).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new AnnouncementService.Request(
+                        "Dept Admin to HOD", "Notice", false, TargetType.ROLE, null, null, null, null, null, Role.HOD, "role", "[\"HOD\"]", null, null
                 ))))
                 .andExpect(status().isCreated());
 
@@ -821,4 +853,98 @@ class RoleFlowsIntegrationTest {
                 .with(csrf()).cookie(authCookie(deptAdmin)))
                 .andExpect(status().isForbidden());
     }
+
+        @Test
+        @DisplayName("Principal and Dean can delete their own announcements")
+        void testPrincipalAndDeanDeleteOwnAnnouncement() throws Exception {
+                User principal = createUser("principal.delete@example.edu", Role.PRINCIPAL, null);
+                User dean = createUser("dean.delete@example.edu", Role.DEAN, null);
+
+                Announcement principalPost = new Announcement();
+                principalPost.setTitle("Principal post");
+                principalPost.setContent("Owned by principal");
+                principalPost.setTargetType(TargetType.ROLE);
+                principalPost.setTargetRole(Role.HOD);
+                principalPost.setCreatedBy(principal);
+                announcementRepo.saveAndFlush(principalPost);
+
+                Announcement deanPost = new Announcement();
+                deanPost.setTitle("Dean post");
+                deanPost.setContent("Owned by dean");
+                deanPost.setTargetType(TargetType.ROLE);
+                deanPost.setTargetRole(Role.HOD);
+                deanPost.setCreatedBy(dean);
+                announcementRepo.saveAndFlush(deanPost);
+
+                mvc.perform(delete("/api/v1/announcements/" + principalPost.getId())
+                                .with(csrf()).cookie(authCookie(principal)))
+                                .andExpect(status().isNoContent());
+                mvc.perform(delete("/api/v1/announcements/" + deanPost.getId())
+                                .with(csrf()).cookie(authCookie(dean)))
+                                .andExpect(status().isNoContent());
+        }
+
+                    @Test
+                    @DisplayName("Task 2 targeting matrix returns the required role status codes")
+                    void testTaskTwoTargetingMatrix() throws Exception {
+                        User principal = createUser("principal.targeting@example.edu", Role.PRINCIPAL, null);
+                        User dean = createUser("dean.targeting@example.edu", Role.DEAN, null);
+                        User hod = createUser("hod.targeting@example.edu", Role.HOD, cseDept);
+                        User cseFaculty = createUser("faculty.targeting.cse@example.edu", Role.FACULTY, cseDept);
+                        User eceFaculty = createUser("faculty.targeting.ece@example.edu", Role.FACULTY, eceDept);
+                        User deptAdmin = createUser("admin.targeting@example.edu", Role.DEPARTMENT_ADMIN, cseDept);
+                        User student = createUser("student.targeting@example.edu", Role.STUDENT, cseDept);
+
+                        FacultyProfile facultyProfile = new FacultyProfile();
+                        facultyProfile.setUser(cseFaculty);
+                        facultyProfile.setDesignation("Assistant Professor");
+                        facultyProfileRepo.saveAndFlush(facultyProfile);
+                        FacultyDepartmentMapping home = new FacultyDepartmentMapping();
+                        home.setFaculty(facultyProfile);
+                        home.setDepartment(cseDept);
+                        home.setRelationship(FacultyDepartmentRelationship.HOME);
+                        mappingRepo.saveAndFlush(home);
+                        FacultyDepartmentMapping sub = new FacultyDepartmentMapping();
+                        sub.setFaculty(facultyProfile);
+                        sub.setDepartment(eceDept);
+                        sub.setRelationship(FacultyDepartmentRelationship.SUB);
+                        mappingRepo.saveAndFlush(sub);
+
+                        announcementRequest(principal, "Principal student", TargetType.ROLE, null, Role.STUDENT, "role", "[\"STUDENT\"]")
+                                .andExpect(status().isForbidden());
+                        announcementRequest(dean, "Dean student", TargetType.ROLE, null, Role.STUDENT, "role", "[\"STUDENT\"]")
+                                .andExpect(status().isForbidden());
+                        announcementRequest(dean, "Dean HOD", TargetType.ROLE, null, Role.HOD, "role", "[\"HOD\"]")
+                                .andExpect(status().isCreated());
+                        announcementRequest(hod, "HOD faculty", TargetType.USER, cseFaculty.getEmail(), null, "user", null)
+                                .andExpect(status().isCreated());
+                        announcementRequest(hod, "HOD other department", TargetType.DEPARTMENT, null, null, "department", null, eceDept.getId())
+                                .andExpect(status().isForbidden());
+                        announcementRequest(cseFaculty, "Faculty sub department", TargetType.DEPARTMENT, null, null, "department", null, eceDept.getId())
+                                .andExpect(status().isCreated());
+                        announcementRequest(cseFaculty, "Faculty unrelated department", TargetType.DEPARTMENT, null, null, "department", null, 999999L)
+                                .andExpect(status().isForbidden());
+                        announcementRequest(deptAdmin, "Dept admin HOD", TargetType.ROLE, null, Role.HOD, "role", "[\"HOD\"]")
+                                .andExpect(status().isCreated());
+                        announcementRequest(student, "Student any", TargetType.GLOBAL, null, null, "all", null)
+                                .andExpect(status().isForbidden());
+                    }
+
+                    private org.springframework.test.web.servlet.ResultActions announcementRequest(User user, String title,
+                                                                                                     TargetType targetType, String userEmail,
+                                                                                                     Role role, String recipientType, String recipientTargets)
+                            throws Exception {
+                        return announcementRequest(user, title, targetType, userEmail, role, recipientType, recipientTargets, null);
+                    }
+
+                    private org.springframework.test.web.servlet.ResultActions announcementRequest(User user, String title,
+                                                                                                     TargetType targetType, String userEmail,
+                                                                                                     Role role, String recipientType, String recipientTargets,
+                                                                                                     Long departmentId) throws Exception {
+                        return mvc.perform(post("/api/v1/announcements")
+                                .with(csrf()).cookie(authCookie(user)).contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(new AnnouncementService.Request(
+                                        title, "Targeting evidence", false, targetType, departmentId, null, null, null,
+                                        userEmail, role, recipientType, recipientTargets, null, null))));
+                    }
 }

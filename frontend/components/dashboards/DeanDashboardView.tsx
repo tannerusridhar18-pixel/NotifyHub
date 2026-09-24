@@ -27,7 +27,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
   const [error, setError] = useState("");
 
   // Broadcaster state
-  const [broadcastAudience, setBroadcastAudience] = useState<"HOD" | "FACULTY" | "STUDENT">("HOD");
+  const [broadcastAudience, setBroadcastAudience] = useState<"HOD" | "FACULTY">("HOD");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [urgent, setUrgent] = useState(false);
@@ -250,17 +250,6 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
                       }`}
                     >
                       👨‍🏫 All Faculty Staff
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBroadcastAudience("STUDENT")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
-                        broadcastAudience === "STUDENT"
-                          ? "border-cyan-500 bg-cyan-500/20 text-cyan-300 shadow-sm"
-                          : "border-white/10 bg-surface-2/60 text-muted"
-                      }`}
-                    >
-                      🎓 All Students
                     </button>
                   </div>
                 </div>
