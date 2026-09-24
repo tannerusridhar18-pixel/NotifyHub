@@ -140,6 +140,21 @@ export type DepartmentAnalytics = {
   answeredQueries: number;
 };
 
+export type DepartmentStudentItem = {
+  id: number;
+  studentId: string;
+  name: string;
+  email: string;
+  departmentId: number;
+  departmentName: string;
+  year: number;
+  semester: number;
+  branchId: number | null;
+  branchName: string | null;
+  sectionId: number | null;
+  sectionName: string | null;
+};
+
 export type CampusOverviewDepartment = {
   departmentId: number;
   departmentName: string;

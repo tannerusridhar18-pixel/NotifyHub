@@ -882,6 +882,21 @@ class RoleFlowsIntegrationTest {
                 mvc.perform(delete("/api/v1/announcements/" + deanPost.getId())
                                 .with(csrf()).cookie(authCookie(dean)))
                                 .andExpect(status().isNoContent());
+
+                Event event = new Event();
+                event.setTitle("Author event");
+                event.setDescription("Owned by principal");
+                event.setLocation("Auditorium");
+                event.setStartAt(Instant.now().plus(1, ChronoUnit.DAYS));
+                event.setEndAt(Instant.now().plus(1, ChronoUnit.DAYS).plus(1, ChronoUnit.HOURS));
+                event.setTargetType(TargetType.ROLE);
+                event.setTargetRole(Role.HOD);
+                event.setCreatedBy(principal);
+                eventRepo.saveAndFlush(event);
+
+                mvc.perform(delete("/api/v1/events/" + event.getId())
+                        .with(csrf()).cookie(authCookie(principal)))
+                        .andExpect(status().isNoContent());
         }
 
                     @Test
@@ -927,6 +942,27 @@ class RoleFlowsIntegrationTest {
                         announcementRequest(deptAdmin, "Dept admin HOD", TargetType.ROLE, null, Role.HOD, "role", "[\"HOD\"]")
                                 .andExpect(status().isCreated());
                         announcementRequest(student, "Student any", TargetType.GLOBAL, null, null, "all", null)
+                                .andExpect(status().isForbidden());
+                    }
+
+                    @Test
+                    @DisplayName("Task 3 department scopes are enforced for roster, promotion, and posting")
+                    void testTaskThreeDepartmentScopes() throws Exception {
+                        User hod = createUser("hod.task3@example.edu", Role.HOD, cseDept);
+                        User deptAdmin = createUser("admin.task3@example.edu", Role.DEPARTMENT_ADMIN, cseDept);
+
+                        mvc.perform(get("/api/v1/departments/" + eceDept.getId() + "/faculty")
+                                .cookie(authCookie(hod)))
+                                .andExpect(status().isForbidden());
+
+                        mvc.perform(post("/api/v1/admin/students/batch-promote")
+                                .with(csrf()).cookie(authCookie(deptAdmin)).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"departmentId\":" + eceDept.getId() + ",\"fromYear\":1,\"toYear\":2}"))
+                                .andExpect(status().isForbidden());
+
+                        announcementRequest(deptAdmin, "Task 3 own department", TargetType.DEPARTMENT, null, null, "department", null, cseDept.getId())
+                                .andExpect(status().isCreated());
+                        announcementRequest(deptAdmin, "Task 3 other department", TargetType.DEPARTMENT, null, null, "department", null, eceDept.getId())
                                 .andExpect(status().isForbidden());
                     }
 

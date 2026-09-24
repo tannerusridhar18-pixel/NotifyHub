@@ -103,6 +103,7 @@ async function request<T>(
   if (response.status === 401 && retry && !path.startsWith("/auth/")) {
     if (await refresh()) return request<T>(path, init, false);
   }
+  if (response.status === 204) return undefined as T;
   const body = (await response.json().catch(() => null)) as ApiResponse<T> | null;
   if (!response.ok || !body?.success) {
     if (
@@ -366,6 +367,9 @@ export type DepartmentFacultyItem = {
 
 export const departmentFacultyList = (departmentId: number) =>
   request<DepartmentFacultyItem[]>(`/departments/${departmentId}/faculty`);
+
+export const departmentStudentList = (departmentId: number) =>
+  request<import("@/types").DepartmentStudentItem[]>(`/departments/${departmentId}/students`);
 
 export const batchPromoteStudents = (departmentId: number, fromYear: number, toYear: number) =>
   request<import("@/types").BatchPromoteResult>(`/departments/${departmentId}/promote-batch`, {
