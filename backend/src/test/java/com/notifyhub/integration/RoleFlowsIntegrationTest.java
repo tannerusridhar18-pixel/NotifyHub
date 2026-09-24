@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -963,6 +964,56 @@ class RoleFlowsIntegrationTest {
                         announcementRequest(deptAdmin, "Task 3 own department", TargetType.DEPARTMENT, null, null, "department", null, cseDept.getId())
                                 .andExpect(status().isCreated());
                         announcementRequest(deptAdmin, "Task 3 other department", TargetType.DEPARTMENT, null, null, "department", null, eceDept.getId())
+                                .andExpect(status().isForbidden());
+                    }
+
+                    @Test
+                    @DisplayName("Task 3b Dept Admin invitations and student management stay in department scope")
+                    void testDepartmentAdminStudentScope() throws Exception {
+                        User deptAdmin = createUser("admin.task3b@example.edu", Role.DEPARTMENT_ADMIN, cseDept);
+                        User otherStudent = createUser("student.other.task3b@example.edu", Role.STUDENT, eceDept);
+                        Branch otherBranch = new Branch();
+                        otherBranch.setName("ECE Task 3b");
+                        otherBranch.setDepartment(eceDept);
+                        branchRepo.saveAndFlush(otherBranch);
+                        Section otherSection = new Section();
+                        otherSection.setName("ECE Task 3b A");
+                        otherSection.setAcademicYear(2026);
+                        otherSection.setDepartment(eceDept);
+                        otherSection.setBranch(otherBranch);
+                        sectionRepo.saveAndFlush(otherSection);
+                        StudentProfile otherProfile = new StudentProfile();
+                        otherProfile.setUser(otherStudent);
+                        otherProfile.setStudentId("STU-ECE-T3B");
+                        otherProfile.setName("Other Department Student");
+                        otherProfile.setDepartment(eceDept);
+                        otherProfile.setBranch(otherBranch);
+                        otherProfile.setSection(otherSection);
+                        otherProfile.setYear(1);
+                        otherProfile.setSemester(1);
+                        studentProfileRepo.saveAndFlush(otherProfile);
+
+                        mvc.perform(post("/api/v1/admin/invitations")
+                                .with(csrf()).cookie(authCookie(deptAdmin)).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"email\":\"student.own.task3b@example.edu\",\"role\":\"STUDENT\",\"departmentId\":" + cseDept.getId() + ",\"branchId\":" + cseBranch.getId() + ",\"sectionId\":" + sectionA.getId() + ",\"profile\":{\"name\":\"Own Student\",\"studentId\":\"STU-CSE-T3B\",\"departmentId\":" + cseDept.getId() + ",\"branchId\":" + cseBranch.getId() + ",\"sectionId\":" + sectionA.getId() + ",\"year\":1,\"semester\":1}}"))
+                                .andExpect(status().isCreated());
+
+                        mvc.perform(post("/api/v1/admin/invitations")
+                                .with(csrf()).cookie(authCookie(deptAdmin)).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"email\":\"student.other.invite.task3b@example.edu\",\"role\":\"STUDENT\",\"departmentId\":" + eceDept.getId() + ",\"branchId\":" + otherBranch.getId() + ",\"sectionId\":" + otherSection.getId() + ",\"profile\":{\"name\":\"Other Student\",\"studentId\":\"STU-ECE-INV\",\"departmentId\":" + eceDept.getId() + ",\"branchId\":" + otherBranch.getId() + ",\"sectionId\":" + otherSection.getId() + ",\"year\":1,\"semester\":1}}"))
+                                .andExpect(status().isForbidden());
+
+                        mvc.perform(patch("/api/v1/departments/" + eceDept.getId() + "/students/" + otherProfile.getId())
+                                .with(csrf()).cookie(authCookie(deptAdmin)).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"name\":\"Tampered\"}"))
+                                .andExpect(status().isForbidden());
+
+                        mvc.perform(patch("/api/v1/departments/" + eceDept.getId() + "/students/" + otherProfile.getId() + "/status")
+                                .with(csrf()).cookie(authCookie(deptAdmin)))
+                                .andExpect(status().isForbidden());
+
+                        mvc.perform(get("/api/v1/departments/" + eceDept.getId() + "/students")
+                                .cookie(authCookie(deptAdmin)))
                                 .andExpect(status().isForbidden());
                     }
 

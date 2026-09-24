@@ -371,6 +371,12 @@ export const departmentFacultyList = (departmentId: number) =>
 export const departmentStudentList = (departmentId: number) =>
   request<import("@/types").DepartmentStudentItem[]>(`/departments/${departmentId}/students`);
 
+export const updateDepartmentStudent = (departmentId: number, studentId: number, payload: { name?: string; year?: number; semester?: number }) =>
+  request<import("@/types").DepartmentStudentItem>(`/departments/${departmentId}/students/${studentId}`, { method: "PATCH", body: JSON.stringify(payload) });
+
+export const deactivateDepartmentStudent = (departmentId: number, studentId: number) =>
+  request<void>(`/departments/${departmentId}/students/${studentId}/status`, { method: "PATCH" });
+
 export const batchPromoteStudents = (departmentId: number, fromYear: number, toYear: number) =>
   request<import("@/types").BatchPromoteResult>(`/departments/${departmentId}/promote-batch`, {
     method: "POST",

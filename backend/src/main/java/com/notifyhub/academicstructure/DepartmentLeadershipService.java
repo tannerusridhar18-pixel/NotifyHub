@@ -308,6 +308,31 @@ public class DepartmentLeadershipService {
         )).toList();
     }
 
+    @Transactional
+    public DepartmentStudentDto updateDepartmentStudent(Long departmentId, Long studentId, String name, Integer year, Integer semester, String actorUsername) {
+        User actor = user(actorUsername);
+        validateDepartmentAccess(actor, departmentId);
+        StudentProfile profile = students.findById(studentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found."));
+        if (profile.getDepartment() == null || !departmentId.equals(profile.getDepartment().getId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Student is outside your department.");
+        if (name != null && !name.isBlank()) profile.setName(name.trim());
+        if (year != null) profile.setYear(year);
+        if (semester != null) profile.setSemester(semester);
+        students.save(profile);
+        return getDepartmentStudents(departmentId, actorUsername).stream().filter(s -> s.id().equals(studentId)).findFirst().orElseThrow();
+    }
+
+    @Transactional
+    public void deactivateDepartmentStudent(Long departmentId, Long studentId, String actorUsername) {
+        User actor = user(actorUsername);
+        validateDepartmentAccess(actor, departmentId);
+        StudentProfile profile = students.findById(studentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found."));
+        if (profile.getDepartment() == null || !departmentId.equals(profile.getDepartment().getId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Student is outside your department.");
+        if (profile.getUser() != null) {
+            profile.getUser().setAccountStatus(com.notifyhub.auth.AccountStatus.INACTIVE);
+            users.save(profile.getUser());
+        }
+    }
+
     private void validateDepartmentAccess(User actor, Long departmentId) {
         if (rbac.isSuperAdmin(actor) || actor.getEffectiveLevel() <= 2) return;
         Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
