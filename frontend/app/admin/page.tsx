@@ -3,11 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { currentUser, login } from "@/lib/api";
-import AuthSplit from "@/components/ui/AuthSplit";
-import AuthCard from "@/components/ui/AuthCard";
-import Field from "@/components/ui/Field";
-import Button from "@/components/ui/Button";
-import { inputBase, errorBox } from "@/components/ui/classes";
+import styles from "../auth/AuthKit.module.css";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -49,68 +45,84 @@ export default function AdminLogin() {
   }
 
   return (
-    <AuthSplit
-      tone="admin"
-      kicker="Control Room Operations"
-      title={
-        <>
-          Run the campus
-          <br />
-          <em className="not-italic text-[#6ee7b7]">signal.</em>
-        </>
-      }
-      description="Publish trusted broadcasts, manage academic calendars, review campus queries, and manage directory structures from one protected workspace."
-      metrics={[
-        { value: "ADMIN", label: "Privileged Access" },
-        { value: "ACTIVE", label: "Campus Signal" },
-      ]}
-    >
-      <AuthCard>
-        <form onSubmit={submit}>
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold tracking-widest text-success uppercase">
-            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-            Restricted Control Room
-          </span>
-          <h2 className="my-2 text-3xl font-extrabold tracking-tight">Admin Portal</h2>
-          <p className="mb-6 text-sm text-muted">Sign in with authorized administrator credentials.</p>
-          <div className="grid gap-4">
-            <Field label="Admin Email" htmlFor="email">
-              <input
-                id="email"
-                required
-                type="email"
-                className={inputBase}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@notifyhub.local"
-                suppressHydrationWarning
-              />
-            </Field>
-            <Field label="Security Key / Password" htmlFor="password">
-              <input
-                id="password"
-                required
-                type="password"
-                className={inputBase}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                suppressHydrationWarning
-              />
-            </Field>
+    <main className={styles.page}>
+      <div className={styles.ambient} />
+      <div className={styles.shell}>
+        <div className={styles.stack}>
+          <div className={styles.brand}>
+            <span className={styles.brandMark}>◈</span>
+            <span>NotifyHub</span>
           </div>
-          {error && <div className={`${errorBox} mt-5`}>{error}</div>}
-          <Button className="mt-6 w-full !py-3 !text-sm" disabled={busy}>
-            {busy ? "Validating Session…" : "Enter Control Room →"}
-          </Button>
-          <p className="mt-6 text-center text-xs text-muted">
-            Student or faculty member?{" "}
-            <Link className="font-bold text-brand hover:underline" href="/auth/login">
-              Sign in via User Portal
-            </Link>
+
+          <div className={styles.eyebrow}>Restricted Control Room</div>
+          <h1 className={styles.heading}>Admin access</h1>
+          <p className={styles.subheading}>
+            Enter authorized administrator credentials to access the protected campus control room.
           </p>
-        </form>
-      </AuthCard>
-    </AuthSplit>
+
+          <section className={styles.card} aria-label="Administrator sign in form">
+            <span className={styles.cardLabel}>
+              <span className={styles.cardLabelDot} />
+              Privileged Identity
+            </span>
+            <h2 className={styles.cardTitle}>Control Room Sign In</h2>
+            <p className={styles.cardDescription}>
+              Authorized administrators only. Your session will be protected by the NotifyHub identity layer.
+            </p>
+
+            <form onSubmit={submit} className={styles.form}>
+              <div className={styles.field}>
+                <label className={styles.fieldLabel} htmlFor="email">
+                  Admin Email
+                </label>
+                <input
+                  id="email"
+                  required
+                  type="email"
+                  autoComplete="username"
+                  className={styles.input}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@notifyhub.local"
+                  suppressHydrationWarning
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.fieldLabel} htmlFor="password">
+                  Security Key / Password
+                </label>
+                <input
+                  id="password"
+                  required
+                  type="password"
+                  autoComplete="current-password"
+                  className={styles.input}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  suppressHydrationWarning
+                />
+              </div>
+
+              {error && <div className={styles.error}>{error}</div>}
+
+              <button type="submit" className={styles.cta} disabled={busy}>
+                {busy ? "Validating Session…" : "Enter Control Room →"}
+              </button>
+            </form>
+
+            <p className={styles.links}>
+              Student or faculty member?{" "}
+              <Link className={styles.link} href="/auth/login">
+                Sign in via User Portal
+              </Link>
+            </p>
+          </section>
+
+          <p className={styles.helper}>Restricted access · Role enforced · Session protected</p>
+        </div>
+      </div>
+    </main>
   );
 }
