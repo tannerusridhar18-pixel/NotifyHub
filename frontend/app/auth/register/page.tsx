@@ -3,10 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { registerUser } from "@/lib/api";
-import AuthCard from "@/components/ui/AuthCard";
 import Field from "@/components/ui/Field";
-import Button from "@/components/ui/Button";
-import { inputBase, errorBox, successBox } from "@/components/ui/classes";
+import styles from "../AuthKit.module.css";
 
 export default function Register() {
   const router = useRouter();
@@ -46,72 +44,83 @@ export default function Register() {
   }
 
   return (
-    <div className="relative grid min-h-[calc(100vh-72px)] place-items-center bg-bg px-5 py-12 sm:min-h-[calc(100vh-80px)]">
-      <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-30" />
-      <AuthCard>
-        <form onSubmit={submit}>
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold tracking-widest text-brand uppercase">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-            Invitation Onboarding
-          </span>
-          <h2 className="my-2 text-3xl font-extrabold tracking-tight">Complete Setup</h2>
-          <p className="mb-5 text-sm text-muted">Create a secure password to activate your campus account.</p>
-          
-          <div className="mb-5 flex items-center gap-3.5 rounded-2xl border border-white/10 bg-surface-2/80 p-4 backdrop-blur-md">
-            <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-success-soft font-extrabold text-[#6ee7b7] border border-success/30">
-              {token ? "✓" : "!"}
-            </span>
-            <div>
-              <b className="block text-sm font-bold text-white">{token ? "Invitation verified" : "Invitation link required"}</b>
-              <small className="block text-xs text-muted">
-                {token ? "Token validated. Enter password to activate." : "Open the link from your NotifyHub invitation email."}
-              </small>
-            </div>
+    <main className={styles.page}>
+      <div className={styles.shell}>
+        <div className={styles.stack}>
+          <div className={styles.brand}>
+            <span className={styles.brandMark}>◈</span>
+            <span>NotifyHub</span>
           </div>
 
-          <div className="grid gap-4">
-            <Field label="New Password (min 8 chars)" htmlFor="password">
-              <input
-                id="password"
-                required
-                minLength={8}
-                type="password"
-                className={inputBase}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="••••••••"
-              />
-            </Field>
-            <Field label="Confirm Password" htmlFor="confirmPassword">
-              <input
-                id="confirmPassword"
-                required
-                minLength={8}
-                type="password"
-                className={inputBase}
-                value={form.confirmPassword}
-                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                placeholder="••••••••"
-              />
-            </Field>
-          </div>
-
-          {error && <div className={`${errorBox} mt-5`}>{error}</div>}
-          {success && <div className={`${successBox} mt-5`}>{success}</div>}
-
-          <Button className="mt-6 w-full !py-3 !text-sm" disabled={busy || !token}>
-            {busy ? "Activating Profile…" : "Activate Campus Account →"}
-          </Button>
-
-          <p className="mt-6 text-center text-xs text-muted">
-            Already active?{" "}
-            <Link className="font-bold text-brand hover:underline" href="/auth/login">
-              Back to sign in
-            </Link>
+          <div className={styles.eyebrow}>Invitation Onboarding</div>
+          <h1 className={styles.heading}>Complete setup</h1>
+          <p className={styles.subheading}>
+            Activate your campus account with the password from your invitation.
           </p>
-        </form>
-      </AuthCard>
-    </div>
+
+          <section className={styles.card} aria-label="Registration form">
+            <span className={styles.cardLabel}>
+              <span className={styles.cardLabelDot} />
+              Secure Account Setup
+            </span>
+            <h2 className={styles.cardTitle}>Create your password</h2>
+            <p className={styles.cardDescription}>Use at least 8 characters to activate your campus account.</p>
+
+            <div className={styles.status}>
+              <span className={styles.statusIcon}>{token ? "✓" : "!"}</span>
+              <div>
+                <b className={styles.statusTitle}>{token ? "Invitation verified" : "Invitation link required"}</b>
+                <small className={styles.statusCopy}>
+                  {token ? "Token validated. Enter password to activate." : "Open the link from your NotifyHub invitation email."}
+                </small>
+              </div>
+            </div>
+
+            <form onSubmit={submit} className={styles.form}>
+              <Field label="New Password (min 8 chars)" htmlFor="password">
+                <input
+                  id="password"
+                  required
+                  minLength={8}
+                  type="password"
+                  className={styles.input}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="••••••••"
+                />
+              </Field>
+              <Field label="Confirm Password" htmlFor="confirmPassword">
+                <input
+                  id="confirmPassword"
+                  required
+                  minLength={8}
+                  type="password"
+                  className={styles.input}
+                  value={form.confirmPassword}
+                  onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                  placeholder="••••••••"
+                />
+              </Field>
+
+              {error && <div className={styles.error}>{error}</div>}
+              {success && <div className={styles.success}>{success}</div>}
+
+              <button type="submit" className={styles.cta} disabled={busy || !token}>
+                {busy ? "Activating Profile…" : "Activate Campus Account →"}
+              </button>
+            </form>
+
+            <p className={styles.links}>
+              Already active?{" "}
+              <Link className={styles.link} href="/auth/login">
+                Back to sign in
+              </Link>
+            </p>
+          </section>
+
+          <p className={styles.helper}>Invitation only · Secure activation · Session protected</p>
+        </div>
+      </div>
+    </main>
   );
 }
-
