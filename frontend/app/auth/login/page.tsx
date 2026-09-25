@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login } from "@/lib/api";
+import { login as loginUser } from "@/lib/api";
 import Field from "@/components/ui/Field";
 import styles from "../AuthKit.module.css";
 
@@ -18,7 +18,7 @@ export default function UserLogin() {
     setBusy(true);
     setError("");
     try {
-      const x = await login(email, password);
+      const x = await loginUser(email, password);
       if (x.roleLevel === 0) {
         router.push("/admin/dashboard");
       } else if (x.roleLevel === 1) {
@@ -41,6 +41,7 @@ export default function UserLogin() {
 
   return (
     <main className={styles.page}>
+      <div className={styles.ambient} />
       <div className={styles.shell}>
         <div className={styles.stack}>
           <div className={styles.brand}>
