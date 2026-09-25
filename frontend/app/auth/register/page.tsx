@@ -45,6 +45,7 @@ export default function Register() {
 
   return (
     <main className={styles.page}>
+      <div className={styles.ambient} />
       <div className={styles.shell}>
         <div className={styles.stack}>
           <div className={styles.brand}>
