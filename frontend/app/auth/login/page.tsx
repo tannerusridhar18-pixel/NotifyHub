@@ -97,6 +97,9 @@ export default function UserLogin() {
             </form>
 
             <div className={styles.links}>
+              <Link className={styles.link} href="/">
+                ← Back to home
+              </Link>
               <Link className={styles.link} href="/auth/forgot-password">
                 Forgot your password?
               </Link>
