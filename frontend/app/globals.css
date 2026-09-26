@@ -1343,7 +1343,7 @@
   display: block;
   margin-top: 2.5rem;
   color: var(--nh-green);
-  font-size: 9px;
+  font-size: clamp(1.05rem, 1.45vw, 1.3rem);
   font-weight: 800;
   letter-spacing: .16em;
   text-transform: uppercase;
