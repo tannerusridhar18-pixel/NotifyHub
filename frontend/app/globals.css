@@ -1292,7 +1292,7 @@
 }
 .nh-section-intro h2 {
   margin-top: .35rem;
-  font-size: clamp(2rem,4vw,3.5rem);
+  font-size: clamp(2.6rem,5.2vw,4.6rem);
   line-height: 1.02;
   letter-spacing: -.04em;
 }
