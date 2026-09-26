@@ -1292,7 +1292,7 @@
 }
 .nh-section-intro h2 {
   margin-top: .7rem;
-  font-size: clamp(2.7rem,5.2vw,4.5rem);
+  font-size: clamp(2rem,4vw,3.5rem);
   line-height: 1.02;
   letter-spacing: -.04em;
 }
@@ -1353,7 +1353,7 @@
 .nh-feature-violet .nh-feature-label { color: var(--nh-violet); }
 .nh-feature-panel h3 {
   margin-top: .6rem;
-  font-size: clamp(2.05rem,3vw,2.5rem);
+  font-size: 1.45rem;
   font-weight: 800;
   letter-spacing: -.025em;
 }
@@ -1373,8 +1373,8 @@
 }
 .nh-content-heading-gap { margin-top: 6.5rem; }
 .nh-content-heading h2 {
-  margin-top: .5rem;
-  font-size: clamp(2.8rem,5.2vw,4.35rem);
+  margin-top: .4rem;
+  font-size: clamp(1.8rem,3.4vw,2.8rem);
   letter-spacing: -.04em;
 }
 .nh-content-heading p {
@@ -1396,7 +1396,7 @@
 .nh-home .nh-heading-blue,
 .nh-home .nh-heading-red {
   display: inline-block;
-  font-size: clamp(1rem, 1.35vw, 1.2rem);
+  font-size: clamp(1.2rem, 1.65vw, 1.45rem);
   line-height: 1.2;
   font-weight: 800;
   letter-spacing: .12em;
