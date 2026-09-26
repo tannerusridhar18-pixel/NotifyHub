@@ -490,7 +490,7 @@ export default function DashboardClient() {
                               Archive
                             </button>
                           )}
-                          {x.status !== "PUBLISHED" && (
+                          {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => deleteAnnouncement(x.id), "Announcement deleted.")}
@@ -626,7 +626,7 @@ export default function DashboardClient() {
                               Archive
                             </button>
                           )}
-                          {x.status !== "PUBLISHED" && (
+                          {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}
