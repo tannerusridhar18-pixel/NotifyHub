@@ -160,11 +160,26 @@ public class UserController {
     @DeleteMapping("/admin/users/{publicId}")
     public ResponseEntity<ApiResponse<Void>> removeUser(Authentication actor, @PathVariable UUID publicId) {
         guardSuperAdminChange(actor, publicId, null, null);
+        guardDepartmentAdminTarget(actor, publicId);
         identity.removeUser(publicId);
         audit(actor, "USER_DELETE", publicId);
         return ResponseEntity.ok(ApiResponse.message("User account deleted."));
     }
 
+
+    private void guardDepartmentAdminTarget(Authentication actor, UUID targetPublicId) {
+        com.notifyhub.auth.User caller = users.findByUsername(actor.getName())
+                .or(() -> users.findByEmailIgnoreCase(actor.getName()))
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."));
+        if (!"DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())) return;
+        Long callerDepartmentId = caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
+        com.notifyhub.auth.User target = users.findByPublicId(targetPublicId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+        Long targetDepartmentId = target.getDepartmentEntity() != null ? target.getDepartmentEntity().getId() : null;
+        if (callerDepartmentId == null || !callerDepartmentId.equals(targetDepartmentId)) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin can only delete users in their own department.");
+        }
+    }
     @PatchMapping("/admin/users/{publicId}/status")
     public ResponseEntity<ApiResponse<Void>> status(Authentication actor, @PathVariable UUID publicId, @Valid @RequestBody StatusRequest request) {
         guardSuperAdminChange(actor, publicId, null, null);
