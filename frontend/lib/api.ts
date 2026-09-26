@@ -55,6 +55,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
   const method = (init.method || "GET").toUpperCase();
+  const publicRequest = isPublicRead(path, method);
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
     const token = csrf();
     if (token) headers.set("X-XSRF-TOKEN", token);
@@ -65,12 +66,12 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   } catch {
     throw new Error("NotifyHub cannot reach the server right now. Check that the backend is running, then try again.");
   }
-  if (response.status === 401 && retry && !path.startsWith("/auth/")) {
+  if (response.status === 401 && retry && !path.startsWith("/auth/") && !publicRequest) {
     if (await refresh()) return request<T>(path, init, false);
   }
   const body = (await response.json().catch(() => null)) as ApiResponse<T> | null;
   if (!response.ok || !body?.success) {
-    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined" && !path.startsWith("/auth/") && !isPublicRead(path, method)) {
+    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined" && !path.startsWith("/auth/") && !publicRequest) {
       window.location.assign(`/auth/login?reason=session-changed`);
     }
     throw new Error(friendlyMessage(response.status, body, path));
