@@ -26,7 +26,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     setError("");
     try {
       const user = await currentUser();
-      if (!user || (user.roleLevel !== 0 && user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+      if (!user || (user.roleLevel !== 0 && user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && user.role !== "DEPARTMENT_ADMIN")) {
         router.replace("/");
         return;
       }
