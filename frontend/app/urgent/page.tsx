@@ -19,7 +19,7 @@ export default function UrgentPage() {
   }, []);
 
   return (
-    <section className="mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
+    <section className="nh-public-page mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
       <Reveal className="max-w-[760px]">
         <span className="inline-flex items-center gap-2 rounded-full border border-danger/50 bg-gradient-to-r from-danger-soft via-[#3b121c] to-danger-soft px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-[#ff8ba0] uppercase shadow-[0_0_20px_rgba(244,63,94,0.4)] backdrop-blur-xl animate-pulse-glow">
           <span className="relative flex h-2 w-2 items-center justify-center">
