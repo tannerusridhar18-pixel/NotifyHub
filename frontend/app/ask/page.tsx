@@ -113,8 +113,24 @@ export default function AskPage() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
-      <Reveal className="mb-10 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+    <section
+      className="nh-public-page mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6"
+      onMouseMove={(e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+        e.currentTarget.style.setProperty("--orbit-x", `${x * 10}px`);
+        e.currentTarget.style.setProperty("--orbit-y", `${y * 8}px`);
+        e.currentTarget.style.setProperty("--orbit-rx", `${y * -4}deg`);
+        e.currentTarget.style.setProperty("--orbit-ry", `${x * 5}deg`);
+      }}>
+      <div className="nh-public-orbit" aria-hidden="true">
+          <div className="nh-public-stars" />
+          <div className="nh-public-sun"><span /></div>
+          <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
+          <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
+          <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
+        </div>
+<Reveal className="mb-10 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
         <div className="max-w-[680px]">
           <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_16px_rgba(99,102,241,0.25)] backdrop-blur-xl">
             <span className="relative flex h-2 w-2 items-center justify-center">
@@ -127,11 +143,6 @@ export default function AskPage() {
           <p className="text-base sm:text-lg leading-relaxed text-muted/95">
             Direct, confidential communication channel to campus administration, department chairs, and faculty staff.
           </p>
-        </div>
-        <div className="hidden h-[160px] w-[160px] flex-none place-items-center rounded-3xl border border-white/12 bg-gradient-to-br from-brand-50/95 via-surface-2/95 to-ink-900/95 shadow-lift backdrop-blur-2xl sm:grid animate-float transition-all duration-500 hover:scale-105 hover:border-brand-light/50 hover:shadow-glow">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white font-extrabold shadow-glow text-2xl">
-            ◈
-          </span>
         </div>
       </Reveal>
 

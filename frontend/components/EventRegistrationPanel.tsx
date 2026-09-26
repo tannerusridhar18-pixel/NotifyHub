@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { currentUser, eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
+import { useState } from "react";
+import { eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
 import type { EventItem } from "@/types";
 
 export default function EventRegistrationPanel({ event }: { event: EventItem }) {
@@ -8,20 +8,6 @@ export default function EventRegistrationPanel({ event }: { event: EventItem }) 
   const [registrations, setRegistrations] = useState<EventRegistration[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const u = await currentUser();
-        if (alive && u && registrations) {
-          const found = registrations.some((r) => r.studentEmail?.toLowerCase() === u.email?.toLowerCase());
-          if (found) setIsRegistered(true);
-        }
-      } catch {}
-    })();
-    return () => { alive = false; };
-  }, [registrations]);
 
   const closed = !event.registrationEnabled || (event.registrationDeadline != null && new Date(event.registrationDeadline) <= new Date());
   const reason = !event.registrationEnabled
