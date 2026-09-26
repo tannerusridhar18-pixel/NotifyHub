@@ -140,7 +140,7 @@ public class AnnouncementService {
     public AnnouncementDto update(Long id, Request r, String username) {
         assertCanManage(id, username);
         Announcement a = get(id);
-        if (a.getStatus() != AnnouncementStatus.DRAFT) throw conflict("Only draft announcements may be edited.");
+        if (a.getStatus() != AnnouncementStatus.DRAFT && a.getStatus() != AnnouncementStatus.ARCHIVED) throw conflict("Only draft or archived announcements may be edited.");
         User sender = user(username);
         List<String> targetList = parseTargets(r.recipientTargets());
         targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId(), r.targetType(), r.branchId(), r.sectionId(), r.userEmail(), r.role());
@@ -159,7 +159,7 @@ public class AnnouncementService {
 
     public AnnouncementDto publish(Long id) {
         Announcement a = get(id);
-        if (a.getStatus() != AnnouncementStatus.DRAFT) throw conflict("Only draft announcements may be published.");
+        if (a.getStatus() != AnnouncementStatus.DRAFT && a.getStatus() != AnnouncementStatus.ARCHIVED) throw conflict("Only draft or archived announcements may be published.");
         a.setStatus(AnnouncementStatus.PUBLISHED);
         a.setPublishedAt(Instant.now());
         events.publishEvent(new AnnouncementPublishedEvent(a.getId(), a.getTitle(), a.getContent(), a.isUrgent(), a.getTargetType(), a.getTargetDepartment() == null ? null : a.getTargetDepartment().getId(), a.getTargetBranch() == null ? null : a.getTargetBranch().getId(), a.getTargetSection() == null ? null : a.getTargetSection().getId(), a.getTargetHostel() == null ? null : a.getTargetHostel().getId(), a.getTargetUser() == null ? null : a.getTargetUser().getId(), a.getTargetRole()));
