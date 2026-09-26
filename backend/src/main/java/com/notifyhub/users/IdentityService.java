@@ -118,6 +118,7 @@ public class IdentityService {
         int start = (int) pageable.getOffset(), end = Math.min(start + pageable.getPageSize(), filtered.size());
         return new PageImpl<>(start >= filtered.size() ? List.of() : filtered.subList(start, end), pageable, filtered.size());
     }
+
     private boolean matchesFilters(User user, Map<String, String> f) {
         if (f.containsKey("department")) {
             Long id = numeric(f.get("department"));
@@ -133,7 +134,14 @@ public class IdentityService {
                 && (!f.containsKey("hostel") || (p.getHostel() != null && p.getHostel().getId().equals(numeric(f.get("hostel")))))
                 && (!f.containsKey("block") || (p.getBlock() != null && p.getBlock().getId().equals(numeric(f.get("block")))));
     }
-    private Long numeric(String value) { try { return Long.valueOf(value); } catch (Exception e) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Filter values must be numeric ids."); } }
+
+    private Long numeric(String value) {
+        try {
+            return Long.valueOf(value);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Filter values must be numeric ids.");
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<EnrollmentItem> listEnrollments() {
@@ -264,9 +272,13 @@ public class IdentityService {
     public void removeUser(UUID publicId) {
         User user = users.findByPublicId(publicId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
-        if (user.getEffectiveLevel() == 0 && users.findAll().stream().filter(u -> u.getEffectiveLevel() == 0 && u.isActive()).count() <= 1) {
+        if (user.isDeleted()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
+        }
+        if (user.getEffectiveLevel() == 0 && users.findAll().stream().filter(u -> !u.isDeleted() && u.getEffectiveLevel() == 0 && u.isActive()).count() <= 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot remove the only active Super Admin.");
         }
+        user.setDeleted(true);
         user.setAccountStatus(AccountStatus.INACTIVE);
         user.setActive(false);
         users.save(user);
@@ -290,7 +302,9 @@ public class IdentityService {
         users.save(user);
     }
 
-    public User user(String username) { return users.findByUsername(username).orElseGet(() -> users.findByEmailIgnoreCase(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."))); }
+    public User user(String username) {
+        return users.findByUsername(username).orElseGet(() -> users.findByEmailIgnoreCase(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required.")));
+    }
 
     private UserListItem toUserListItem(User u) {
         return new UserListItem(
@@ -350,7 +364,9 @@ public class IdentityService {
             );
         }
     }
+
     public record StudentView(String studentId, String name, Long departmentId, Long branchId, Long sectionId, int year, int semester, boolean hosteller, String phone, String personalEmail) { }
+
     public record FacultyView(String facultyId, String name, Long departmentId, String phone, String designation, List<FacultyDeptMappingDto> departments) { }
 
     public record UserListItem(
