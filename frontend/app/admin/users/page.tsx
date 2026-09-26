@@ -318,7 +318,7 @@ export default function ManageUsersPage() {
             <div className="mb-3 flex flex-wrap items-center gap-3">
               <div>
                 <h2 className="text-sm font-extrabold text-ink">Directory filters</h2>
-                <p className="text-xs text-muted">Use the primary filters first; open more filters for academic details.</p>
+                <p className="text-xs text-muted">Filter users by search, role, department, status, year, section, hostel, and block.</p>
               </div>
               <button
                 type="button"
@@ -329,17 +329,7 @@ export default function ManageUsersPage() {
                 Clear all filters
               </button>
             </div>
-            <button
-              type="button"
-              aria-expanded={advancedFiltersOpen}
-              aria-controls="advanced-user-filters"
-              onClick={() => setAdvancedFiltersOpen((open) => !open)}
-              className="mb-3 rounded-xl border border-border bg-surface-2 px-3.5 py-2 text-xs font-bold text-ink transition-colors hover:border-brand-light/50 hover:bg-surface-3"
-            >
-              {advancedFiltersOpen ? "Hide more filters" : "More filters"}
-              <span className="ml-1.5 text-muted">(Year, Section, Hostel, Block)</span>
-            </button>
-            <div id="advanced-user-filters" hidden={!advancedFiltersOpen} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div id="advanced-user-filters" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {USER_FILTER_CONFIG.map((filter) => (
                 <div key={filter.key}>
                   <label className="mb-1 block text-xs font-bold text-muted">{filter.label}</label>
