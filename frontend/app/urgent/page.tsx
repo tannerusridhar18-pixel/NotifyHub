@@ -1,15 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { announcements } from "@/lib/api";
 import type { Announcement } from "@/types";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import { Empty, ErrorState, CardSkeletons } from "@/components/States";
 import Reveal from "@/components/ui/Reveal";
+import { inputBase } from "@/components/ui/classes";
 
 export default function UrgentPage() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     announcements({ size: 50, urgent: true })
@@ -17,6 +19,11 @@ export default function UrgentPage() {
       .catch((e) => setError(e instanceof Error ? e.message : "Unable to load urgent alerts."))
       .finally(() => setLoading(false));
   }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return items.filter((x) => !q || x.title.toLowerCase().includes(q) || x.content.toLowerCase().includes(q));
+  }, [items, query]);
 
   return (
     <section
@@ -51,12 +58,30 @@ export default function UrgentPage() {
         </p>
       </Reveal>
 
+      {!loading && !error && items.length > 0 && (
+        <Reveal delay={100} className="my-8 flex flex-wrap items-center gap-3.5 rounded-2xl border border-danger/20 bg-surface/85 p-3.5 shadow-lift backdrop-blur-2xl">
+          <div className="relative min-w-[260px] flex-1">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ff8ba0] text-sm pointer-events-none">⌕</span>
+            <input
+              className={inputBase + " !pl-10 !bg-surface-2/95 focus:!border-danger/50"}
+              placeholder="Search urgent alerts…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search urgent alerts"
+            />
+          </div>
+          <span className="rounded-xl border border-danger/25 bg-danger-soft/20 px-4 py-3 text-xs font-bold text-[#ff8ba0]">
+            Priority channel
+          </span>
+        </Reveal>
+      )}
+
       <div className="mt-8">
         {loading ? (
           <CardSkeletons count={4} />
         ) : error ? (
           <ErrorState message={error} />
-        ) : items.length ? (
+        ) : filtered.length ? (
           <div className="grid gap-5 sm:grid-cols-2">
             {items.map((x, i) => (
               <Reveal key={x.id} delay={Math.min(i, 6) * 70}>
@@ -65,7 +90,7 @@ export default function UrgentPage() {
             ))}
           </div>
         ) : (
-          <Empty label="urgent alerts" />
+          <Empty label="urgent alerts matching your search" />
         )}
       </div>
     </section>
