@@ -59,6 +59,8 @@ export default function ManageUsersPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [scopedFilters, setScopedFilters] = useState<Partial<Record<ScopedFilterKey, string>>>({});
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState("");
+  const [currentUserDepartmentId, setCurrentUserDepartmentId] = useState<number | null>(null);
 
   // Create Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -82,10 +84,11 @@ export default function ManageUsersPage() {
     setError("");
     try {
       const hasScopedFilters = Object.values(scopedFilters).some(Boolean);
+      const isDepartmentAdmin = currentUserRole === "DEPARTMENT_ADMIN";
       const [uList, rList, dList, sList, hList, bList, eList] = await Promise.all([
         hasScopedFilters ? queryUsersByFilters(scopedFilters as Record<string, string>) : listAdminUsers({
           role: roleFilter || undefined,
-          departmentId: deptFilter ? Number(deptFilter) : undefined,
+          departmentId: isDepartmentAdmin ? currentUserDepartmentId ?? undefined : (deptFilter ? Number(deptFilter) : undefined),
           search: searchQuery || undefined,
           status: statusFilter || undefined,
         }),
@@ -108,7 +111,7 @@ export default function ManageUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, deptFilter, searchQuery, statusFilter, scopedFilters]);
+  }, [roleFilter, deptFilter, searchQuery, statusFilter, scopedFilters, currentUserRole, currentUserDepartmentId]);
 
   const scopedFilterOptions = (key: ScopedFilterKey): FilterOption[] => {
     switch (key) {
@@ -127,9 +130,11 @@ export default function ManageUsersPage() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && (!u || u.roleLevel !== 0)) {
+        if (alive && (!u || ![0, 3].includes(u.roleLevel))) {
           router.replace("/");
         } else if (alive) {
+          setCurrentUserRole(u.role);
+          setCurrentUserDepartmentId(u.departmentId ?? null);
           await load();
         }
       } catch (e) {
@@ -374,7 +379,8 @@ export default function ManageUsersPage() {
               <label className="mb-1 block text-xs font-bold text-muted">Department</label>
               <select
                 className={inputBase}
-                value={deptFilter}
+                value={currentUserRole === "DEPARTMENT_ADMIN" && currentUserDepartmentId != null ? String(currentUserDepartmentId) : deptFilter}
+                disabled={currentUserRole === "DEPARTMENT_ADMIN"}
                 onChange={(e) => setDeptFilter(e.target.value)}
               >
                 <option value="">All Departments</option>
@@ -461,28 +467,35 @@ export default function ManageUsersPage() {
                         </td>
                         <td className="py-3.5 px-3 text-right">
                           <div className="flex flex-wrap justify-end gap-2">
-                            <button
-                              onClick={() => openEdit(u)}
-                              className="rounded-xl border border-brand/40 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-light transition-colors hover:bg-brand-50/80"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => void handleToggleStatus(u)}
-                              className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
-                                u.active
-                                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
-                                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-                              }`}
-                            >
-                              {u.active ? "Deactivate" : "Activate"}
-                            </button>
-                            <button
-                              onClick={() => void handleDeleteUser(u)}
-                              className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-xs font-bold text-danger-light transition-colors hover:border-danger/60 hover:bg-danger-soft/80"
-                            >
-                              Delete
-                            </button>
+                            {currentUserRole === "DEPARTMENT_ADMIN" ? (
+                              <span className="text-xs font-bold text-muted">Department user</span>
+                            ) : (
+                              <>
+                                                            <button
+                                                              onClick={() => openEdit(u)}
+                                                              className="rounded-xl border border-brand/40 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-light transition-colors hover:bg-brand-50/80"
+                                                            >
+                                                              Edit
+                                                            </button>
+                                                            <button
+                                                              onClick={() => void handleToggleStatus(u)}
+                                                              className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                                                                u.active
+                                                                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                                                                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                                              }`}
+                                                            >
+                                                              {u.active ? "Deactivate" : "Activate"}
+                                                            </button>
+                                                            <button
+                                                              onClick={() => void handleDeleteUser(u)}
+                                                              className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-xs font-bold text-danger-light transition-colors hover:border-danger/60 hover:bg-danger-soft/80"
+                                                            >
+                                                              Delete
+                                                            </button>
+                                
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
