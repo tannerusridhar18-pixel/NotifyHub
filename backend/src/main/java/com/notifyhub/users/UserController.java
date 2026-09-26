@@ -71,6 +71,7 @@ public class UserController {
 
     @GetMapping("/admin/users")
     public ResponseEntity<ApiResponse<PageResponse<IdentityService.UserListItem>>> listUsers(
+            Authentication authentication,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String role,
             @RequestParam(required = false) Long departmentId,
@@ -78,6 +79,15 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size
     ) {
+        com.notifyhub.auth.User caller = users.findByUsername(authentication.getName())
+                .or(() -> users.findByEmailIgnoreCase(authentication.getName()))
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."));
+        if ("DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())) {
+            departmentId = caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
+            if (departmentId == null) {
+                throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+            }
+        }
         Page<IdentityService.UserListItem> paged = identity.listUsers(search, role, departmentId, status, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 200), Sort.by(Sort.Direction.DESC, "createdAt")));
         return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(paged)));
     }
@@ -92,11 +102,20 @@ public class UserController {
                 .map(com.notifyhub.auth.User::getEffectiveRoleName).orElse("STUDENT");
         if ("STUDENT".equalsIgnoreCase(callerRole))
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied.");
+        com.notifyhub.auth.User caller = users.findByUsername(authentication.getName())
+                .or(() -> users.findByEmailIgnoreCase(authentication.getName()))
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."));
+        boolean departmentAdmin = "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName());
+        Long callerDepartmentId = caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
+        if (departmentAdmin && callerDepartmentId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        }
         Map<String, String> filters = new LinkedHashMap<>();
         query.forEach((key, values) -> {
             if (key.startsWith("filter[") && key.endsWith("]") && !values.isEmpty())
                 filters.put(key.substring(7, key.length() - 1), values.get(0));
         });
+        if (departmentAdmin) filters.put("department", String.valueOf(callerDepartmentId));
         Page<IdentityService.UserListItem> result = identity.listUsers(filters, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 200), Sort.by(Sort.Direction.DESC, "createdAt")));
         return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(result)));
     }
