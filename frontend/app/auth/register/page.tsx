@@ -5,6 +5,7 @@ import Link from "next/link";
 import { registerUser } from "@/lib/api";
 import Field from "@/components/ui/Field";
 import styles from "../AuthKit.module.css";
+import AuthFloatingCards from "@/components/auth/AuthFloatingCards";
 
 export default function Register() {
   const router = useRouter();
@@ -47,7 +48,8 @@ export default function Register() {
     <main className={styles.page}>
       <div className={styles.ambient} />
       <div className={styles.shell}>
-        <div className={styles.stack}>
+        <div className={`${styles.stack} ${styles["authkit-hero"]}`}>
+          <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
             <span>NotifyHub</span>
