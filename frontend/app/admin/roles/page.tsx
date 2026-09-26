@@ -5,6 +5,7 @@ import {
   currentUser,
   listRoles,
   createRole,
+  deleteRole,
   type RoleItem,
 } from "@/lib/api";
 import { ErrorState, Loading } from "@/components/States";
@@ -13,6 +14,16 @@ import Button from "@/components/ui/Button";
 import Field from "@/components/ui/Field";
 import Counter from "@/components/ui/Counter";
 import { inputBase } from "@/components/ui/classes";
+
+const FIXED_ROLE_NAMES = new Set([
+  "SUPER_ADMIN",
+  "PRINCIPAL",
+  "DEAN",
+  "HOD",
+  "DEPARTMENT_ADMIN",
+  "FACULTY",
+  "STUDENT",
+]);
 
 const TARGET_ROLE_OPTIONS = [
   { label: "Everyone / All (L0)", level: 0 },
@@ -94,6 +105,25 @@ export default function ManageRolesPage() {
     }
   }
 
+  async function handleDeleteRole(role: RoleItem) {
+    if (FIXED_ROLE_NAMES.has(role.name.toUpperCase())) return;
+    const confirmed = window.confirm(
+      `Delete custom role "${role.name}"? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteRole(role.id);
+      setRoles((current) => current.filter((item) => item.id !== role.id));
+      setToast({ message: `Role "${role.name}" deleted successfully.`, type: "success" });
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : "Failed to delete role.",
+        type: "error",
+      });
+    }
+  }
+
   const toggleTarget = (targetLevel: number) => {
     setCanPostTo((prev) =>
       prev.includes(targetLevel) ? prev.filter((t) => t !== targetLevel) : [...prev, targetLevel]
@@ -149,6 +179,7 @@ export default function ManageRolesPage() {
                   <th className="py-3 px-3">Parent Role</th>
                   <th className="py-3 px-3">Can Post To</th>
                   <th className="py-3 px-3">Scope</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -189,7 +220,20 @@ export default function ManageRolesPage() {
                         </div>
                       </td>
                       <td className="py-3.5 px-3 text-muted">
-                        {r.createdBy ? "Custom Role" : "System Built-in"}
+                        {FIXED_ROLE_NAMES.has(r.name.toUpperCase()) ? "System Built-in" : "Custom Role"}
+                      </td>
+                      <td className="py-3.5 px-3 text-right">
+                        {FIXED_ROLE_NAMES.has(r.name.toUpperCase()) ? (
+                          <span className="text-[10px] font-bold text-muted">Protected</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteRole(r)}
+                            className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-extrabold text-red-300 transition hover:bg-red-500/20"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
