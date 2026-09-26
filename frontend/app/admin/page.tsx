@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { currentUser, login } from "@/lib/api";
 import styles from "../auth/AuthKit.module.css";
+import AuthFloatingCards from "@/components/auth/AuthFloatingCards";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -48,7 +49,8 @@ export default function AdminLogin() {
     <main className={styles.page}>
       <div className={styles.ambient} />
       <div className={styles.shell}>
-        <div className={styles.stack}>
+        <div className={`${styles.stack} ${styles["authkit-hero"]}`}>
+          <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
             <span>NotifyHub</span>
