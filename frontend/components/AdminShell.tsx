@@ -132,7 +132,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </div>
           <div className="grid min-w-0 gap-0.5">
             <strong className="text-xs font-extrabold text-ink">Super Admin</strong>
-            <span className="truncate text-[10px] font-semibold text-muted">{email}</span>
+            <span className="truncate text-xs font-semibold text-muted">{email}</span>
           </div>
         </div>
 
