@@ -16,6 +16,7 @@ import {
   publishEvent,
   unpublishEvent,
   cancelEvent,
+  archiveEvent,
   deleteEvent,
   deleteQuery,
   createInvitation,
@@ -479,7 +480,7 @@ export default function DashboardClient() {
                               Unpublish
                             </button>
                           )}
-                          {x.status !== "ARCHIVED" && (
+                          {true && (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => archiveAnnouncement(x.id), "Announcement archived.")}
@@ -487,7 +488,7 @@ export default function DashboardClient() {
                               Archive
                             </button>
                           )}
-                          {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
+                          {x.status !== "PUBLISHED" && (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => deleteAnnouncement(x.id), "Announcement deleted.")}
@@ -615,7 +616,15 @@ export default function DashboardClient() {
                               Cancel
                             </button>
                           )}
-                          {x.status !== "PUBLISHED" && x.status !== "CANCELLED" && (
+                          {true && (
+                            <button
+                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
+                              onClick={() => void act(() => archiveEvent(x.id), "Event archived.")}
+                            >
+                              Archive
+                            </button>
+                          )}
+                          {x.status !== "PUBLISHED" && (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}
