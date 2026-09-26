@@ -594,7 +594,7 @@ export default function DashboardClient() {
                           <StatusBadge status={x.status} />
                         </td>
                         <td className="flex flex-wrap gap-1.5 border-b border-border p-3 align-top">
-                          {(x.status === "DRAFT" || x.status === "ARCHIVED") && (
+                          {x.status === "DRAFT" && (
                             <button
                               className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
                               onClick={() => void act(() => publishEvent(x.id), "Event published.")}
@@ -618,7 +618,14 @@ export default function DashboardClient() {
                               Cancel
                             </button>
                           )}
-                          {true && (
+                          {x.status === "ARCHIVED" ? (
+                            <button
+                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
+                              onClick={() => void act(() => unarchiveEvent(x.id), "Event unarchived.")}
+                            >
+                              Unarchive
+                            </button>
+                          ) : (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => archiveEvent(x.id), "Event archived.")}
