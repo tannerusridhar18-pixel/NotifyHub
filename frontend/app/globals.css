@@ -1518,6 +1518,17 @@
   transform:translate3d(calc(-50% + var(--orbit-x)),var(--orbit-y),0) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry))!important;
   opacity:.76!important;
 }
+/* Home-only orbit placement: centered and enlarged without affecting public pages */
+.nh-home .nh-public-orbit-home {
+  top: 50%!important;
+  left: 50%!important;
+  right: auto!important;
+  width: min(1350px, 110vw)!important;
+  height: min(1350px, 110vw)!important;
+  margin: 0!important;
+  transform: translate3d(-50%, -50%, 0)!important;
+  opacity: .76!important;
+}
 .nh-home .nh-public-orbit-d { width:820px;height:350px;margin:-175px 0 0 -410px;transform:rotateX(70deg) rotateZ(-65deg);animation:nh-public-orbit-d 35s linear infinite reverse; }
 .nh-home .nh-public-orbit-e { width:410px;height:180px;margin:-90px 0 0 -205px;transform:rotateX(63deg) rotateZ(86deg);animation:nh-public-orbit-e 15s linear infinite; }
 .nh-home .nh-public-orbit-f { width:940px;height:400px;margin:-200px 0 0 -470px;transform:rotateX(74deg) rotateZ(34deg);animation:nh-public-orbit-f 42s linear infinite reverse; }
