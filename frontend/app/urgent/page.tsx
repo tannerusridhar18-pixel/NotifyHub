@@ -29,6 +29,14 @@ export default function UrgentPage() {
         e.currentTarget.style.setProperty("--orbit-rx", `${y * -4}deg`);
         e.currentTarget.style.setProperty("--orbit-ry", `${x * 5}deg`);
       }}>
+      <div className="nh-public-orbit" aria-hidden="true">
+        <div className="nh-public-stars" />
+        <div className="nh-public-sun" />
+        <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
+        <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
+        <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
+      </div>
+
       <Reveal className="max-w-[760px]">
         <span className="inline-flex items-center gap-2 rounded-full border border-danger/50 bg-gradient-to-r from-danger-soft via-[#3b121c] to-danger-soft px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-[#ff8ba0] uppercase shadow-[0_0_20px_rgba(244,63,94,0.4)] backdrop-blur-xl animate-pulse-glow">
           <span className="relative flex h-2 w-2 items-center justify-center">
@@ -43,7 +51,7 @@ export default function UrgentPage() {
         </p>
       </Reveal>
 
-      <div className="mt-12">
+      <div className="mt-8">
         {loading ? (
           <CardSkeletons count={4} />
         ) : error ? (
