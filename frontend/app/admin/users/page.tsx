@@ -29,10 +29,9 @@ import Field from "@/components/ui/Field";
 import Counter from "@/components/ui/Counter";
 import { inputBase } from "@/components/ui/classes";
 
-type ScopedFilterKey = "department" | "year" | "section" | "hostel" | "block";
+type ScopedFilterKey = "year" | "section" | "hostel" | "block";
 type FilterOption = { id: number | string; label: string };
 const USER_FILTER_CONFIG: Array<{ key: ScopedFilterKey; label: string; allLabel: string }> = [
-  { key: "department", label: "Department", allLabel: "All departments" },
   { key: "year", label: "Year", allLabel: "All years" },
   { key: "section", label: "Section", allLabel: "All sections" },
   { key: "hostel", label: "Hostel", allLabel: "All hostels" },
@@ -59,6 +58,7 @@ export default function ManageUsersPage() {
   const [deptFilter, setDeptFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [scopedFilters, setScopedFilters] = useState<Partial<Record<ScopedFilterKey, string>>>({});
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
 
   // Create Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -256,18 +256,18 @@ export default function ManageUsersPage() {
 
       <header className="mb-7 flex flex-col items-start justify-between gap-6 sm:flex-row">
         <div>
-          <span className="text-[11px] font-extrabold text-brand">Identity & Directory</span>
+          <span className="text-xs font-extrabold text-brand">Identity & Directory</span>
           <h1 className="mt-1.5 text-[32px] leading-tight sm:text-4xl lg:text-[46px]">Manage Users</h1>
           <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted">
             Directory of campus accounts across all authority tiers. Provision leadership accounts, assign department affiliations, and audit enrollments.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           <div className="grid min-w-[110px] gap-1 rounded-2xl border border-border bg-surface p-4">
             <strong className="font-display text-2xl">
               <Counter value={users.length} />
             </strong>
-            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted">Total Accounts</span>
+            <span className="text-xs font-bold tracking-wide text-muted">Total Accounts</span>
           </div>
           <Button onClick={() => setIsCreateOpen(true)}>+ Provision User</Button>
         </div>
@@ -302,24 +302,34 @@ export default function ManageUsersPage() {
       {activeTab === "users" ? (
         <div className="space-y-4">
           <section className="rounded-2xl border border-brand/25 bg-brand-50/30 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
               <div>
                 <h2 className="text-sm font-extrabold text-ink">Directory filters</h2>
-                <p className="text-xs text-muted">Combine any dimensions to narrow results.</p>
+                <p className="text-xs text-muted">Use the primary filters first; open more filters for academic details.</p>
               </div>
               <button
                 type="button"
                 onClick={clearScopedFilters}
                 disabled={!Object.values(scopedFilters).some(Boolean)}
-                className="text-xs font-bold text-brand-light disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-light transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Clear all filters
               </button>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <button
+              type="button"
+              aria-expanded={advancedFiltersOpen}
+              aria-controls="advanced-user-filters"
+              onClick={() => setAdvancedFiltersOpen((open) => !open)}
+              className="mb-3 rounded-xl border border-border bg-surface-2 px-3.5 py-2 text-xs font-bold text-ink transition-colors hover:border-brand-light/50 hover:bg-surface-3"
+            >
+              {advancedFiltersOpen ? "Hide more filters" : "More filters"}
+              <span className="ml-1.5 text-muted">(Year, Section, Hostel, Block)</span>
+            </button>
+            <div id="advanced-user-filters" hidden={!advancedFiltersOpen} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {USER_FILTER_CONFIG.map((filter) => (
                 <div key={filter.key}>
-                  <label className="mb-1 block text-[10px] font-bold uppercase text-muted">{filter.label}</label>
+                  <label className="mb-1 block text-xs font-bold text-muted">{filter.label}</label>
                   <select
                     className={inputBase}
                     value={scopedFilters[filter.key] ?? ""}
@@ -337,7 +347,7 @@ export default function ManageUsersPage() {
           {/* Filter Bar */}
           <div className="grid gap-3 rounded-2xl border border-white/10 bg-surface/90 p-4 sm:grid-cols-4">
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Search Query</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Search Query</label>
               <input
                 className={inputBase}
                 placeholder="Search email, username..."
@@ -346,7 +356,7 @@ export default function ManageUsersPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Role</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Role</label>
               <select
                 className={inputBase}
                 value={roleFilter}
@@ -361,7 +371,7 @@ export default function ManageUsersPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Department</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Department</label>
               <select
                 className={inputBase}
                 value={deptFilter}
@@ -376,7 +386,7 @@ export default function ManageUsersPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Status</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Status</label>
               <select
                 className={inputBase}
                 value={statusFilter}
@@ -420,7 +430,7 @@ export default function ManageUsersPage() {
                         </td>
                         <td className="py-3.5 px-3">
                           <span className="inline-flex items-center gap-1.5 rounded-lg border border-brand/30 bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-light">
-                            <span>{u.role}</span>
+                            <span>{u.role.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase())}</span>
                             <span className="font-mono text-[9px] text-muted">L{u.level}</span>
                           </span>
                         </td>
@@ -450,16 +460,16 @@ export default function ManageUsersPage() {
                           </span>
                         </td>
                         <td className="py-3.5 px-3 text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex flex-wrap justify-end gap-2">
                             <button
                               onClick={() => openEdit(u)}
-                              className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1 text-[10px] font-bold text-brand-light hover:bg-brand-50/80"
+                              className="rounded-xl border border-brand/40 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-light transition-colors hover:bg-brand-50/80"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => void handleToggleStatus(u)}
-                              className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold ${
+                              className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
                                 u.active
                                   ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
                                   : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
@@ -469,7 +479,7 @@ export default function ManageUsersPage() {
                             </button>
                             <button
                               onClick={() => void handleDeleteUser(u)}
-                              className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[10px] font-bold text-red-400 hover:bg-red-500/20 hover:border-red-500/50"
+                              className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-xs font-bold text-danger-light transition-colors hover:border-danger/60 hover:bg-danger-soft/80"
                             >
                               Delete
                             </button>
