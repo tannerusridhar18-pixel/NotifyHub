@@ -1391,6 +1391,18 @@
   letter-spacing: .16em;
   text-transform: uppercase;
 }
+/* Home section labels — make the small category headings clearly readable */
+.nh-home .nh-heading-green,
+.nh-home .nh-heading-blue,
+.nh-home .nh-heading-red {
+  display: inline-block;
+  font-size: clamp(1rem, 1.35vw, 1.2rem);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
 .nh-card-grid {
   display: grid;
   grid-template-columns: repeat(3,minmax(0,1fr));
