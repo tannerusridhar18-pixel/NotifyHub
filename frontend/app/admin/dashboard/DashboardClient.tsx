@@ -482,7 +482,14 @@ export default function DashboardClient() {
                               Unpublish
                             </button>
                           )}
-                          {x.status !== "ARCHIVED" && (
+                          {x.status === "ARCHIVED" ? (
+                            <button
+                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
+                              onClick={() => void act(() => unarchiveAnnouncement(x.id), "Announcement unarchived.")}
+                            >
+                              Unarchive
+                            </button>
+                          ) : (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => archiveAnnouncement(x.id), "Announcement archived.")}
