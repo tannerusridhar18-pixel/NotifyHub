@@ -18,7 +18,6 @@ import java.util.List;
 public class RoleService {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final RoleRepository roleRepository;
     private static final java.util.Set<String> FIXED_ROLE_NAMES = java.util.Set.of(
             "SUPER_ADMIN", "PRINCIPAL", "DEAN", "HOD", "DEPARTMENT_ADMIN", "FACULTY", "STUDENT"
     );
