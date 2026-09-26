@@ -414,6 +414,7 @@ export const createRole = (p: { name: string; level: number; parentRoleId?: numb
   request<RoleItem>("/admin/roles", { method: "POST", body: JSON.stringify(p) });
 export const updateRole = (id: number, p: { name?: string; level?: number; parentRoleId?: number; canPostTo?: number[] }) =>
   request<RoleItem>(`/admin/roles/${id}`, { method: "PUT", body: JSON.stringify(p) });
+export const deleteRole = (id: number) => request<void>(`/admin/roles/${id}`, { method: "DELETE" });
 export const RBAC_PERMISSIONS = ["USER_INVITE", "USER_EDIT", "USER_DELETE", "ANNOUNCEMENT_CREATE", "ANNOUNCEMENT_DELETE", "EVENT_CREATE", "EVENT_DELETE", "ROLE_CREATE", "ROLE_ASSIGN", "ROLE_EDIT", "ROLE_REVOKE"] as const;
 export type RbacPermission = typeof RBAC_PERMISSIONS[number];
 export type ScopedRole = { id: number; name: string; systemRole: boolean; superadmin: boolean; permissions: RbacPermission[] };
