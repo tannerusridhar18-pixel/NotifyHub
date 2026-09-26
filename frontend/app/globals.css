@@ -747,6 +747,7 @@
   --nh-cyan: #76d7ff;
   --nh-red: #ff5d73;
 }
+.nh-home-hero-inner { position:relative; z-index:2; }
 .nh-home .nh-hero {
   background:
     radial-gradient(700px circle at 50% 30%, rgba(184,255,90,.055), transparent 65%),
@@ -1291,7 +1292,7 @@
 }
 .nh-section-intro h2 {
   margin-top: .7rem;
-  font-size: clamp(2.3rem,4.6vw,4rem);
+  font-size: clamp(2.7rem,5.2vw,4.5rem);
   line-height: 1.02;
   letter-spacing: -.04em;
 }
@@ -1352,7 +1353,7 @@
 .nh-feature-violet .nh-feature-label { color: var(--nh-violet); }
 .nh-feature-panel h3 {
   margin-top: .6rem;
-  font-size: clamp(1.9rem,2.8vw,2.25rem);
+  font-size: clamp(2.05rem,3vw,2.5rem);
   font-weight: 800;
   letter-spacing: -.025em;
 }
@@ -1370,10 +1371,10 @@
   gap: 1.5rem;
   margin-bottom: 1.75rem;
 }
-.nh-content-heading-gap { margin-top: 8rem; }
+.nh-content-heading-gap { margin-top: 6.5rem; }
 .nh-content-heading h2 {
-  margin-top: .45rem;
-  font-size: clamp(2.55rem,4.8vw,3.9rem);
+  margin-top: .5rem;
+  font-size: clamp(2.8rem,5.2vw,4.35rem);
   letter-spacing: -.04em;
 }
 .nh-content-heading p {
@@ -1496,7 +1497,7 @@
 @media (prefers-reduced-motion:reduce){.nh-public-page > .nh-public-orbit *{animation:none!important;}.nh-public-page > .nh-public-orbit{transition:none;}}
 /* Home-only cosmic system: centered, larger, and richer than public sub-pages */
 .nh-home .nh-public-orbit-home {
-  top:-125px!important;
+  top:-90px!important;
   left:50%!important;
   right:auto!important;
   width:min(1220px,100vw)!important;
