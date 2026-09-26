@@ -88,6 +88,7 @@ export default function Home() {
           <div className="nh-public-orbit-path nh-public-orbit-f"><i className="nh-public-planet nh-public-planet-f" /></div>
         </div>
 
+        <div className="nh-qronos-cyclone" aria-hidden="true"><span className="nh-qronos-cyclone-core" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-1" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-2" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-3" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-1" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-2" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-3" /></div>
         <div className="nh-bg-animation" aria-hidden="true">
           <span className="nh-bg-orb nh-bg-orb-1" />
           <span className="nh-bg-orb nh-bg-orb-2" />
