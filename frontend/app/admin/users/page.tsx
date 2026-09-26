@@ -307,7 +307,8 @@ export default function ManageUsersPage() {
         >
           Student Enrollments ({enrollments.length})
         </button>
-      </div>\n        )}
+        )}
+      </div>
 
       {error && <ErrorState message={error} onRetry={() => void load()} />}
 
