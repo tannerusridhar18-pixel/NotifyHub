@@ -1352,7 +1352,7 @@
 .nh-feature-violet .nh-feature-label { color: var(--nh-violet); }
 .nh-feature-panel h3 {
   margin-top: .6rem;
-  font-size: clamp(1.65rem,2.5vw,2rem);
+  font-size: clamp(1.9rem,2.8vw,2.25rem);
   font-weight: 800;
   letter-spacing: -.025em;
 }
@@ -1372,8 +1372,8 @@
 }
 .nh-content-heading-gap { margin-top: 8rem; }
 .nh-content-heading h2 {
-  margin-top: .4rem;
-  font-size: clamp(2.15rem,4vw,3.25rem);
+  margin-top: .45rem;
+  font-size: clamp(2.55rem,4.8vw,3.9rem);
   letter-spacing: -.04em;
 }
 .nh-content-heading p {
@@ -1494,3 +1494,24 @@
 @keyframes nh-public-sun-pulse { 50% { transform:translate(-50%,-50%) scale(1.08); } }
 @media (max-width:680px){ .nh-public-page > .nh-public-orbit{top:-70px;right:-280px;transform:translate3d(var(--orbit-x),var(--orbit-y),0) scale(.7) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry));} .nh-public-orbit-home{top:80px!important;right:50%!important;width:700px!important;height:700px!important;margin-right:-350px;opacity:.5!important;} }
 @media (prefers-reduced-motion:reduce){.nh-public-page > .nh-public-orbit *{animation:none!important;}.nh-public-page > .nh-public-orbit{transition:none;}}
+/* Home-only cosmic system: centered, larger, and richer than public sub-pages */
+.nh-home .nh-public-orbit-home {
+  top:-125px!important;
+  left:50%!important;
+  right:auto!important;
+  width:min(1220px,100vw)!important;
+  height:min(1220px,100vw)!important;
+  margin:0!important;
+  transform:translate3d(calc(-50% + var(--orbit-x)),var(--orbit-y),0) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry))!important;
+  opacity:.76!important;
+}
+.nh-home .nh-public-orbit-d { width:820px;height:350px;margin:-175px 0 0 -410px;transform:rotateX(70deg) rotateZ(-65deg);animation:nh-public-orbit-d 35s linear infinite reverse; }
+.nh-home .nh-public-orbit-e { width:410px;height:180px;margin:-90px 0 0 -205px;transform:rotateX(63deg) rotateZ(86deg);animation:nh-public-orbit-e 15s linear infinite; }
+.nh-home .nh-public-orbit-f { width:940px;height:400px;margin:-200px 0 0 -470px;transform:rotateX(74deg) rotateZ(34deg);animation:nh-public-orbit-f 42s linear infinite reverse; }
+.nh-home .nh-public-planet-d { color:#b8ff5a;background:#b8ff5a;width:22px;height:22px;top:-11px;margin-left:-11px; }
+.nh-home .nh-public-planet-e { color:#f5c451;background:#f5c451;width:11px;height:11px;top:-5.5px;margin-left:-5.5px; }
+.nh-home .nh-public-planet-f { color:#f7f7ff;background:#f7f7ff;width:9px;height:9px;top:-4.5px;margin-left:-4.5px; }
+@media (max-width:680px){
+  .nh-home .nh-public-orbit-home{top:-20px!important;width:760px!important;height:760px!important;}
+}
+
