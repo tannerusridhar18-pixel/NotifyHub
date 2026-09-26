@@ -476,7 +476,12 @@ export default function ManageUsersPage() {
                         <td className="py-3.5 px-3 text-right">
                           <div className="flex flex-wrap justify-end gap-2">
                             {currentUserRole === "DEPARTMENT_ADMIN" ? (
-                              <span className="text-xs font-bold text-muted">Department user</span>
+                              <button
+                                onClick={() => void handleDeleteUser(u)}
+                                className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-xs font-bold text-danger-light transition-colors hover:border-danger/60 hover:bg-danger-soft/80"
+                              >
+                                Delete
+                              </button>
                             ) : (
                               <>
                                                             <button
