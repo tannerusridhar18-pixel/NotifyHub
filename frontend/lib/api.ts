@@ -381,7 +381,7 @@ export const deactivateDepartmentStudent = (departmentId: number, studentId: num
   request<void>(`/departments/${departmentId}/students/${studentId}/status`, { method: "PATCH" });
 
 export const batchPromoteStudents = (departmentId: number, fromYear: number, toYear: number) =>
-  request<import("@/types").BatchPromoteResult>(`/departments/${departmentId}/promote-batch`, {
+  request<import("@/types").BatchPromoteResult>("/admin/students/batch-promote", {
     method: "POST",
     body: JSON.stringify({ fromYear, toYear }),
   });
