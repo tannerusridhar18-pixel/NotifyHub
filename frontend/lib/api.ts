@@ -383,7 +383,7 @@ export const deactivateDepartmentStudent = (departmentId: number, studentId: num
 export const batchPromoteStudents = (departmentId: number, fromYear: number, toYear: number) =>
   request<import("@/types").BatchPromoteResult>("/admin/students/batch-promote", {
     method: "POST",
-    body: JSON.stringify({ fromYear, toYear }),
+    body: JSON.stringify({ departmentId, fromYear, toYear }),
   });
 
 export const assignDepartmentHod = (departmentId: number, userId: number) =>
