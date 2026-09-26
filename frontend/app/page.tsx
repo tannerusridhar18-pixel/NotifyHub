@@ -83,6 +83,9 @@ export default function Home() {
           <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
           <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
           <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
+          <div className="nh-public-orbit-path nh-public-orbit-d"><i className="nh-public-planet nh-public-planet-d" /></div>
+          <div className="nh-public-orbit-path nh-public-orbit-e"><i className="nh-public-planet nh-public-planet-e" /></div>
+          <div className="nh-public-orbit-path nh-public-orbit-f"><i className="nh-public-planet nh-public-planet-f" /></div>
         </div>
 
         <div className="nh-bg-animation" aria-hidden="true">
