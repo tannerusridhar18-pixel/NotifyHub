@@ -56,6 +56,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   if (init.body) headers.set("Content-Type", "application/json");
   const method = (init.method || "GET").toUpperCase();
   const publicRequest = isPublicRead(path, method);
+  const silentAuthCheck = method === "GET" && path.split("?")[0] === "/users/me";
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
     const token = csrf();
     if (token) headers.set("X-XSRF-TOKEN", token);
@@ -71,7 +72,7 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   }
   const body = (await response.json().catch(() => null)) as ApiResponse<T> | null;
   if (!response.ok || !body?.success) {
-    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined" && !path.startsWith("/auth/") && !publicRequest) {
+    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined" && !path.startsWith("/auth/") && !publicRequest && !silentAuthCheck) {
       window.location.assign(`/auth/login?reason=session-changed`);
     }
     throw new Error(friendlyMessage(response.status, body, path));
