@@ -1541,95 +1541,74 @@
 }
 
 
-/* Public pages: decorative orbit + responsive content layout */
+/* Public pages: keep the orbit decorative and content fully readable */
 .nh-public-page {
   position: relative;
   isolation: isolate;
   overflow-x: clip;
-  width: 100%;
 }
 .nh-public-page > .nh-public-orbit {
   z-index: 0;
-  pointer-events: none;
 }
 .nh-public-page > :not(.nh-public-orbit) {
   position: relative;
   z-index: 2;
+}
+.nh-public-page .nh-public-orbit ~ * {
   min-width: 0;
 }
 .nh-public-page .grid,
 .nh-public-page form,
 .nh-public-page input,
+.nh-public-page textarea {
+  max-width: 100%;
+}
+.nh-public-page input,
 .nh-public-page textarea,
 .nh-public-page button {
-  max-width: 100%;
   min-width: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   .nh-public-page {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
-
   .nh-public-page > .nh-public-orbit {
     top: -90px;
-    right: -240px;
+    right: -250px;
     width: 680px;
     height: 680px;
-    opacity: .56;
+    opacity: .62;
   }
-
   .nh-public-page h1 {
     max-width: 100%;
-    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    font-size: clamp(2.4rem, 7vw, 4rem);
     line-height: 1.02;
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 680px) {
   .nh-public-page {
     padding-top: 2.5rem;
     padding-bottom: 3rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
   }
-
   .nh-public-page > .nh-public-orbit {
-    top: -55px;
-    right: -285px;
+    top: -45px;
+    right: -300px;
     width: 620px;
     height: 620px;
-    opacity: .42;
-    transform: translate3d(var(--orbit-x), var(--orbit-y), 0) scale(.72);
+    opacity: .48;
+    transform: translate3d(var(--orbit-x),var(--orbit-y),0) scale(.72) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry));
   }
-
   .nh-public-page h1 {
     font-size: clamp(2.15rem, 10vw, 3.25rem);
-    line-height: 1.04;
-    overflow-wrap: anywhere;
   }
-
-  .nh-public-page p {
-    max-width: 100%;
-  }
-
   .nh-public-page .grid {
     min-width: 0;
   }
-
-  .nh-public-page .grid > * {
+  .nh-public-page .rounded-[26px] {
     min-width: 0;
-    max-width: 100%;
-  }
-
-  .nh-public-page input,
-  .nh-public-page textarea {
-    width: 100%;
-  }
-
-  .nh-public-page form {
-    width: 100%;
   }
 }
 
@@ -1638,16 +1617,15 @@
     padding-left: .85rem;
     padding-right: .85rem;
   }
-
   .nh-public-page > .nh-public-orbit {
-    top: -25px;
-    right: -330px;
+    top: -20px;
+    right: -335px;
     width: 560px;
     height: 560px;
-    opacity: .32;
+    opacity: .38;
   }
-
   .nh-public-page h1 {
-    font-size: clamp(2rem, 11vw, 2.75rem);
+    font-size: clamp(2rem, 11vw, 2.7rem);
+    overflow-wrap: anywhere;
   }
 }
