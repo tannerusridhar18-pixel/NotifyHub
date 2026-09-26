@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { currentUser, eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
+import { eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
 import type { EventItem } from "@/types";
 
 export default function EventRegistrationPanel({ event }: { event: EventItem }) {
@@ -8,29 +8,6 @@ export default function EventRegistrationPanel({ event }: { event: EventItem }) 
   const [registrations, setRegistrations] = useState<EventRegistration[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const hasSession = typeof document !== "undefined" && document.cookie.includes("NH_ACCESS=");
-    if (!hasSession) {
-      // Public event cards must not probe the authenticated session.
-      setAuthenticated(false);
-      return;
-    }
-
-    setAuthenticated(true);
-    let alive = true;
-    (async () => {
-      try {
-        const u = await currentUser();
-        if (alive && u && registrations) {
-          const found = registrations.some((r) => r.studentEmail?.toLowerCase() === u.email?.toLowerCase());
-          if (found) setIsRegistered(true);
-        }
-      } catch {}
-    })();
-    return () => { alive = false; };
-  }, [registrations]);
 
   const closed = !event.registrationEnabled || (event.registrationDeadline != null && new Date(event.registrationDeadline) <= new Date());
   const reason = !event.registrationEnabled
@@ -74,8 +51,6 @@ export default function EventRegistrationPanel({ event }: { event: EventItem }) 
     : "Register";
 
   const buttonDisabled = closed || loading || isRegistered;
-
-  if (!authenticated) return null;
 
   return (
     <section className="mt-4 border-t border-border pt-4" onClick={(e) => e.stopPropagation()}>
