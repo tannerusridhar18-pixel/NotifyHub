@@ -11,12 +11,14 @@ import {
   publishAnnouncement,
   unpublishAnnouncement,
   archiveAnnouncement,
+  unarchiveAnnouncement,
   deleteAnnouncement,
   createEvent,
   publishEvent,
   unpublishEvent,
   cancelEvent,
   archiveEvent,
+  unarchiveEvent,
   deleteEvent,
   deleteQuery,
   createInvitation,
@@ -464,7 +466,7 @@ export default function DashboardClient() {
                           <StatusBadge status={x.status} />
                         </td>
                         <td className="flex flex-wrap gap-1.5 border-b border-border p-3 align-top">
-                          {(x.status === "DRAFT" || x.status === "ARCHIVED") && (
+                          {x.status === "DRAFT" && (
                             <button
                               className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
                               onClick={() => void act(() => publishAnnouncement(x.id), "Announcement published.")}
@@ -608,7 +610,7 @@ export default function DashboardClient() {
                               Unpublish
                             </button>
                           )}
-                          {x.status !== "CANCELLED" && (
+                          {x.status !== "CANCELLED" && x.status !== "ARCHIVED" && (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => cancelEvent(x.id), "Event cancelled.")}
