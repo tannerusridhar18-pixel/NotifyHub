@@ -236,7 +236,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="nh-features mx-auto w-full max-w-[1240px] px-4 py-20 sm:px-6 sm:py-28">
+      <section className="nh-features mx-auto w-full max-w-[1240px] px-4 py-10 sm:px-6 sm:py-16">
         <Reveal className="nh-section-intro">
           <span>Everything your campus needs to communicate clearly</span>
           <h2>One platform for everyday updates and important moments.</h2>
