@@ -233,7 +233,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
   }
 
   async function handleBatchPromote() {
-    if (!confirm(`Are you sure you want to promote Year ${fromYear} students to Year ${toYear}? This is a transactional operation.`)) {
+    if (!confirm(toYear === 5 ? `Are you sure you want to graduate Year ${fromYear} students as Graduated / Alumni? This cannot be undone.` : `Are you sure you want to promote Year ${fromYear} students to Year ${toYear}? This is a transactional operation.`)) {
       return;
     }
     setPromoteBusy(true);
@@ -713,8 +713,8 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                       onChange={(e) => setToYear(Number(e.target.value))}
                       className={inputBase}
                     >
-                      <option value={fromYear + 1}>Year {fromYear + 1} (Next Academic Year)</option>
-                      {fromYear >= 4 && <option value={5}>Year 5 / Graduated Alumni</option>}
+                      {fromYear < 4 && <option value={fromYear + 1}>Year {fromYear + 1} (Next Academic Year)</option>}
+                      {fromYear === 4 && <option value={5}>Graduated / Alumni</option>}
                     </select>
                   </Field>
                 </div>
@@ -739,7 +739,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                   onClick={() => void handleBatchPromote()}
                   className="w-full"
                 >
-                  {promoteBusy ? "Executing Cohort Promotion…" : `Promote Year ${fromYear} → Year ${toYear} Cohort`}
+                  {promoteBusy ? "Executing Cohort Promotion…" : toYear === 5 ? `Graduate Year ${fromYear} → Alumni` : `Promote Year ${fromYear} → Year ${toYear} Cohort`}
                 </Button>
               </div>
             </Spotlight>
