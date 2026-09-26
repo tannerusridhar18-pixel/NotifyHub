@@ -1520,11 +1520,11 @@
 }
 /* Home-only orbit placement: centered and enlarged without affecting public pages */
 .nh-home .nh-public-orbit-home {
-  top: -300px!important;
+  top: -620px!important;
   left: 50%!important;
   right: auto!important;
-  width: min(1550px, 125vw)!important;
-  height: min(1550px, 125vw)!important;
+  width: min(1850px, 150vw)!important;
+  height: min(1850px, 150vw)!important;
   margin: 0!important;
   transform: translateX(-50%)!important;
   opacity: .72!important;
