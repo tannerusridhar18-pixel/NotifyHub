@@ -144,11 +144,6 @@ export default function AskPage() {
             Direct, confidential communication channel to campus administration, department chairs, and faculty staff.
           </p>
         </div>
-        <div className="hidden h-[160px] w-[160px] flex-none place-items-center rounded-3xl border border-white/12 bg-gradient-to-br from-brand-50/95 via-surface-2/95 to-ink-900/95 shadow-lift backdrop-blur-2xl sm:grid animate-float transition-all duration-500 hover:scale-105 hover:border-brand-light/50 hover:shadow-glow">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white font-extrabold shadow-glow text-2xl">
-            ◈
-          </span>
-        </div>
       </Reveal>
 
       <div className="grid gap-12 lg:grid-cols-12">
