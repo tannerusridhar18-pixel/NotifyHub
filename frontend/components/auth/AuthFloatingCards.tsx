@@ -1,20 +1,22 @@
+import styles from "@/app/auth/AuthKit.module.css";
+
 export default function AuthFloatingCards() {
   return (
-    <div className="authkit-orbit" aria-hidden="true">
-      <div className="authkit-float authkit-float-left">
-        <span className="authkit-float-kicker">CAMPUS FEED</span>
-        <strong>3 new announcements</strong>
-        <span className="authkit-float-line" />
-        <span className="authkit-float-meta">Academic · Events · Alerts</span>
+    <div className={styles["authkit-orbit"]} aria-hidden="true">
+      <div className={`${styles["authkit-float"]} ${styles["authkit-float-left"]}`}>
+        <span className={styles["authkit-float-line"]} />
+        <span className={styles["authkit-float-line"]} />
+        <span className={styles["authkit-float-dot"]} />
       </div>
-      <div className="authkit-float authkit-float-right">
-        <span className="authkit-float-kicker">IDENTITY</span>
-        <strong>Role-aware access</strong>
-        <span className="authkit-float-line" />
-        <span className="authkit-float-meta">Secure session · Protected</span>
+
+      <div className={`${styles["authkit-float"]} ${styles["authkit-float-right"]}`}>
+        <span className={styles["authkit-float-line"]} />
+        <span className={styles["authkit-float-line"]} />
+        <span className={styles["authkit-float-dot"]} />
       </div>
-      <div className="authkit-orbit-ring" />
-      <div className="authkit-orbit-glow" />
+
+      <div className={styles["authkit-orbit-ring"]} />
+      <div className={styles["authkit-orbit-glow"]} />
     </div>
   );
 }
