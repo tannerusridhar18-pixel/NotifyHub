@@ -410,6 +410,170 @@
   text-transform: uppercase;
 }
 
+
+.authkit-hero {
+  position: relative;
+  isolation: isolate;
+  perspective: 1400px;
+}
+
+.authkit-card-stage {
+  position: relative;
+  isolation: isolate;
+}
+
+.authkit-orbit {
+  position: absolute;
+  inset: -92px -190px -70px;
+  z-index: -1;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.authkit-orbit::before,
+.authkit-orbit::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.authkit-orbit::before {
+  inset: 9% 17%;
+  border: 1px solid rgba(186, 215, 247, 0.08);
+  transform: rotateX(68deg) rotateZ(-10deg);
+  box-shadow: 0 0 70px rgba(186, 215, 247, 0.04);
+}
+
+.authkit-orbit::after {
+  inset: 25% 28%;
+  border: 1px solid rgba(186, 215, 247, 0.05);
+  transform: rotateX(68deg) rotateZ(12deg);
+}
+
+.authkit-orbit-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 72%;
+  height: 54%;
+  border: 1px solid rgba(186, 215, 247, 0.07);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(68deg) rotateZ(-7deg);
+  box-shadow: inset 0 0 34px rgba(186, 215, 247, 0.025);
+}
+
+.authkit-orbit-glow {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 46%;
+  height: 46%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(186, 215, 247, 0.11), rgba(102, 58, 243, 0.035) 42%, transparent 72%);
+  filter: blur(18px);
+}
+
+.authkit-float {
+  position: absolute;
+  width: 188px;
+  display: grid;
+  gap: 7px;
+  padding: 15px;
+  border-radius: 16px;
+  background: rgba(5, 6, 15, 0.72);
+  color: var(--color-authkit-frost);
+  box-shadow:
+    inset 0 1px 1px rgba(216, 236, 248, 0.14),
+    inset 0 18px 36px rgba(168, 216, 245, 0.035),
+    0 18px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transform-style: preserve-3d;
+}
+
+.authkit-float::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(186, 215, 247, 0.08);
+  pointer-events: none;
+}
+
+.authkit-float-left {
+  left: 0;
+  top: 26%;
+  transform: translateZ(-50px) rotateY(10deg) rotateZ(-5deg);
+  animation: authkit-float-left 8s ease-in-out infinite;
+}
+
+.authkit-float-right {
+  right: 0;
+  top: 39%;
+  transform: translateZ(-35px) rotateY(-10deg) rotateZ(5deg);
+  animation: authkit-float-right 9s ease-in-out infinite;
+}
+
+.authkit-float-kicker {
+  color: var(--color-authkit-mist);
+  font-family: var(--font-authkit-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+}
+
+.authkit-float strong {
+  color: var(--color-authkit-ice);
+  font-family: var(--font-authkit-display);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.authkit-float-line {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, rgba(186, 215, 247, 0.12), transparent);
+}
+
+.authkit-float-meta {
+  color: var(--color-authkit-fog);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+@keyframes authkit-float-left {
+  0%, 100% { transform: translate3d(0, 0, -50px) rotateY(10deg) rotateZ(-5deg); }
+  50% { transform: translate3d(0, -9px, -50px) rotateY(10deg) rotateZ(-4deg); }
+}
+
+@keyframes authkit-float-right {
+  0%, 100% { transform: translate3d(0, 0, -35px) rotateY(-10deg) rotateZ(5deg); }
+  50% { transform: translate3d(0, -11px, -35px) rotateY(-10deg) rotateZ(4deg); }
+}
+
+@media (max-width: 900px) {
+  .authkit-orbit { inset: -72px -80px -48px; }
+  .authkit-float { width: 160px; }
+  .authkit-float-left { left: -18px; }
+  .authkit-float-right { right: -18px; }
+}
+
+@media (max-width: 680px) {
+  .authkit-orbit { inset: -52px -18px -34px; }
+  .authkit-float { display: none; }
+  .authkit-orbit::before { inset: 10% 4%; }
+  .authkit-orbit::after { inset: 27% 12%; }
+  .authkit-orbit-ring { width: 90%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authkit-float-left,
+  .authkit-float-right { animation: none; }
+}
+
 @media (min-width: 640px) {
   .shell {
     padding: 56px 24px 64px;
