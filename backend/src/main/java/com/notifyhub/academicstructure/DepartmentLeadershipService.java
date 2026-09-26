@@ -95,8 +95,7 @@ public class DepartmentLeadershipService {
 
             if (graduating) {
                 sp.setYear(5);
-                sp.setSemester(0);
-                sp.setSection(null);
+                sp.setSemester(8);
                 students.save(sp);
                 graduatedCount++;
                 continue;
