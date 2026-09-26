@@ -203,6 +203,7 @@ public class EventService {
         if (event.getStatus() != EventStatus.ARCHIVED) throw conflict("Only archived events can be unarchived.");
         event.setStatus(EventStatus.DRAFT);
         event.setPublishedAt(null);
+        repo.save(event);
         audit.save(new AuditLog(event.getCreatedBy(), "EVENT_UNARCHIVE", "EVENT", String.valueOf(event.getId()), "{}"));
         return EventDto.from(event);
     }
