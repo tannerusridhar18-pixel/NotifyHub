@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -39,6 +40,7 @@ public class IdentityService {
     private final FacultyDepartmentService facultyDepartmentService;
     private final InvitationRepository invitations;
     private final PasswordEncoder encoder;
+    private final EntityManager entityManager;
 
     public IdentityService(
             UserRepository users,
@@ -49,7 +51,8 @@ public class IdentityService {
             FacultyProfileRepository faculty,
             FacultyDepartmentService facultyDepartmentService,
             InvitationRepository invitations,
-            PasswordEncoder encoder) {
+            PasswordEncoder encoder,
+            EntityManager entityManager) {
         this.users = users;
         this.roles = roles;
         this.departments = departments;
@@ -59,6 +62,7 @@ public class IdentityService {
         this.facultyDepartmentService = facultyDepartmentService;
         this.invitations = invitations;
         this.encoder = encoder;
+        this.entityManager = entityManager;
     }
 
     @Transactional(readOnly = true)
@@ -272,16 +276,45 @@ public class IdentityService {
     public void removeUser(UUID publicId) {
         User user = users.findByPublicId(publicId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
-        if (user.isDeleted()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
-        }
         if (user.getEffectiveLevel() == 0 && users.findAll().stream().filter(u -> !u.isDeleted() && u.getEffectiveLevel() == 0 && u.isActive()).count() <= 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot remove the only active Super Admin.");
         }
-        user.setDeleted(true);
-        user.setAccountStatus(AccountStatus.INACTIVE);
-        user.setActive(false);
-        users.save(user);
+
+        long userId = user.getId();
+
+        // Clear nullable references from records that belong to other users and must survive the deletion.
+        entityManager.createNativeQuery("UPDATE announcements SET target_user_id = NULL WHERE target_user_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("UPDATE events SET target_user_id = NULL WHERE target_user_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("UPDATE queries SET student_id = NULL, asker_id = NULL, target_faculty_id = NULL, answered_by = NULL WHERE student_id = ?1 OR asker_id = ?1 OR target_faculty_id = ?1 OR answered_by = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("UPDATE audit_log SET actor_id = NULL WHERE actor_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("UPDATE roles SET created_by = NULL WHERE created_by = ?1")
+                .setParameter(1, userId).executeUpdate();
+
+        // Remove records owned by the account before removing the account itself.
+        entityManager.createNativeQuery("DELETE FROM event_registrations WHERE student_id = ?1 OR event_id IN (SELECT id FROM events WHERE created_by = ?1)")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM announcements WHERE created_by = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM events WHERE created_by = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM invitations WHERE user_id = ?1 OR created_by = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM password_reset_tokens WHERE user_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM refresh_tokens WHERE user_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM user_role_assignments WHERE user_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM student_profiles WHERE user_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM faculty_profiles WHERE user_id = ?1")
+                .setParameter(1, userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM users WHERE id = ?1")
+                .setParameter(1, userId).executeUpdate();
     }
 
     @Transactional
