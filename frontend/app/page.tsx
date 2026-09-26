@@ -19,6 +19,37 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+const featureItems = [
+  {
+    number: "01",
+    label: "Announcements",
+    title: "Keep everyone informed.",
+    text: "Official campus announcements are published in one place, so students and staff can find current information without searching through scattered channels.",
+    tone: "green",
+  },
+  {
+    number: "02",
+    label: "Events",
+    title: "Never miss what is happening.",
+    text: "Campus and academic events stay organized with dates, times, locations, and the information your campus community needs.",
+    tone: "blue",
+  },
+  {
+    number: "03",
+    label: "Urgent Announcements",
+    title: "Put important updates first.",
+    text: "Urgent announcements are separated from the regular feed so time-sensitive campus information gets the attention it needs.",
+    tone: "red",
+  },
+  {
+    number: "04",
+    label: "Role-aware communication",
+    title: "The right information for the right people.",
+    text: "NotifyHub supports targeted communication across roles and academic structures, including departments, branches, sections, hostels, and individual users.",
+    tone: "violet",
+  },
+];
+
 export default function Home() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [upcoming, setUpcoming] = useState<EventItem[]>([]);
@@ -46,31 +77,39 @@ export default function Home() {
   return (
     <main className="nh-home overflow-x-hidden">
       <section className="nh-hero">
+        <div className="nh-bg-animation" aria-hidden="true">
+          <span className="nh-bg-orb nh-bg-orb-1" />
+          <span className="nh-bg-orb nh-bg-orb-2" />
+          <span className="nh-bg-orb nh-bg-orb-3" />
+          <span className="nh-bg-ring nh-bg-ring-1" />
+          <span className="nh-bg-ring nh-bg-ring-2" />
+          <span className="nh-bg-particles nh-bg-particles-1" />
+          <span className="nh-bg-particles nh-bg-particles-2" />
+          <span className="nh-bg-scanline" />
+        </div>
         <div className="nh-hero-grid bg-grid-pattern pointer-events-none" />
-        <div className="nh-orb nh-orb-a" />
-        <div className="nh-orb nh-orb-b" />
 
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-10 pt-16 sm:px-6 sm:pt-24 lg:pt-28">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-20 sm:px-6 sm:pt-28 lg:pt-32">
           <div className="nh-hero-copy">
             <Reveal variant="fade">
               <span className="nh-kicker rounded-full px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80 sm:text-[11px]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#b8ff5a] shadow-[0_0_12px_rgba(184,255,90,.8)]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#b8ff5a] shadow-[0_0_14px_rgba(184,255,90,.9)]" />
                 Smart campus communication
               </span>
             </Reveal>
 
             <Reveal delay={100}>
-              <h1 className="nh-hero-title mt-7 font-display font-extrabold text-white">
-                Everything happening
+              <h1 className="nh-hero-title mt-8 font-display font-extrabold text-white">
+                Your campus.
                 <br />
-                <span className="nh-title-accent">on your campus.</span>
+                <span className="nh-title-accent">One clear signal.</span>
               </h1>
             </Reveal>
 
             <Reveal delay={180}>
               <p className="nh-hero-subtitle mt-7">
-                One place for official announcements, campus events, and urgent updates.
-                Stay informed without searching across notice boards, groups, and messages.
+                NotifyHub brings official announcements, campus events, and urgent updates
+                into one digital campus communication platform.
               </p>
             </Reveal>
 
@@ -85,77 +124,78 @@ export default function Home() {
                 className={buttonClasses("secondary", "!border-white/10 !bg-white/[.04] !px-7 !py-3.5 !text-base !text-white")}
                 href="/auth/login"
               >
-                Sign in
+                Sign in to NotifyHub
               </Link>
             </Reveal>
           </div>
 
-          <Reveal variant="scale" delay={320}>
-            <div className="nh-hero-stage">
+          <Reveal variant="scale" delay={340}>
+            <div className="nh-product-stage">
               <div className="nh-stage-floor" />
 
-              <div className="nh-float-card nh-float-left hidden sm:block nh-card-urgent">
-                <div className="mb-4 flex items-center justify-between">
+              <div className="nh-float-card nh-float-left hidden md:block nh-card-urgent">
+                <div className="flex items-center justify-between">
                   <span className="nh-card-label">Urgent announcement</span>
-                  <span className="h-2 w-2 rounded-full bg-[#ff5d73] shadow-[0_0_12px_rgba(255,93,115,.8)]" />
+                  <span className="nh-status-dot nh-status-red" />
                 </div>
-                <strong className="block text-sm font-extrabold text-white">
-                  {urgent.length ? urgent[0].title : "No urgent announcements"}
+                <strong className="mt-5 block text-sm font-extrabold text-white">
+                  {urgent.length ? urgent[0].title : "Priority updates"}
                 </strong>
-                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/55">
-                  {urgent.length ? urgent[0].content : "Critical campus updates will appear here."}
+                <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-white/50">
+                  {urgent.length ? urgent[0].content : "Time-sensitive campus announcements appear here."}
                 </p>
               </div>
 
-              <div className="nh-float-card nh-float-right hidden sm:block nh-card-event">
-                <div className="mb-4 flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#76d7ff]/10 text-[#76d7ff]">◇</span>
+              <div className="nh-float-card nh-float-right hidden md:block nh-card-event">
+                <div className="flex items-center justify-between">
                   <span className="nh-card-label">Upcoming event</span>
+                  <span className="nh-status-dot nh-status-blue" />
                 </div>
-                <strong className="block text-sm font-extrabold text-white">
-                  {upcoming.length ? upcoming[0].title : "No upcoming events"}
+                <strong className="mt-5 block text-sm font-extrabold text-white">
+                  {upcoming.length ? upcoming[0].title : "Campus events"}
                 </strong>
-                <p className="mt-2 text-xs leading-relaxed text-white/55">
+                <p className="mt-2 text-xs leading-relaxed text-white/50">
                   {upcoming.length
                     ? formatDate(upcoming[0].startAt) + " · " + upcoming[0].location
-                    : "Campus events will appear here."}
+                    : "Academic and campus events appear here."}
                 </p>
               </div>
 
-              <div className="nh-dashboard">
-                <div className="nh-dashboard-bar">
-                  <div className="flex items-center gap-2.5">
-                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black text-[#0a0d12]">N</span>
+              <div className="nh-product-window">
+                <div className="nh-product-topbar">
+                  <div className="flex items-center gap-3">
+                    <span className="nh-product-logo">N</span>
                     <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-white">NotifyHub</p>
-                      <p className="text-[9px] text-white/40">Campus updates</p>
+                      <p>NotifyHub</p>
+                      <span>Campus communication</span>
                     </div>
                   </div>
                   <span className="nh-live-pill">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#b8ff5a]" />
+                    <span />
                     LIVE
                   </span>
                 </div>
 
-                <div className="nh-dashboard-body">
-                  <div>
-                    <div className="mb-4">
-                      <p className="nh-dashboard-eyebrow">Latest announcements</p>
-                      <h2 className="mt-1 text-lg font-extrabold text-white">What&apos;s new</h2>
+                <div className="nh-product-content">
+                  <div className="nh-product-feed">
+                    <div className="mb-5">
+                      <span className="nh-product-eyebrow">Campus feed</span>
+                      <h2>Latest announcements</h2>
                     </div>
 
-                    <div className="nh-live-list">
+                    <div className="nh-product-list">
                       {items.length ? (
                         items.map((item) => (
-                          <div className="nh-live-row" key={item.id}>
+                          <div className="nh-product-row" key={item.id}>
                             <span className="nh-row-icon">◈</span>
-                            <div className="min-w-0">
-                              <strong className="block truncate text-white">{item.title}</strong>
-                              <span className="block truncate">
-                                {item.publishedAt ? formatDate(item.publishedAt) : "Published announcement"}
+                            <div>
+                              <strong>{item.title}</strong>
+                              <span>
+                                {item.publishedAt
+                                  ? formatDate(item.publishedAt)
+                                  : "Published announcement"}
                               </span>
                             </div>
-                            <span className="nh-row-tag">ANNOUNCEMENT</span>
                           </div>
                         ))
                       ) : (
@@ -164,16 +204,16 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="nh-dashboard-side">
-                    <div className="nh-side-stat">
+                  <div className="nh-product-side">
+                    <div>
                       <span>Announcements</span>
                       <strong>{items.length}</strong>
                     </div>
-                    <div className="nh-side-stat">
+                    <div>
                       <span>Events</span>
                       <strong>{upcoming.length}</strong>
                     </div>
-                    <div className="nh-side-stat nh-side-stat-urgent">
+                    <div className="nh-product-urgent">
                       <span>Urgent</span>
                       <strong>{urgent.length}</strong>
                     </div>
@@ -185,67 +225,91 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="nh-content mx-auto w-full max-w-[1240px] px-4 py-16 sm:px-6 sm:py-24">
+      <section className="nh-features mx-auto w-full max-w-[1240px] px-4 py-20 sm:px-6 sm:py-28">
+        <Reveal className="nh-section-intro">
+          <span>Everything your campus needs to communicate clearly</span>
+          <h2>One platform for everyday updates and important moments.</h2>
+          <p>
+            NotifyHub keeps the public campus signal simple while giving authorized users
+            the tools to publish and manage communication.
+          </p>
+        </Reveal>
+
+        <div className="nh-feature-grid">
+          {featureItems.map((item, index) => (
+            <Reveal key={item.number} delay={index * 80}>
+              <article className={"nh-feature-panel nh-feature-" + item.tone}>
+                <span className="nh-feature-number">{item.number}</span>
+                <span className="nh-feature-label">{item.label}</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="nh-live-section mx-auto w-full max-w-[1240px] px-4 pb-20 sm:px-6 sm:pb-28">
         {loading ? (
           <CardSkeletons count={3} />
         ) : error ? (
           <ErrorState message={error} />
         ) : (
           <>
-            <Reveal className="nh-section-heading">
-              <span className="nh-section-number">01</span>
+            <Reveal className="nh-content-heading">
               <div>
-                <span className="nh-section-label nh-label-announcement">Announcements</span>
+                <span className="nh-heading-green">01 — Announcements</span>
                 <h2>Latest campus announcements</h2>
                 <p>Official updates published for the campus community.</p>
               </div>
               <Link href="/announcements" className={buttonClasses("secondary")}>View all →</Link>
             </Reveal>
-
             {items.length ? (
-              <div className="nh-content-grid nh-announcement-grid">
+              <div className="nh-card-grid">
                 {items.map((item, index) => (
-                  <Reveal key={item.id} delay={index * 80}><AnnouncementCard item={item} /></Reveal>
+                  <Reveal key={item.id} delay={index * 70}>
+                    <AnnouncementCard item={item} />
+                  </Reveal>
                 ))}
               </div>
             ) : (
               <div className="nh-empty-content">No announcements are published yet.</div>
             )}
 
-            <Reveal className="nh-section-heading nh-section-gap">
-              <span className="nh-section-number">02</span>
+            <Reveal className="nh-content-heading nh-content-heading-gap">
               <div>
-                <span className="nh-section-label nh-label-event">Events</span>
+                <span className="nh-heading-blue">02 — Events</span>
                 <h2>Upcoming campus events</h2>
-                <p>Academic and campus events with their schedule and location.</p>
+                <p>See what is happening next, with the schedule and location.</p>
               </div>
               <Link href="/events" className={buttonClasses("secondary")}>View all →</Link>
             </Reveal>
-
             {upcoming.length ? (
-              <div className="nh-content-grid nh-event-grid">
+              <div className="nh-card-grid">
                 {upcoming.map((item, index) => (
-                  <Reveal key={item.id} delay={index * 80}><EventCard item={item} /></Reveal>
+                  <Reveal key={item.id} delay={index * 70}>
+                    <EventCard item={item} />
+                  </Reveal>
                 ))}
               </div>
             ) : (
               <div className="nh-empty-content">No upcoming events are scheduled.</div>
             )}
 
-            <Reveal className="nh-section-heading nh-section-gap">
-              <span className="nh-section-number">03</span>
+            <Reveal className="nh-content-heading nh-content-heading-gap">
               <div>
-                <span className="nh-section-label nh-label-urgent">Urgent announcements</span>
+                <span className="nh-heading-red">03 — Urgent announcements</span>
                 <h2>Priority campus updates</h2>
-                <p>Important announcements that need attention are separated from the regular feed.</p>
+                <p>Important announcements are separated so they remain easy to notice.</p>
               </div>
               <Link href="/urgent" className={buttonClasses("secondary")}>View all →</Link>
             </Reveal>
-
             {urgent.length ? (
-              <div className="nh-content-grid nh-urgent-grid">
+              <div className="nh-card-grid nh-card-grid-two">
                 {urgent.map((item, index) => (
-                  <Reveal key={item.id} delay={index * 80}><AnnouncementCard item={item} /></Reveal>
+                  <Reveal key={item.id} delay={index * 70}>
+                    <AnnouncementCard item={item} />
+                  </Reveal>
                 ))}
               </div>
             ) : (
@@ -253,6 +317,23 @@ export default function Home() {
             )}
           </>
         )}
+      </section>
+
+      <section className="nh-final-cta mx-auto w-full max-w-[1240px] px-4 pb-24 sm:px-6 sm:pb-32">
+        <Reveal className="nh-cta-panel">
+          <div className="nh-cta-glow" aria-hidden="true" />
+          <span>NotifyHub</span>
+          <h2>Keep your campus informed.</h2>
+          <p>Explore the public campus feed or sign in to your NotifyHub workspace.</p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link className={buttonClasses("primary", "!border-0 !bg-[#b8ff5a] !text-[#07100a] !px-7 !py-3.5")} href="/announcements">
+              Explore campus updates →
+            </Link>
+            <Link className={buttonClasses("secondary", "!border-white/10 !bg-white/[.04] !px-7 !py-3.5 !text-white")} href="/auth/login">
+              Sign in
+            </Link>
+          </div>
+        </Reveal>
       </section>
     </main>
   );
