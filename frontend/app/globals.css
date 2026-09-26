@@ -1474,22 +1474,26 @@
 }
 
 /* Shared public-page cosmic orbit system */
-.nh-public-page { position: relative; isolation: isolate; }
-.nh-public-page > .nh-public-orbit { position:absolute; top:-70px; right:-95px; width:620px; height:620px; z-index:0; pointer-events:none; opacity:.9; overflow:visible; }
-.nh-public-stars { position:absolute; z-index:0; inset:0; border-radius:50%; background-image:radial-gradient(circle at 18% 24%,rgba(255,255,255,.65) 0 1px,transparent 1.5px),radial-gradient(circle at 72% 18%,rgba(118,215,255,.55) 0 1px,transparent 1.5px),radial-gradient(circle at 42% 76%,rgba(255,255,255,.45) 0 1px,transparent 1.5px),radial-gradient(circle at 84% 68%,rgba(184,255,90,.4) 0 1px,transparent 1.5px); animation:nh-public-star-drift 12s linear infinite; }
-.nh-public-sun { position:absolute; z-index:3; left:50%; top:50%; width:72px; height:72px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff 0 5%,#dfffb8 15%,#b8ff5a 42%,rgba(184,255,90,.08) 70%,transparent 72%); box-shadow:0 0 35px rgba(184,255,90,.45),0 0 110px rgba(184,255,90,.12); animation:nh-public-sun-pulse 4s ease-in-out infinite; }
-.nh-public-orbit-path { position:absolute; z-index:2; left:50%; top:50%; width:430px; height:180px; margin:-90px 0 0 -215px; border:1px solid rgba(255,255,255,.1); border-radius:50%; transform-style:preserve-3d; }
+.nh-public-page { position:relative; isolation:isolate; --orbit-x:0px; --orbit-y:0px; --orbit-rx:0deg; --orbit-ry:0deg; }
+.nh-public-page > .nh-public-orbit { position:absolute; top:-190px; right:-180px; width:820px; height:820px; z-index:0; pointer-events:none; opacity:.88; transform:translate3d(var(--orbit-x),var(--orbit-y),0) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry)); transition:transform .35s cubic-bezier(.16,1,.3,1); transform-style:preserve-3d; }
+.nh-public-orbit-home { position:absolute!important; top:50px!important; right:50%!important; width:min(1050px,90vw)!important; height:min(1050px,90vw)!important; margin-right:min(525px,-45vw); opacity:.72!important; z-index:0!important; }
+.nh-public-stars { position:absolute; inset:0; border-radius:50%; background-image:radial-gradient(circle at 18% 24%,rgba(255,255,255,.65) 0 1px,transparent 1.5px),radial-gradient(circle at 72% 18%,rgba(118,215,255,.55) 0 1px,transparent 1.5px),radial-gradient(circle at 42% 76%,rgba(255,255,255,.45) 0 1px,transparent 1.5px),radial-gradient(circle at 84% 68%,rgba(184,255,90,.4) 0 1px,transparent 1.5px); animation:nh-public-star-drift 12s linear infinite; }
+.nh-public-sun { position:absolute; left:50%; top:50%; width:96px; height:96px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff 0 5%,#dfffb8 15%,#b8ff5a 42%,rgba(184,255,90,.08) 70%,transparent 72%); box-shadow:0 0 45px rgba(184,255,90,.5),0 0 150px rgba(184,255,90,.16); animation:nh-public-sun-pulse 4s ease-in-out infinite; }
+.nh-public-orbit-path { position:absolute; left:50%; top:50%; width:620px; height:270px; margin:-135px 0 0 -310px; border:1px solid rgba(255,255,255,.12); border-radius:50%; transform-style:preserve-3d; }
 .nh-public-orbit-a { transform:rotateX(67deg) rotateZ(12deg); animation:nh-public-orbit-a 13s linear infinite; }
-.nh-public-orbit-b { width:350px;height:145px;margin:-72px 0 0 -175px; transform:rotateX(68deg) rotateZ(-32deg); animation:nh-public-orbit-b 17s linear infinite reverse; }
-.nh-public-orbit-c { width:500px;height:210px;margin:-105px 0 0 -250px; transform:rotateX(72deg) rotateZ(58deg); animation:nh-public-orbit-c 21s linear infinite; }
-.nh-public-planet { position:absolute; left:50%; top:-7px; width:14px;height:14px; margin-left:-7px; border-radius:50%; box-shadow:0 0 18px currentColor; }
+.nh-public-orbit-b { width:500px;height:215px;margin:-107px 0 0 -250px; transform:rotateX(68deg) rotateZ(-32deg); animation:nh-public-orbit-b 17s linear infinite reverse; }
+.nh-public-orbit-c { width:730px;height:310px;margin:-155px 0 0 -365px; transform:rotateX(72deg) rotateZ(58deg); animation:nh-public-orbit-c 21s linear infinite; }
+.nh-public-planet { position:absolute; left:50%; top:-9px; width:18px;height:18px; margin-left:-9px; border-radius:50%; box-shadow:0 0 24px currentColor; }
 .nh-public-planet-a { color:#76d7ff;background:#76d7ff; }
-.nh-public-planet-b { color:#a78bfa;background:#a78bfa;width:20px;height:20px;top:-10px;margin-left:-10px; }
-.nh-public-planet-c { color:#ff5d73;background:#ff5d73;width:10px;height:10px;top:-5px;margin-left:-5px; }
+.nh-public-planet-b { color:#a78bfa;background:#a78bfa;width:26px;height:26px;top:-13px;margin-left:-13px; }
+.nh-public-planet-c { color:#ff5d73;background:#ff5d73;width:14px;height:14px;top:-7px;margin-left:-7px; }
 @keyframes nh-public-orbit-a { to { transform:rotateX(67deg) rotateZ(372deg); } }
 @keyframes nh-public-orbit-b { to { transform:rotateX(68deg) rotateZ(-392deg); } }
 @keyframes nh-public-orbit-c { to { transform:rotateX(72deg) rotateZ(418deg); } }
 @keyframes nh-public-star-drift { to { transform:rotate(360deg) scale(1.03); } }
 @keyframes nh-public-sun-pulse { 50% { transform:translate(-50%,-50%) scale(1.08); } }
-@media (max-width:680px){ .nh-public-page > .nh-public-orbit{top:-40px;right:-290px;transform:scale(.62);opacity:.6;} }
-@media (prefers-reduced-motion:reduce){.nh-public-page > .nh-public-orbit *{animation:none!important;}}
+@media (max-width:680px){
+ .nh-public-page > .nh-public-orbit{top:-90px;right:-300px;transform:translate3d(var(--orbit-x),var(--orbit-y),0) scale(.62) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry));}
+ .nh-public-orbit-home{top:80px!important;right:50%!important;width:700px!important;height:700px!important;margin-right:-350px;opacity:.5!important;}
+}
+@media (prefers-reduced-motion:reduce){.nh-public-page > .nh-public-orbit *{animation:none!important;}.nh-public-page > .nh-public-orbit{transition:none;}}
