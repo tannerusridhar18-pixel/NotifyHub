@@ -294,6 +294,9 @@ public class IdentityService {
         entityManager.createNativeQuery("UPDATE roles SET created_by = NULL WHERE created_by = ?1")
                 .setParameter(1, userId).executeUpdate();
 
+        entityManager.createNativeQuery("UPDATE users SET reports_to = NULL WHERE reports_to = ?1")
+                .setParameter(1, userId).executeUpdate();
+
         // Remove records owned by the account before removing the account itself.
         entityManager.createNativeQuery("DELETE FROM event_registrations WHERE student_id = ?1 OR event_id IN (SELECT id FROM events WHERE created_by = ?1)")
                 .setParameter(1, userId).executeUpdate();
