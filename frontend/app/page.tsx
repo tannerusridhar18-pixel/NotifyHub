@@ -9,27 +9,6 @@ import EventCard from "@/components/EventCard";
 import { ErrorState, CardSkeletons } from "@/components/States";
 import { buttonClasses } from "@/components/ui/Button";
 import Reveal from "@/components/ui/Reveal";
-import Counter from "@/components/ui/Counter";
-
-const modules = [
-  { icon: "◈", title: "Campus Announcements", text: "Publish and discover official campus communication from one reliable public feed.", tone: "brand" },
-  { icon: "◌", title: "Urgent Alerts", text: "Surface high-priority broadcasts clearly so critical information is not buried.", tone: "danger" },
-  { icon: "◇", title: "Campus Events", text: "Keep academic and campus events visible with schedules, locations, and registration details.", tone: "cyan" },
-  { icon: "⌁", title: "Targeted Delivery", text: "Role, department, branch, section, hostel, or user targeting keeps communication relevant.", tone: "violet" },
-  { icon: "◎", title: "Role-Aware Workspace", text: "Give admins, faculty, and students the right workflows without mixing responsibilities.", tone: "amber" },
-  { icon: "↗", title: "Ask Campus", text: "Turn student questions into a structured communication channel with administrators.", tone: "white" },
-];
-
-const chips = [
-  "Announcements",
-  "Urgent Alerts",
-  "Events",
-  "Targeted Delivery",
-  "Admin Workspace",
-  "Faculty Workspace",
-  "Student Workspace",
-  "Ask Campus",
-];
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-IN", {
@@ -44,78 +23,69 @@ export default function Home() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [upcoming, setUpcoming] = useState<EventItem[]>([]);
   const [urgent, setUrgent] = useState<Announcement[]>([]);
-  const [announcementTotal, setAnnouncementTotal] = useState(0);
-  const [eventTotal, setEventTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     Promise.all([
       announcements({ size: 3 }),
-      upcomingEvents(0, 2),
-      announcements({ size: 2, urgent: true }),
+      upcomingEvents(0, 3),
+      announcements({ size: 3, urgent: true }),
     ])
       .then(([a, e, u]) => {
         setItems(a.content);
         setUpcoming(e.content);
         setUrgent(u.content);
-        setAnnouncementTotal(a.totalElements);
-        setEventTotal(e.totalElements);
       })
       .catch((e) =>
-        setError(e instanceof Error ? e.message : "Unable to load the campus signal."),
+        setError(e instanceof Error ? e.message : "Unable to load campus updates."),
       )
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="overflow-x-hidden">
+    <main className="nh-home overflow-x-hidden">
       <section className="nh-hero">
         <div className="nh-hero-grid bg-grid-pattern pointer-events-none" />
         <div className="nh-orb nh-orb-a" />
         <div className="nh-orb nh-orb-b" />
-        <div className="nh-orb nh-orb-c" />
 
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-8 pt-16 sm:px-6 sm:pt-24 lg:pt-28">
+        <div className="mx-auto w-full max-w-[1240px] px-4 pb-10 pt-16 sm:px-6 sm:pt-24 lg:pt-28">
           <div className="nh-hero-copy">
             <Reveal variant="fade">
-              <div className="nh-kicker rounded-full px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-200 sm:text-[11px]">
-                <span className="relative flex h-2.5 w-2.5 items-center justify-center">
-                  <span className="absolute h-full w-full animate-ping rounded-full bg-brand-light opacity-60" />
-                  <span className="relative h-1.5 w-1.5 rounded-full bg-brand-light shadow-[0_0_12px_rgba(124,58,237,.9)]" />
-                </span>
-                Smart Campus Communication
-              </div>
+              <span className="nh-kicker rounded-full px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80 sm:text-[11px]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#b8ff5a] shadow-[0_0_12px_rgba(184,255,90,.8)]" />
+                Smart campus communication
+              </span>
             </Reveal>
 
             <Reveal delay={100}>
-              <h1 className="nh-hero-title mt-7 font-display font-extrabold">
-                Every campus signal.
+              <h1 className="nh-hero-title mt-7 font-display font-extrabold text-white">
+                Everything happening
                 <br />
-                <span className="text-gradient-animated">In one place.</span>
+                <span className="nh-title-accent">on your campus.</span>
               </h1>
             </Reveal>
 
             <Reveal delay={180}>
               <p className="nh-hero-subtitle mt-7">
-                NotifyHub replaces scattered notice boards and disconnected updates with a
-                single digital campus signal for announcements, urgent alerts, events, and
-                student communication.
+                One place for official announcements, campus events, and urgent updates.
+                Stay informed without searching across notice boards, groups, and messages.
               </p>
             </Reveal>
 
             <Reveal delay={260} className="mt-9 flex flex-wrap justify-center gap-3">
               <Link
-                className={buttonClasses("primary", "!px-7 !py-3.5 !text-base btn-shine")}
+                className={buttonClasses("primary", "!border-0 !bg-[#b8ff5a] !text-[#07100a] !px-7 !py-3.5 !text-base btn-shine")}
                 href="/announcements"
               >
-                Explore campus feed →
+                Explore announcements →
               </Link>
               <Link
-                className={buttonClasses("secondary", "!px-7 !py-3.5 !text-base")}
+                className={buttonClasses("secondary", "!border-white/10 !bg-white/[.04] !px-7 !py-3.5 !text-base !text-white")}
                 href="/auth/login"
               >
-                Sign in to NotifyHub
+                Sign in
               </Link>
             </Reveal>
           </div>
@@ -124,253 +94,166 @@ export default function Home() {
             <div className="nh-hero-stage">
               <div className="nh-stage-floor" />
 
-              <div className="nh-float-card nh-float-left hidden sm:block">
+              <div className="nh-float-card nh-float-left hidden sm:block nh-card-urgent">
                 <div className="mb-4 flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted">Priority channel</span>
-                  <span className="h-2 w-2 rounded-full bg-danger shadow-[0_0_12px_rgba(255,42,95,.8)]" />
+                  <span className="nh-card-label">Urgent announcement</span>
+                  <span className="h-2 w-2 rounded-full bg-[#ff5d73] shadow-[0_0_12px_rgba(255,93,115,.8)]" />
                 </div>
                 <strong className="block text-sm font-extrabold text-white">
-                  {urgent.length ? urgent[0].title : "Urgent alerts"}
+                  {urgent.length ? urgent[0].title : "No urgent announcements"}
                 </strong>
-                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted">
-                  {urgent.length ? urgent[0].content : "Critical campus updates are surfaced here."}
+                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/55">
+                  {urgent.length ? urgent[0].content : "Critical campus updates will appear here."}
                 </p>
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[.07]">
-                  <div className="h-full w-[78%] rounded-full bg-gradient-to-r from-danger to-brand-magenta" />
-                </div>
               </div>
 
-              <div className="nh-float-card nh-float-right hidden sm:block">
+              <div className="nh-float-card nh-float-right hidden sm:block nh-card-event">
                 <div className="mb-4 flex items-center gap-2">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-cyan/10 text-cyan-light">◇</span>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted">Next event</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#76d7ff]/10 text-[#76d7ff]">◇</span>
+                  <span className="nh-card-label">Upcoming event</span>
                 </div>
                 <strong className="block text-sm font-extrabold text-white">
-                  {upcoming.length ? upcoming[0].title : "Campus events"}
+                  {upcoming.length ? upcoming[0].title : "No upcoming events"}
                 </strong>
-                <p className="mt-2 text-xs text-muted">
+                <p className="mt-2 text-xs leading-relaxed text-white/55">
                   {upcoming.length
-                    ? `${formatDate(upcoming[0].startAt)} · ${upcoming[0].location}`
-                    : "Upcoming academic and campus events."}
+                    ? formatDate(upcoming[0].startAt) + " · " + upcoming[0].location
+                    : "Campus events will appear here."}
                 </p>
               </div>
 
               <div className="nh-dashboard">
                 <div className="nh-dashboard-bar">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-xs font-bold text-white shadow-glow">
-                      ◈
-                    </span>
+                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black text-[#0a0d12]">N</span>
                     <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-white">NotifyHub</p>
-                      <p className="text-[9px] text-muted">Campus command center</p>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-white">NotifyHub</p>
+                      <p className="text-[9px] text-white/40">Campus updates</p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-teal-light/20 bg-teal-soft/60 px-3 py-1 text-[9px] font-extrabold uppercase tracking-wider text-teal-light">
-                    <span className="h-1.5 w-1.5 rounded-full bg-teal-light shadow-[0_0_8px_rgba(0,245,160,.9)]" />
-                    Live
+                  <span className="nh-live-pill">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#b8ff5a]" />
+                    LIVE
                   </span>
                 </div>
 
                 <div className="nh-dashboard-body">
                   <div>
-                    <div className="mb-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-[9px] font-extrabold uppercase tracking-[.18em] text-brand-2-light">Live campus stream</p>
-                        <h2 className="mt-1 text-base font-extrabold text-white">What matters now</h2>
-                      </div>
-                      <span className="text-[9px] text-muted">Public feed</span>
+                    <div className="mb-4">
+                      <p className="nh-dashboard-eyebrow">Latest announcements</p>
+                      <h2 className="mt-1 text-lg font-extrabold text-white">What&apos;s new</h2>
                     </div>
 
                     <div className="nh-live-list">
                       {items.length ? (
                         items.map((item) => (
                           <div className="nh-live-row" key={item.id}>
-                            <span className={`grid h-8 w-8 place-items-center rounded-lg ${item.urgent ? "bg-danger-soft text-danger-light" : "bg-brand-50 text-brand-2-light"}`}>
-                              {item.urgent ? "!" : "◈"}
-                            </span>
+                            <span className="nh-row-icon">◈</span>
                             <div className="min-w-0">
                               <strong className="block truncate text-white">{item.title}</strong>
-                              <span className="block truncate">{item.publishedAt ? formatDate(item.publishedAt) : "Published announcement"}</span>
+                              <span className="block truncate">
+                                {item.publishedAt ? formatDate(item.publishedAt) : "Published announcement"}
+                              </span>
                             </div>
-                            <span className="rounded-full bg-white/[.05] px-2 py-1 text-[8px] font-bold uppercase text-slate-300">
-                              {item.urgent ? "Urgent" : "Published"}
-                            </span>
+                            <span className="nh-row-tag">ANNOUNCEMENT</span>
                           </div>
                         ))
                       ) : (
-                        <div className="nh-live-row">
-                          <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[.05] text-muted">◈</span>
-                          <div>
-                            <strong className="block text-white">No published announcements</strong>
-                            <span className="block">The live stream is ready for campus updates.</span>
-                          </div>
-                        </div>
+                        <div className="nh-empty-row">No announcements published yet.</div>
                       )}
                     </div>
                   </div>
 
-                  <div className="nh-metrics">
-                    <div className="nh-metric">
-                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-muted">Announcements</span>
-                      <strong className="text-white">{announcementTotal}</strong>
-                      <span className="text-[9px] text-teal-light">published signal</span>
+                  <div className="nh-dashboard-side">
+                    <div className="nh-side-stat">
+                      <span>Announcements</span>
+                      <strong>{items.length}</strong>
                     </div>
-                    <div className="nh-metric">
-                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-muted">Upcoming events</span>
-                      <strong className="text-white">{eventTotal}</strong>
-                      <span className="text-[9px] text-cyan-light">campus calendar</span>
+                    <div className="nh-side-stat">
+                      <span>Events</span>
+                      <strong>{upcoming.length}</strong>
                     </div>
-                    <div className="nh-metric">
-                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-muted">Urgent now</span>
-                      <strong className="text-danger-light">{urgent.length}</strong>
-                      <span className="text-[9px] text-danger-light">priority feed</span>
+                    <div className="nh-side-stat nh-side-stat-urgent">
+                      <span>Urgent</span>
+                      <strong>{urgent.length}</strong>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <div className="nh-float-card nh-float-bottom hidden md:block">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted">Targeted delivery</span>
-                  <span className="text-brand-2-light">◎</span>
-                </div>
-                <div className="mt-4 flex gap-2">
-                  {["Admin", "Faculty", "Student"].map((role) => (
-                    <span key={role} className="rounded-full border border-white/[.08] bg-white/[.04] px-2.5 py-1 text-[9px] font-bold text-slate-300">
-                      {role}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-3 text-[10px] leading-relaxed text-muted">
-                  Role-aware communication without a noisy one-size-fits-all feed.
-                </p>
-              </div>
             </div>
           </Reveal>
         </div>
-
-        <div className="overflow-hidden border-y border-white/[.07] bg-white/[.015] py-4 backdrop-blur-xl">
-          <div className="marquee-track gap-10">
-            {[...chips, ...chips].map((chip, index) => (
-              <span key={index} className="flex items-center gap-3 whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[.16em] text-muted">
-                <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-brand-light to-cyan shadow-[0_0_8px_rgba(124,58,237,.7)]" />
-                {chip}
-              </span>
-            ))}
-          </div>
-        </div>
       </section>
 
-      <section className="nh-section mx-auto w-full max-w-[1240px] px-4 py-20 sm:px-6 sm:py-28">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <span className="text-[10px] font-extrabold uppercase tracking-[.2em] text-brand-2-light">Built around campus communication</span>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">One platform. Every important signal.</h2>
-          <p className="mt-5 text-sm leading-7 text-muted sm:text-base">
-            The visual language is expressive, but every surface below maps to a real NotifyHub workflow.
-          </p>
-        </Reveal>
-
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {modules.map((module, index) => (
-            <Reveal key={module.title} delay={index * 70}>
-              <article className={`nh-feature-card spotlight spotlight-${module.tone} p-6`}>
-                <div className="relative z-10">
-                  <span className="grid h-11 w-11 place-items-center rounded-2xl border border-white/[.08] bg-white/[.045] text-lg text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
-                    {module.icon}
-                  </span>
-                  <h3 className="mt-7 text-lg font-extrabold text-white">{module.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted">{module.text}</p>
-                </div>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-[1240px] px-4 pb-20 sm:px-6 sm:pb-28">
+      <section className="nh-content mx-auto w-full max-w-[1240px] px-4 py-16 sm:px-6 sm:py-24">
         {loading ? (
           <CardSkeletons count={3} />
         ) : error ? (
           <ErrorState message={error} />
         ) : (
           <>
-            <Reveal className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+            <Reveal className="nh-section-heading">
+              <span className="nh-section-number">01</span>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-[.2em] text-danger-light">Priority attention</span>
-                <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Urgent broadcasts</h2>
-                <p className="mt-2 text-sm text-muted">Important campus information stays visible.</p>
+                <span className="nh-section-label nh-label-announcement">Announcements</span>
+                <h2>Latest campus announcements</h2>
+                <p>Official updates published for the campus community.</p>
               </div>
-              <Link href="/urgent" className={buttonClasses("secondary")}>View all alerts →</Link>
-            </Reveal>
-
-            {urgent.length ? (
-              <div className="grid gap-5 sm:grid-cols-2">
-                {urgent.map((item, index) => (
-                  <Reveal key={item.id} delay={index * 90}><AnnouncementCard item={item} /></Reveal>
-                ))}
-              </div>
-            ) : (
-              <div className="glass-card rounded-2xl p-6 text-sm text-muted">No urgent alerts right now.</div>
-            )}
-
-            <Reveal className="mb-8 mt-24 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-[.2em] text-brand-2-light">Published campus signal</span>
-                <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Latest announcements</h2>
-              </div>
-              <Link href="/announcements" className={buttonClasses("secondary")}>Open full feed →</Link>
+              <Link href="/announcements" className={buttonClasses("secondary")}>View all →</Link>
             </Reveal>
 
             {items.length ? (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="nh-content-grid nh-announcement-grid">
                 {items.map((item, index) => (
-                  <Reveal key={item.id} delay={index * 90}><AnnouncementCard item={item} /></Reveal>
+                  <Reveal key={item.id} delay={index * 80}><AnnouncementCard item={item} /></Reveal>
                 ))}
               </div>
             ) : (
-              <div className="glass-card rounded-2xl p-6 text-sm text-muted">No announcements are published yet.</div>
+              <div className="nh-empty-content">No announcements are published yet.</div>
             )}
 
-            <Reveal className="mb-8 mt-24 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+            <Reveal className="nh-section-heading nh-section-gap">
+              <span className="nh-section-number">02</span>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-[.2em] text-cyan-light">Academic & campus calendar</span>
-                <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">Upcoming events</h2>
+                <span className="nh-section-label nh-label-event">Events</span>
+                <h2>Upcoming campus events</h2>
+                <p>Academic and campus events with their schedule and location.</p>
               </div>
-              <Link href="/events" className={buttonClasses("secondary")}>See all events →</Link>
+              <Link href="/events" className={buttonClasses("secondary")}>View all →</Link>
             </Reveal>
 
             {upcoming.length ? (
-              <div className="grid gap-5">
+              <div className="nh-content-grid nh-event-grid">
                 {upcoming.map((item, index) => (
-                  <Reveal key={item.id} delay={index * 90}><EventCard item={item} /></Reveal>
+                  <Reveal key={item.id} delay={index * 80}><EventCard item={item} /></Reveal>
                 ))}
               </div>
             ) : (
-              <div className="glass-card rounded-2xl p-6 text-sm text-muted">No upcoming events are scheduled.</div>
+              <div className="nh-empty-content">No upcoming events are scheduled.</div>
+            )}
+
+            <Reveal className="nh-section-heading nh-section-gap">
+              <span className="nh-section-number">03</span>
+              <div>
+                <span className="nh-section-label nh-label-urgent">Urgent announcements</span>
+                <h2>Priority campus updates</h2>
+                <p>Important announcements that need attention are separated from the regular feed.</p>
+              </div>
+              <Link href="/urgent" className={buttonClasses("secondary")}>View all →</Link>
+            </Reveal>
+
+            {urgent.length ? (
+              <div className="nh-content-grid nh-urgent-grid">
+                {urgent.map((item, index) => (
+                  <Reveal key={item.id} delay={index * 80}><AnnouncementCard item={item} /></Reveal>
+                ))}
+              </div>
+            ) : (
+              <div className="nh-empty-content nh-empty-urgent">No urgent announcements right now.</div>
             )}
           </>
         )}
       </section>
-
-      <section className="mx-auto w-full max-w-[1240px] px-4 pb-24 sm:px-6 sm:pb-32">
-        <Reveal className="nh-glass-cta relative overflow-hidden rounded-[30px] px-6 py-14 text-center sm:px-12 sm:py-20">
-          <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-light/20 blur-3xl" />
-          <span className="relative text-[10px] font-extrabold uppercase tracking-[.22em] text-cyan-light">The campus signal is ready</span>
-          <h2 className="relative mx-auto mt-4 max-w-3xl text-3xl font-extrabold sm:text-5xl">
-            Stop searching for updates.
-            <br />
-            <span className="text-gradient-cyan">Start receiving the signal.</span>
-          </h2>
-          <p className="relative mx-auto mt-5 max-w-xl text-sm leading-7 text-muted sm:text-base">
-            Explore the public campus feed or sign in to your role-specific NotifyHub workspace.
-          </p>
-          <div className="relative mt-8 flex flex-wrap justify-center gap-3">
-            <Link className={buttonClasses("primary", "!px-7 !py-3.5 btn-shine")} href="/announcements">Explore NotifyHub →</Link>
-            <Link className={buttonClasses("secondary", "!px-7 !py-3.5")} href="/auth/login">Sign in</Link>
-          </div>
-        </Reveal>
-      </section>
-    </div>
+    </main>
   );
 }
