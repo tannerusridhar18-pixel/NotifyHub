@@ -7,6 +7,8 @@ import {
   currentUser,
   managedAnnouncements,
   managedEvents,
+  myAnnouncements,
+  myEvents,
   createAnnouncement,
   publishAnnouncement,
   unpublishAnnouncement,
@@ -80,14 +82,14 @@ const blankInvite = {
 };
 type Tab = "announcements" | "events" | "queries" | "people";
 
-export default function DashboardClient() {
+export default function DashboardClient({ departmentScoped = false }: { departmentScoped?: boolean }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("announcements");
 
   useEffect(() => {
     const requestedTab = new URLSearchParams(window.location.search).get("tab");
     if (requestedTab === "events" || requestedTab === "announcements") setTab(requestedTab);
-  }, []);
+  }, [departmentScoped]);
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [evs, setEvs] = useState<EventItem[]>([]);
   const [queries, setQueries] = useState<CampusQuery[]>([]);
@@ -139,7 +141,7 @@ export default function DashboardClient() {
       try {
         const u = await currentUser();
         if (cancelled) return;
-        if (!u || (u.roleLevel !== 0 && u.role !== "DEPARTMENT_ADMIN")) {
+        if (!u || (departmentScoped ? u.role !== "DEPARTMENT_ADMIN" : u.roleLevel !== 0)) {
           router.replace("/");
           return;
         }
