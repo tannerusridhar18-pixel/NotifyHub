@@ -115,7 +115,7 @@ public class IdentityService {
     /** Extensible query-spec filtering; callers pass only filter[dimension] entries. */
     @Transactional(readOnly = true)
     public Page<UserListItem> listUsers(Map<String, String> filters, Pageable pageable) {
-        Set<String> known = Set.of("department", "year", "section", "hostel", "block");
+        Set<String> known = Set.of("department", "year", "section", "hostel", "block", "search", "role", "status");
         if (filters.keySet().stream().anyMatch(k -> !known.contains(k)))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown user filter dimension.");
         List<UserListItem> filtered = users.findAll().stream().filter(u -> matchesFilters(u, filters)).map(this::toUserListItem).toList();
@@ -124,6 +124,16 @@ public class IdentityService {
     }
 
     private boolean matchesFilters(User user, Map<String, String> f) {
+        if (f.containsKey("search") && !f.get("search").isBlank()) {
+            String q = f.get("search").trim().toLowerCase();
+            boolean matches = (user.getEmail() != null && user.getEmail().toLowerCase().contains(q))
+                    || (user.getUsername() != null && user.getUsername().toLowerCase().contains(q));
+            if (!matches) return false;
+        }
+        if (f.containsKey("role") && !f.get("role").isBlank() && !"ALL".equalsIgnoreCase(f.get("role"))
+                && !user.getEffectiveRoleName().equalsIgnoreCase(f.get("role"))) return false;
+        if (f.containsKey("status") && !f.get("status").isBlank() && !"ALL".equalsIgnoreCase(f.get("status"))
+                && !user.getAccountStatus().name().equalsIgnoreCase(f.get("status"))) return false;
         if (f.containsKey("department")) {
             Long id = numeric(f.get("department"));
             Long current = user.getDepartmentEntity() != null ? user.getDepartmentEntity().getId()
