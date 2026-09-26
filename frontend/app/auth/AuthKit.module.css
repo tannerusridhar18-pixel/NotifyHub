@@ -97,7 +97,8 @@
   background:
     radial-gradient(520px circle at 50% 28%, rgba(186, 215, 247, 0.08), transparent 68%),
     radial-gradient(460px circle at 12% 92%, rgba(102, 58, 243, 0.07), transparent 72%),
-    radial-gradient(460px circle at 88% 84%, rgba(186, 215, 247, 0.05), transparent 72%);
+    radial-gradient(460px circle at 88% 84%, rgba(186, 215, 247, 0.05), transparent 72%),
+    radial-gradient(340px circle at 50% 62%, rgba(216, 236, 248, 0.035), transparent 70%);
 }
 
 .shell {
@@ -200,13 +201,23 @@
 
 .card {
   position: relative;
+  border: 1px solid rgba(186, 215, 247, 0.07);
   width: 100%;
   border-radius: var(--radius-authkit-card);
   background: var(--color-authkit-deep-glass);
   box-shadow: var(--shadow-authkit-modal);
   padding: 30px 26px 26px;
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px) saturate(125%);
+  -webkit-backdrop-filter: blur(28px) saturate(125%);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgba(216,236,248,0.055), transparent 24%, transparent 72%, rgba(102,58,243,0.025));
+  pointer-events: none;
 }
 
 .card::before {
