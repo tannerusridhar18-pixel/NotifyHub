@@ -148,7 +148,6 @@ public class EventService {
     public EventDto update(Long id, Request request, String username) {
         assertCanManage(id, username);
         Event event = get(id);
-        if (event.getStatus() == EventStatus.ARCHIVED) throw conflict("Archived events cannot be modified or deleted.");
         if (event.getStatus() != EventStatus.DRAFT) throw conflict("Only draft events may be edited.");
         User sender = user(username);
         List<String> targetList = parseTargets(request.recipientTargets());
@@ -195,7 +194,6 @@ public class EventService {
 
     public EventDto archive(Long id) {
         Event event = get(id);
-        if (event.getStatus() == EventStatus.ARCHIVED) throw conflict("Event is already archived.");
         event.setStatus(EventStatus.ARCHIVED);
         audit.save(new AuditLog(event.getCreatedBy(), "EVENT_ARCHIVE", "EVENT", String.valueOf(event.getId()), "{}"));
         return EventDto.from(event);
