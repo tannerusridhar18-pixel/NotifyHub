@@ -188,6 +188,7 @@ public class AnnouncementService {
         if (a.getStatus() != AnnouncementStatus.ARCHIVED) throw conflict("Only archived announcements can be unarchived.");
         a.setStatus(AnnouncementStatus.DRAFT);
         a.setPublishedAt(null);
+        repo.save(a);
         audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_UNARCHIVE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
         return AnnouncementDto.from(a);
     }
