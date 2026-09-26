@@ -313,8 +313,12 @@ public class IdentityService {
                 .setParameter(1, userId).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM faculty_profiles WHERE user_id = ?1")
                 .setParameter(1, userId).executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM users WHERE id = ?1")
+        int deleted = entityManager.createNativeQuery("DELETE FROM users WHERE id = ?1")
                 .setParameter(1, userId).executeUpdate();
+        entityManager.clear();
+        if (deleted != 1 || users.findById(userId).isPresent()) {
+            throw new IllegalStateException("User deletion did not remove the account from the database.");
+        }
     }
 
     @Transactional
