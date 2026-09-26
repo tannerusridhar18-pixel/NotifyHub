@@ -334,6 +334,7 @@ export const updateAnnouncement = (id: number, p: AnnouncementPayload) =>
   request<Announcement>(`/announcements/${id}`, { method: "PUT", body: JSON.stringify(p) });
 export const publishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/publish`, { method: "POST" });
 export const archiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/archive`, { method: "POST" });
+export const unarchiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unarchive`, { method: "POST" });
 export const unpublishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unpublish`, { method: "POST" });
 export const deleteAnnouncement = (id: number) => request<void>(`/announcements/${id}`, { method: "DELETE" });
 
@@ -347,6 +348,7 @@ export const publishEvent = (id: number) => request<EventItem>(`/events/${id}/pu
 export const unpublishEvent = (id: number) => request<EventItem>(`/events/${id}/unpublish`, { method: "POST" });
 export const cancelEvent = (id: number) => request<EventItem>(`/events/${id}/cancel`, { method: "POST" });
 export const archiveEvent = (id: number) => request<EventItem>(`/events/${id}/archive`, { method: "POST" });
+export const unarchiveEvent = (id: number) => request<EventItem>(`/events/${id}/unarchive`, { method: "POST" });
 export const deleteEvent = (id: number) => request<void>(`/events/${id}`, { method: "DELETE" });
 export type EventRegistration = { id: number; studentId: number; studentEmail: string; studentName: string; department: string | null; year: number | null; section: string | null; registeredAt: string };
 export const registerForEvent = (id: number) => request<EventRegistration>(`/events/${id}/register`, { method: "POST" });
