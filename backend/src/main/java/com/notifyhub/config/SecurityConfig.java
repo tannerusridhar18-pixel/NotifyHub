@@ -97,6 +97,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/queries/*/answer").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/queries/*").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/queries/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/admin/users").hasAnyRole("ADMIN", "SUPER_ADMIN", "DEPARTMENT_ADMIN")
                         .requestMatchers("/api/v1/admin/users/**", "/api/v1/admin/roles/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/admin/invitations/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "DEPARTMENT_ADMIN")
                         .requestMatchers("/api/v1/admin/students/batch-promote").hasAnyRole("ADMIN", "SUPER_ADMIN", "DEPARTMENT_ADMIN")
