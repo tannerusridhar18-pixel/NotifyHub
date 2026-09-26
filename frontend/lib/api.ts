@@ -346,6 +346,7 @@ export const updateEvent = (id: number, p: EventPayload) => request<EventItem>(`
 export const publishEvent = (id: number) => request<EventItem>(`/events/${id}/publish`, { method: "POST" });
 export const unpublishEvent = (id: number) => request<EventItem>(`/events/${id}/unpublish`, { method: "POST" });
 export const cancelEvent = (id: number) => request<EventItem>(`/events/${id}/cancel`, { method: "POST" });
+export const archiveEvent = (id: number) => request<EventItem>(`/events/${id}/archive`, { method: "POST" });
 export const deleteEvent = (id: number) => request<void>(`/events/${id}`, { method: "DELETE" });
 export type EventRegistration = { id: number; studentId: number; studentEmail: string; studentName: string; department: string | null; year: number | null; section: string | null; registeredAt: string };
 export const registerForEvent = (id: number) => request<EventRegistration>(`/events/${id}/register`, { method: "POST" });
