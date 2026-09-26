@@ -187,6 +187,7 @@ public class AnnouncementService {
     public void delete(Long id) {
         Announcement a = get(id);
         if (a.getStatus() == AnnouncementStatus.PUBLISHED) throw conflict("Unpublish or archive this announcement before deleting it.");
+        if (a.getStatus() == AnnouncementStatus.ARCHIVED) throw conflict("Archived announcements cannot be modified or deleted.");
         audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_DELETE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
         repo.delete(a);
     }
