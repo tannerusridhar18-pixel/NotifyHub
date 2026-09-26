@@ -1475,25 +1475,32 @@
 
 /* Shared public-page cosmic orbit system */
 .nh-public-page { position:relative; isolation:isolate; --orbit-x:0px; --orbit-y:0px; --orbit-rx:0deg; --orbit-ry:0deg; }
-.nh-public-page > .nh-public-orbit { position:absolute; top:-190px; right:-180px; width:820px; height:820px; z-index:0; pointer-events:none; opacity:.88; transform:translate3d(var(--orbit-x),var(--orbit-y),0) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry)); transition:transform .35s cubic-bezier(.16,1,.3,1); transform-style:preserve-3d; }
-.nh-public-orbit-home { position:absolute!important; top:50px!important; right:50%!important; width:min(1050px,90vw)!important; height:min(1050px,90vw)!important; margin-right:min(525px,-45vw); opacity:.72!important; z-index:0!important; }
-.nh-public-stars { position:absolute; inset:0; border-radius:50%; background-image:radial-gradient(circle at 18% 24%,rgba(255,255,255,.65) 0 1px,transparent 1.5px),radial-gradient(circle at 72% 18%,rgba(118,215,255,.55) 0 1px,transparent 1.5px),radial-gradient(circle at 42% 76%,rgba(255,255,255,.45) 0 1px,transparent 1.5px),radial-gradient(circle at 84% 68%,rgba(184,255,90,.4) 0 1px,transparent 1.5px); animation:nh-public-star-drift 12s linear infinite; }
-.nh-public-sun { position:absolute; left:50%; top:50%; width:96px; height:96px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff 0 5%,#dfffb8 15%,#b8ff5a 42%,rgba(184,255,90,.08) 70%,transparent 72%); box-shadow:0 0 45px rgba(184,255,90,.5),0 0 150px rgba(184,255,90,.16); animation:nh-public-sun-pulse 4s ease-in-out infinite; }
-.nh-public-orbit-path { position:absolute; left:50%; top:50%; width:620px; height:270px; margin:-135px 0 0 -310px; border:1px solid rgba(255,255,255,.12); border-radius:50%; transform-style:preserve-3d; }
-.nh-public-orbit-a { transform:rotateX(67deg) rotateZ(12deg); animation:nh-public-orbit-a 13s linear infinite; }
-.nh-public-orbit-b { width:500px;height:215px;margin:-107px 0 0 -250px; transform:rotateX(68deg) rotateZ(-32deg); animation:nh-public-orbit-b 17s linear infinite reverse; }
-.nh-public-orbit-c { width:730px;height:310px;margin:-155px 0 0 -365px; transform:rotateX(72deg) rotateZ(58deg); animation:nh-public-orbit-c 21s linear infinite; }
+.nh-public-page > .nh-public-orbit { position:absolute; top:-120px; right:-120px; width:900px; height:900px; z-index:0; pointer-events:none; opacity:.9; transform:translate3d(var(--orbit-x),var(--orbit-y),0) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry)); transition:transform .35s cubic-bezier(.16,1,.3,1); transform-style:preserve-3d; }
+.nh-public-orbit-home { position:absolute!important; top:-80px!important; left:50%!important; right:auto!important; width:min(1180px,96vw)!important; height:min(1180px,96vw)!important; transform:translate3d(calc(-50% + var(--orbit-x)),var(--orbit-y),0) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry)); opacity:.78!important; z-index:0!important; }
+.nh-public-stars { position:absolute; inset:0; border-radius:50%; background-image:radial-gradient(circle at 12% 18%,rgba(255,255,255,.75) 0 1px,transparent 1.6px),radial-gradient(circle at 72% 12%,rgba(118,215,255,.65) 0 1px,transparent 1.6px),radial-gradient(circle at 39% 74%,rgba(255,255,255,.5) 0 1px,transparent 1.6px),radial-gradient(circle at 84% 68%,rgba(184,255,90,.5) 0 1px,transparent 1.6px),radial-gradient(circle at 26% 54%,rgba(167,139,250,.5) 0 1px,transparent 1.6px); animation:nh-public-star-drift 16s linear infinite; }
+.nh-public-sun { position:absolute; left:50%; top:50%; width:110px; height:110px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff 0 5%,#dfffb8 15%,#b8ff5a 42%,rgba(184,255,90,.08) 70%,transparent 72%); box-shadow:0 0 50px rgba(184,255,90,.55),0 0 180px rgba(184,255,90,.18); animation:nh-public-sun-pulse 4s ease-in-out infinite; }
+.nh-public-orbit-path { position:absolute; left:50%; top:50%; width:620px; height:270px; margin:-135px 0 0 -310px; border:1px solid rgba(255,255,255,.13); border-radius:50%; transform-style:preserve-3d; }
+.nh-public-orbit-a { transform:rotateX(67deg) rotateZ(12deg); animation:nh-public-orbit-a 18s linear infinite; }
+.nh-public-orbit-b { width:500px;height:215px;margin:-107px 0 0 -250px; transform:rotateX(68deg) rotateZ(-32deg); animation:nh-public-orbit-b 23s linear infinite reverse; }
+.nh-public-orbit-c { width:730px;height:310px;margin:-155px 0 0 -365px; transform:rotateX(72deg) rotateZ(58deg); animation:nh-public-orbit-c 29s linear infinite; }
+.nh-public-orbit-d { width:820px;height:350px;margin:-175px 0 0 -410px; transform:rotateX(70deg) rotateZ(-65deg); animation:nh-public-orbit-d 35s linear infinite reverse; }
+.nh-public-orbit-e { width:410px;height:180px;margin:-90px 0 0 -205px; transform:rotateX(63deg) rotateZ(86deg); animation:nh-public-orbit-e 15s linear infinite; }
+.nh-public-orbit-f { width:940px;height:400px;margin:-200px 0 0 -470px; transform:rotateX(74deg) rotateZ(34deg); animation:nh-public-orbit-f 42s linear infinite reverse; }
 .nh-public-planet { position:absolute; left:50%; top:-9px; width:18px;height:18px; margin-left:-9px; border-radius:50%; box-shadow:0 0 24px currentColor; }
 .nh-public-planet-a { color:#76d7ff;background:#76d7ff; }
-.nh-public-planet-b { color:#a78bfa;background:#a78bfa;width:26px;height:26px;top:-13px;margin-left:-13px; }
-.nh-public-planet-c { color:#ff5d73;background:#ff5d73;width:14px;height:14px;top:-7px;margin-left:-7px; }
+.nh-public-planet-b { color:#a78bfa;background:#a78bfa;width:28px;height:28px;top:-14px;margin-left:-14px; }
+.nh-public-planet-c { color:#ff5d73;background:#ff5d73;width:15px;height:15px;top:-7.5px;margin-left:-7.5px; }
+.nh-public-planet-d { color:#b8ff5a;background:#b8ff5a;width:22px;height:22px;top:-11px;margin-left:-11px; }
+.nh-public-planet-e { color:#f5c451;background:#f5c451;width:11px;height:11px;top:-5.5px;margin-left:-5.5px; }
+.nh-public-planet-f { color:#f7f7ff;background:#f7f7ff;width:9px;height:9px;top:-4.5px;margin-left:-4.5px; }
 @keyframes nh-public-orbit-a { to { transform:rotateX(67deg) rotateZ(372deg); } }
 @keyframes nh-public-orbit-b { to { transform:rotateX(68deg) rotateZ(-392deg); } }
 @keyframes nh-public-orbit-c { to { transform:rotateX(72deg) rotateZ(418deg); } }
-@keyframes nh-public-star-drift { to { transform:rotate(360deg) scale(1.03); } }
+@keyframes nh-public-orbit-d { to { transform:rotateX(70deg) rotateZ(-425deg); } }
+@keyframes nh-public-orbit-e { to { transform:rotateX(63deg) rotateZ(446deg); } }
+@keyframes nh-public-orbit-f { to { transform:rotateX(74deg) rotateZ(-326deg); } }
+@keyframes nh-public-star-drift { to { transform:rotate(360deg) scale(1.04); } }
 @keyframes nh-public-sun-pulse { 50% { transform:translate(-50%,-50%) scale(1.08); } }
-@media (max-width:680px){
- .nh-public-page > .nh-public-orbit{top:-90px;right:-300px;transform:translate3d(var(--orbit-x),var(--orbit-y),0) scale(.62) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry));}
- .nh-public-orbit-home{top:80px!important;right:50%!important;width:700px!important;height:700px!important;margin-right:-350px;opacity:.5!important;}
-}
+@media (max-width:900px){ .nh-public-page > .nh-public-orbit{top:-80px;right:-260px;width:760px;height:760px;} .nh-public-orbit-home{top:-40px!important;width:900px!important;height:900px!important;} }
+@media (max-width:680px){ .nh-public-page > .nh-public-orbit{top:-40px;right:-300px;transform:translate3d(var(--orbit-x),var(--orbit-y),0) scale(.62) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry));} .nh-public-orbit-home{top:0!important;left:50%!important;width:700px!important;height:700px!important;transform:translate3d(calc(-50% + var(--orbit-x)),var(--orbit-y),0) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry));opacity:.5!important;} }
 @media (prefers-reduced-motion:reduce){.nh-public-page > .nh-public-orbit *{animation:none!important;}.nh-public-page > .nh-public-orbit{transition:none;}}
