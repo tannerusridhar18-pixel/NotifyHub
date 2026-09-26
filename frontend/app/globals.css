@@ -1669,6 +1669,11 @@
 
   .nh-public-page > .nh-public-orbit {
     pointer-events: none;
+    display: block;
+    visibility: visible;
+    opacity: .62;
+    z-index: 0;
+    transform: translate3d(var(--orbit-x), var(--orbit-y), 0) scale(.72) rotateX(var(--orbit-rx)) rotateY(var(--orbit-ry));
   }
 
   .nh-public-content-card {
