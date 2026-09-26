@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   scopedQueries,
+  queryUsersByFilters,
+  removeAdminUser,
   answerScopedQuery,
   departmentFacultyList,
   departmentStudentList,
@@ -40,6 +42,11 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
   const [studentList, setStudentList] = useState<DepartmentStudentItem[]>([]);
   const [analytics, setAnalytics] = useState<DepartmentAnalytics | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
+  const [studentYearFilter, setStudentYearFilter] = useState("");
+  const [studentSectionFilter, setStudentSectionFilter] = useState("");
+  const [studentHostelFilter, setStudentHostelFilter] = useState("");
+  const [studentBlockFilter, setStudentBlockFilter] = useState("");
+  const [studentStatusFilter, setStudentStatusFilter] = useState("");
   const [editingStudent, setEditingStudent] = useState<DepartmentStudentItem | null>(null);
   const [branches, setBranches] = useState<StructureBranch[]>([]);
   const [sections, setSections] = useState<StructureSection[]>([]);
@@ -172,6 +179,19 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
       await loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update student.");
+    }
+  }
+
+  async function deleteStudent(student: DepartmentStudentItem) {
+    if (!confirm(`Permanently delete ${student.name}? This cannot be undone.`)) return;
+    try {
+      const users = await queryUsersByFilters({ search: student.email, department: String(deptId) });
+      const target = users.content?.find((u) => u.email?.toLowerCase() === student.email?.toLowerCase());
+      if (!target?.publicId) throw new Error("Could not resolve the student's account for deletion.");
+      await removeAdminUser(target.publicId);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete student.");
     }
   }
 
@@ -637,12 +657,19 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
         {!error && tab === "students" && (
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div><h2 className="text-2xl font-extrabold text-white">Student Management</h2><p className="text-xs text-muted">Search, edit, and deactivate students in {user.department || "your department"}.</p></div>
-              <div className="flex flex-wrap gap-2"><input aria-label="Search students" className={`${inputBase} max-w-xs`} placeholder="Search name, ID, email" value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} /><Button variant="primary" onClick={() => setShowStudentInvite(true)}>Invite Students</Button></div>
+              <div><h2 className="text-2xl font-extrabold text-white">Student Management</h2><p className="text-xs text-muted">Students in {user.department || "your department"}.</p></div>
+              <Button variant="primary" onClick={() => setShowStudentInvite(true)}>Invite Students</Button>
+            </div>
+            <div className="mb-5 grid gap-3 rounded-2xl border border-white/10 bg-surface-2/60 p-4 sm:grid-cols-2 lg:grid-cols-5">
+              <input aria-label="Search students" className={inputBase} placeholder="Search name, ID, email" value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} />
+              <select className={inputBase} value={studentYearFilter} onChange={(e) => setStudentYearFilter(e.target.value)}><option value="">All years</option>{[1,2,3,4,5].map((y) => <option key={y} value={y}>{y === 5 ? "Graduated / Alumni" : `Year ${y}`}</option>)}</select>
+              <select className={inputBase} value={studentSectionFilter} onChange={(e) => setStudentSectionFilter(e.target.value)}><option value="">All sections</option>{sections.filter((s) => s.departmentId === deptId && s.active).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+              <select className={inputBase} value={studentHostelFilter} onChange={(e) => setStudentHostelFilter(e.target.value)}><option value="">All hostels</option><option value="HOSTELLER">Hostellers</option><option value="NON_HOSTELLER">Non-hostellers</option></select>
+              <select className={inputBase} value={studentStatusFilter} onChange={(e) => setStudentStatusFilter(e.target.value)}><option value="">All statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs"><thead className="border-b border-white/10 text-muted uppercase tracking-wider"><tr><th className="py-3 px-4">Student ID</th><th className="py-3 px-4">Name</th><th className="py-3 px-4">Email</th><th className="py-3 px-4">Year</th><th className="py-3 px-4 text-right">Actions</th></tr></thead>
-                <tbody className="divide-y divide-white/[0.06]">{studentList.filter((student) => `${student.studentId} ${student.name} ${student.email}`.toLowerCase().includes(studentSearch.toLowerCase())).map((student) => <tr key={student.id}><td className="py-3 px-4 font-mono font-bold">{student.studentId}</td><td className="py-3 px-4 font-bold">{student.name}</td><td className="py-3 px-4 text-muted">{student.email}</td><td className="py-3 px-4">{student.year}</td><td className="py-3 px-4 text-right"><button className="mr-2 rounded-lg border border-white/10 px-2 py-1 font-bold text-muted" onClick={() => setEditingStudent({ ...student })}>Edit</button><button className="rounded-lg border border-red-400/30 px-2 py-1 font-bold text-red-200" onClick={() => void deactivateStudent(student)}>Deactivate</button></td></tr>)}</tbody>
+                <tbody className="divide-y divide-white/[0.06]">{studentList.filter((student) => `${student.studentId} ${student.name} ${student.email}`.toLowerCase().includes(studentSearch.toLowerCase()) && (!studentYearFilter || String(student.year) === studentYearFilter) && (!studentSectionFilter || String(student.sectionId) === studentSectionFilter) && (!studentHostelFilter || (studentHostelFilter === "HOSTELLER" ? student.hosteller : !student.hosteller)) && (!studentStatusFilter || student.status === studentStatusFilter)).map((student) => <tr key={student.id}><td className="py-3 px-4 font-mono font-bold">{student.studentId}</td><td className="py-3 px-4 font-bold">{student.name}</td><td className="py-3 px-4 text-muted">{student.email}</td><td className="py-3 px-4">{student.year}</td><td className="py-3 px-4 text-right"><button className="mr-2 rounded-lg border border-white/10 px-2 py-1 font-bold text-muted" onClick={() => setEditingStudent({ ...student })}>Edit</button><button className="rounded-lg border border-red-400/30 px-2 py-1 font-bold text-red-200" onClick={() => void deactivateStudent(student)}>Deactivate</button><button className="rounded-lg border border-danger/40 bg-danger-soft px-2 py-1 font-bold text-danger-light" onClick={() => void deleteStudent(student)}>Delete</button></td></tr>)}</tbody>
               </table>
             </div>
             {editingStudent && <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"><form onSubmit={saveStudent} className="w-full max-w-md space-y-4 rounded-2xl border border-white/15 bg-surface p-6"><h3 className="text-lg font-extrabold">Edit Student</h3><Field label="Name"><input className={inputBase} value={editingStudent.name} onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })} /></Field><div className="grid grid-cols-2 gap-3"><Field label="Year"><input type="number" min={1} className={inputBase} value={editingStudent.year} onChange={(e) => setEditingStudent({ ...editingStudent, year: Number(e.target.value) })} /></Field><Field label="Semester"><input type="number" min={1} className={inputBase} value={editingStudent.semester} onChange={(e) => setEditingStudent({ ...editingStudent, semester: Number(e.target.value) })} /></Field></div><div className="flex justify-end gap-2"><Button variant="secondary" type="button" onClick={() => setEditingStudent(null)}>Cancel</Button><Button variant="primary" type="submit">Save changes</Button></div></form></div>}
