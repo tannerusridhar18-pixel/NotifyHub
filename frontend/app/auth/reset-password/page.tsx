@@ -7,6 +7,8 @@ import AuthCard from "@/components/ui/AuthCard";
 import Field from "@/components/ui/Field";
 import Button from "@/components/ui/Button";
 import { inputBase, errorBox, successBox } from "@/components/ui/classes";
+import AuthFloatingCards from "@/components/auth/AuthFloatingCards";
+import styles from "../AuthKit.module.css";
 
 export default function ResetPassword() {
   const router = useRouter();
