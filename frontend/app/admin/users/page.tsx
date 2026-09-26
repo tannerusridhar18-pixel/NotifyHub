@@ -226,8 +226,9 @@ export default function ManageUsersPage() {
     }
     try {
       await removeAdminUser(u.publicId);
-      setToast({ message: `User ${u.email} deleted successfully.`, type: "success" });
+      setUsers((current) => current.filter((item) => item.publicId !== u.publicId));
       await load();
+      setToast({ message: `User ${u.email} deleted successfully.`, type: "success" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to delete user.";
       setToast({ message: msg, type: "error" });
