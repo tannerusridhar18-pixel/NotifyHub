@@ -143,7 +143,7 @@ public class UserController {
         guardSuperAdminChange(actor, publicId, null, null);
         identity.removeUser(publicId);
         audit(actor, "USER_DELETE", publicId);
-        return ResponseEntity.ok(ApiResponse.message("User account removed/deactivated."));
+        return ResponseEntity.ok(ApiResponse.message("User account deleted."));
     }
 
     @PatchMapping("/admin/users/{publicId}/status")
