@@ -198,6 +198,15 @@ public class EventService {
         return EventDto.from(event);
     }
 
+    public EventDto unarchive(Long id) {
+        Event event = get(id);
+        if (event.getStatus() != EventStatus.ARCHIVED) throw conflict("Only archived events can be unarchived.");
+        event.setStatus(EventStatus.DRAFT);
+        event.setPublishedAt(null);
+        audit.save(new AuditLog(event.getCreatedBy(), "EVENT_UNARCHIVE", "EVENT", String.valueOf(event.getId()), "{}"));
+        return EventDto.from(event);
+    }
+
     public void delete(Long id) {
         Event event = get(id);
         if (event.getStatus() == EventStatus.PUBLISHED) throw conflict("Unpublish or cancel this event before deleting it.");
@@ -347,6 +356,7 @@ public class EventService {
     public EventDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
     public EventDto cancel(Long id, String username) { assertCanManage(id, username); return cancel(id); }
     public EventDto archive(Long id, String username) { assertCanManage(id, username); return archive(id); }
+    public EventDto unarchive(Long id, String username) { assertCanManage(id, username); return unarchive(id); }
     public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Event get(Long id) { return repo.findById(id).orElseThrow(this::notFound); }
