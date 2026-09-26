@@ -17,10 +17,10 @@ export default function AnnouncementCard({ item }: { item: Announcement }) {
         as="article"
         tone={item.urgent ? "danger" : "brand"}
         className={cx(
-          "group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-[22px] border p-6 cursor-pointer transition-[transform,opacity,border-color,box-shadow,background-color] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-card-hover",
+          "nh-public-content-card group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-[22px] border p-6 cursor-pointer transition-[transform,opacity,border-color,box-shadow,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-2",
           item.urgent
-            ? "border-danger/45 bg-gradient-to-br from-[#240c17] via-surface to-[#190810] hover:border-danger/80 hover:shadow-glow-danger"
-            : "border-border/90 bg-gradient-to-br from-surface via-surface-2 to-surface hover:border-brand-light/70 hover:shadow-glow"
+            ? "nh-card-urgent-theme border-danger/45 bg-gradient-to-br from-[#241019] via-[#101217] to-[#0a0c10] hover:border-danger/80 hover:shadow-[0_18px_55px_rgba(255,93,115,.18)]"
+            : "border-white/[0.09] bg-gradient-to-br from-[#15181c]/95 via-[#0d1013]/92 to-[#090b0d]/96 hover:border-[#b8ff5a]/35 hover:shadow-[0_18px_55px_rgba(184,255,90,.10)]"
         )}
       >
         <div onClick={() => setOpen(true)}>
@@ -31,7 +31,7 @@ export default function AnnouncementCard({ item }: { item: Announcement }) {
             </span>
             {item.urgent && <UrgentBadge />}
           </div>
-          <h3 className="mb-2 text-xl font-extrabold tracking-tight text-ink [overflow-wrap:anywhere] transition-colors duration-200 group-hover:text-brand-light">
+          <h3 className="mb-2 text-xl font-extrabold tracking-tight text-ink [overflow-wrap:anywhere] transition-colors duration-200 group-hover:text-[#b8ff5a]">
             {item.title}
           </h3>
           <p className="mb-3 text-xs font-semibold text-muted/80">
@@ -63,7 +63,7 @@ export default function AnnouncementCard({ item }: { item: Announcement }) {
             "pointer-events-none absolute bottom-0 left-0 right-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100",
             item.urgent
               ? "bg-gradient-to-r from-danger via-[#ff6b8b] to-amber"
-              : "bg-gradient-to-r from-brand via-brand-2 to-cyan"
+              : "bg-gradient-to-r from-[#b8ff5a] via-[#76d7ff] to-transparent"
           )}
         />
       </Spotlight>
