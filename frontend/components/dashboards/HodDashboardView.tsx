@@ -7,6 +7,7 @@ import {
   announcements,
   createAnnouncement,
   departmentAnalytics,
+  departmentFacultyList,
   departmentStudents,
   structureSections,
   reassignStudentSection,
@@ -15,6 +16,7 @@ import {
   type StructureSection,
 } from "@/lib/api";
 import type { Announcement, DepartmentAnalytics } from "@/types";
+import type { DepartmentFacultyItem } from "@/lib/api";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import { Empty, ErrorState, Loading } from "@/components/States";
 import Button from "@/components/ui/Button";
@@ -24,10 +26,11 @@ import { inputBase, textareaBase } from "@/components/ui/classes";
 
 export default function HodDashboardView({ user }: { user: CurrentUser }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"analytics" | "directives" | "broadcast" | "roster">("analytics");
+  const [tab, setTab] = useState<"analytics" | "directives" | "broadcast" | "roster" | "faculty">("analytics");
   const [analytics, setAnalytics] = useState<DepartmentAnalytics | null>(null);
   const [directives, setDirectives] = useState<Announcement[]>([]);
   const [students, setStudents] = useState<Array<{ id: number; studentId: string; name: string; email: string; year: number; semester: number; branchId: number; branchName: string; sectionId: number; sectionName: string }>>([]);
+  const [faculty, setFaculty] = useState<DepartmentFacultyItem[]>([]);
   const [sections, setSections] = useState<StructureSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,15 +55,17 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
     setLoading(true);
     setError("");
     try {
-      const [an, d, st, sc] = await Promise.all([
+      const [an, d, st, f, sc] = await Promise.all([
         departmentAnalytics(deptId).catch(() => null),
         announcements({ size: 20 }),
         departmentStudents(deptId).catch(() => []),
+        departmentFacultyList(deptId).catch(() => []),
         structureSections().catch(() => []),
       ]);
       setAnalytics(an);
       setDirectives(d.content || []);
       setStudents(st || []);
+      setFaculty(f || []);
       setSections(sc || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load HOD workspace.");
@@ -70,6 +75,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
   }, [deptId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
@@ -144,6 +150,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
           <span>{user.department ? `${user.department} Department` : user.email}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/dashboard/my-posts" className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all">My Posts</Link>
           <Link
             href="/dashboard/feed?from=hod"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"
@@ -232,6 +239,16 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
               }`}
             >
               👥 Student Roster & Sections ({students.length})
+            </button>
+            <button
+              onClick={() => setTab("faculty")}
+              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+                tab === "faculty"
+                  ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
+                  : "bg-surface-2/60 text-muted hover:text-white"
+              }`}
+            >
+              👨‍🏫 Faculty Roster ({faculty.length})
             </button>
           </div>
         </section>
@@ -455,6 +472,21 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {!error && tab === "faculty" && (
+          <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
+            <h2 className="text-2xl font-extrabold text-white">Department Faculty Roster</h2>
+            <p className="mt-1 text-xs text-muted">Faculty mapped to this department, including HOME and SUB assignments.</p>
+            <div className="mt-6 overflow-x-auto">
+              {faculty.length === 0 ? <Empty label="department faculty" /> : (
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-white/10 text-muted uppercase tracking-wider"><tr><th className="py-3 px-4">Faculty ID</th><th className="py-3 px-4">Name</th><th className="py-3 px-4">Email</th><th className="py-3 px-4">Designation</th><th className="py-3 px-4">Mapping</th></tr></thead>
+                  <tbody className="divide-y divide-white/[0.06]">{faculty.map((member) => <tr key={member.id}><td className="py-3 px-4 font-mono font-bold">{member.facultyId}</td><td className="py-3 px-4 font-bold">{member.name}</td><td className="py-3 px-4 text-muted">{member.email}</td><td className="py-3 px-4">{member.designation}</td><td className="py-3 px-4">{member.relationship}</td></tr>)}</tbody>
+                </table>
+              )}
+            </div>
           </div>
         )}
       </main>

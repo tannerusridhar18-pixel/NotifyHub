@@ -104,6 +104,12 @@ public class TargetingService {
      */
     public void validateSenderPermissions(User sender, String recipientType, List<String> recipientTargets,
                                           Long departmentId, TargetType targetType, Long branchId, Long sectionId) {
+        validateSenderPermissions(sender, recipientType, recipientTargets, departmentId, targetType, branchId, sectionId, null, null);
+    }
+
+    public void validateSenderPermissions(User sender, String recipientType, List<String> recipientTargets,
+                                          Long departmentId, TargetType targetType, Long branchId, Long sectionId,
+                                          String userEmail, Role role) {
         TargetType effectiveType = targetType != null ? targetType : TargetType.GLOBAL;
         int level = sender.getEffectiveLevel();
         if (effectiveType == TargetType.GLOBAL && level >= 2 && level <= 4) {
@@ -116,7 +122,11 @@ public class TargetingService {
         if (effectiveDepartmentId == null && effectiveType == TargetType.BRANCH && branchId != null) {
             effectiveDepartmentId = branches.findById(branchId).map(b -> b.getDepartment().getId()).orElse(null);
         }
-        broadcastPermissionResolver.validate(sender, recipientType, recipientTargets, effectiveDepartmentId);
+        User targetUser = null;
+        if (effectiveType == TargetType.USER && userEmail != null && !userEmail.isBlank()) {
+            targetUser = users.findByEmailIgnoreCase(userEmail.trim()).filter(User::isActive).orElse(null);
+        }
+        broadcastPermissionResolver.validate(sender, recipientType, recipientTargets, effectiveDepartmentId, effectiveType, targetUser, role);
     }
 
     public boolean matches(Announcement a, User viewer) {

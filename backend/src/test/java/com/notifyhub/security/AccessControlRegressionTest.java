@@ -6,6 +6,7 @@ import com.notifyhub.announcement.AnnouncementRepository;
 import com.notifyhub.announcement.AnnouncementService;
 import com.notifyhub.auth.AccountStatus;
 import com.notifyhub.auth.AuthService;
+import com.notifyhub.auth.RefreshTokenRepository;
 import com.notifyhub.auth.Role;
 import com.notifyhub.auth.User;
 import com.notifyhub.auth.UserRepository;
@@ -58,6 +59,8 @@ class AccessControlRegressionTest {
     @Autowired QueryRepository queryRepo;
     @Autowired AuthService authService;
     @Autowired PasswordEncoder passwordEncoder;
+    @Autowired RefreshTokenRepository refreshTokens;
+    @Autowired SecureTokenService secureTokens;
     @Autowired DepartmentRepository departmentRepo;
     @Autowired AnnouncementRepository announcementRepo;
     @Autowired TargetingService targetingService;
@@ -239,5 +242,48 @@ class AccessControlRegressionTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"password\":\"NewPassw0rd123\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    void parallelRefreshWithTheSameTokenDoesNotEndTheSession() {
+        User user = new User();
+        user.setUsername("refresh-" + System.nanoTime() + "@example.edu");
+        user.setEmail(user.getUsername());
+        user.setPasswordHash(passwordEncoder.encode("Correct123"));
+        user.setRole(Role.STUDENT);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        user = users.saveAndFlush(user);
+
+        var session = authService.login(user.getEmail(), "Correct123");
+        var first = authService.refresh(session.rawRefreshToken());
+        // a second request from the same browser presents the same, just-rotated token
+        var second = authService.refresh(session.rawRefreshToken());
+
+        assertNotNull(second.rawRefreshToken());
+        assertNotNull(authService.refresh(first.rawRefreshToken()).rawRefreshToken(), "session must still be alive");
+    }
+
+    @Test
+    @Transactional
+    void reusingAnOldRotatedRefreshTokenStillRevokesTheSession() {
+        User user = new User();
+        user.setUsername("reuse-" + System.nanoTime() + "@example.edu");
+        user.setEmail(user.getUsername());
+        user.setPasswordHash(passwordEncoder.encode("Correct123"));
+        user.setRole(Role.STUDENT);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        user = users.saveAndFlush(user);
+
+        var session = authService.login(user.getEmail(), "Correct123");
+        var first = authService.refresh(session.rawRefreshToken());
+
+        // pretend the rotation happened a minute ago: this is now genuine token reuse
+        var old = refreshTokens.findByTokenHash(secureTokens.hash(session.rawRefreshToken())).orElseThrow();
+        old.setRevokedAt(Instant.now().minusSeconds(60));
+        refreshTokens.saveAndFlush(old);
+
+        assertThrows(ResponseStatusException.class, () -> authService.refresh(session.rawRefreshToken()));
+        assertThrows(ResponseStatusException.class, () -> authService.refresh(first.rawRefreshToken()));
     }
 }

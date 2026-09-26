@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping({"/api/v1/admin", "/api/v1"})
 public class DepartmentLeadershipController {
     private final DepartmentLeadershipService leadershipService;
 
@@ -60,7 +60,36 @@ public class DepartmentLeadershipController {
         return ResponseEntity.ok(ApiResponse.ok(leadershipService.getDepartmentAnalytics(id, authentication.getName())));
     }
 
-    @GetMapping("/campus/overview")
+    @GetMapping("/departments/{id}/faculty")
+    public ResponseEntity<ApiResponse<List<DepartmentLeadershipService.DepartmentFacultyDto>>> departmentFaculty(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(leadershipService.getDepartmentFaculty(id, authentication.getName())));
+    }
+
+    @GetMapping("/departments/{id}/students")
+    public ResponseEntity<ApiResponse<List<DepartmentLeadershipService.DepartmentStudentDto>>> departmentStudents(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(leadershipService.getDepartmentStudents(id, authentication.getName())));
+    }
+
+    @PatchMapping("/departments/{id}/students/{studentId}")
+    public ResponseEntity<ApiResponse<DepartmentLeadershipService.DepartmentStudentDto>> updateStudent(
+            @PathVariable Long id, @PathVariable Long studentId, Authentication authentication,
+            @RequestBody StudentUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(leadershipService.updateDepartmentStudent(id, studentId, request.name(), request.year(), request.semester(), authentication.getName())));
+    }
+
+    @PatchMapping("/departments/{id}/students/{studentId}/status")
+    public ResponseEntity<ApiResponse<Void>> deactivateStudent(@PathVariable Long id, @PathVariable Long studentId, Authentication authentication) {
+        leadershipService.deactivateDepartmentStudent(id, studentId, authentication.getName());
+        return ResponseEntity.ok(ApiResponse.message("Student deactivated."));
+    }
+
+    @GetMapping({"/campus/overview", "/departments/campus-overview"})
     public ResponseEntity<ApiResponse<List<DepartmentLeadershipService.DepartmentOverviewDto>>> campusOverview(
             Authentication authentication
     ) {
@@ -70,4 +99,5 @@ public class DepartmentLeadershipController {
     public record BatchPromoteRequest(@NotNull Long departmentId, @NotNull Integer fromYear, @NotNull Integer toYear) {}
     public record AssignHodRequest(@NotNull Long userId) {}
     public record ReassignSectionRequest(@NotNull Long sectionId) {}
+    public record StudentUpdateRequest(String name, Integer year, Integer semester) {}
 }

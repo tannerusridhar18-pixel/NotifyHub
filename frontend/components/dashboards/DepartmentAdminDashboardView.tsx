@@ -7,16 +7,24 @@ import {
   scopedQueries,
   answerScopedQuery,
   departmentFacultyList,
+  departmentStudentList,
+  departmentAnalytics,
+  updateDepartmentStudent,
+  deactivateDepartmentStudent,
   createInvitation,
   batchPromoteStudents,
   assignDepartmentHod,
   structureDepartments,
+  structureBranches,
+  structureSections,
   logout,
   type CurrentUser,
   type DepartmentFacultyItem,
   type StructureDepartment,
+  type StructureBranch,
+  type StructureSection,
 } from "@/lib/api";
-import type { CampusQuery, BatchPromoteResult } from "@/types";
+import type { CampusQuery, BatchPromoteResult, DepartmentAnalytics, DepartmentStudentItem } from "@/types";
 import { Empty, ErrorState, Loading } from "@/components/States";
 import { StatusBadge } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -26,9 +34,20 @@ import { inputBase, textareaBase } from "@/components/ui/classes";
 
 export default function DepartmentAdminDashboardView({ user }: { user: CurrentUser }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"inbox" | "faculty" | "promotion" | "hod">("inbox");
+  const [tab, setTab] = useState<"inbox" | "faculty" | "students" | "promotion" | "hod">("inbox");
   const [queries, setQueries] = useState<CampusQuery[]>([]);
   const [facultyList, setFacultyList] = useState<DepartmentFacultyItem[]>([]);
+  const [studentList, setStudentList] = useState<DepartmentStudentItem[]>([]);
+  const [analytics, setAnalytics] = useState<DepartmentAnalytics | null>(null);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [editingStudent, setEditingStudent] = useState<DepartmentStudentItem | null>(null);
+  const [branches, setBranches] = useState<StructureBranch[]>([]);
+  const [sections, setSections] = useState<StructureSection[]>([]);
+  const [showStudentInvite, setShowStudentInvite] = useState(false);
+  const [studentInvite, setStudentInvite] = useState({ email: "", name: "", studentId: "", branchId: "", sectionId: "", year: "1", semester: "1" });
+  const [bulkStudents, setBulkStudents] = useState("");
+  const [studentInviteMsg, setStudentInviteMsg] = useState("");
+  const [studentInviteBusy, setStudentInviteBusy] = useState(false);
   const [allDepts, setAllDepts] = useState<StructureDepartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,14 +84,22 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
     setLoading(true);
     setError("");
     try {
-      const [q, f, d] = await Promise.all([
+      const [q, f, s, d, b, sectionData, overview] = await Promise.all([
         scopedQueries(),
         departmentFacultyList(deptId).catch(() => []),
+        departmentStudentList(deptId).catch(() => []),
         structureDepartments().catch(() => []),
+        structureBranches().catch(() => []),
+        structureSections().catch(() => []),
+        departmentAnalytics(deptId).catch(() => null),
       ]);
       setQueries(q.content || []);
       setFacultyList(f || []);
+      setStudentList(s || []);
       setAllDepts(d || []);
+      setBranches(b || []);
+      setSections(sectionData || []);
+      setAnalytics(overview);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load Department Admin workspace.");
     } finally {
@@ -81,6 +108,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
   }, [deptId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
@@ -128,6 +156,59 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
       setInviteMsg(`⚠ ${err instanceof Error ? err.message : "Failed to invite faculty."}`);
     } finally {
       setInviteBusy(false);
+    }
+  }
+
+  async function saveStudent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingStudent) return;
+    try {
+      await updateDepartmentStudent(deptId, editingStudent.id, {
+        name: editingStudent.name,
+        year: editingStudent.year,
+        semester: editingStudent.semester,
+      });
+      setEditingStudent(null);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update student.");
+    }
+  }
+
+  async function deactivateStudent(student: DepartmentStudentItem) {
+    if (!confirm(`Deactivate ${student.name}?`)) return;
+    try {
+      await deactivateDepartmentStudent(deptId, student.id);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to deactivate student.");
+    }
+  }
+
+  async function inviteStudents(e: React.FormEvent) {
+    e.preventDefault();
+    setStudentInviteBusy(true);
+    setStudentInviteMsg("");
+    try {
+      if (bulkStudents.length > 1_000_000) throw new Error("Bulk CSV is limited to 1 MB.");
+      const rows = bulkStudents.trim()
+        ? bulkStudents.trim().split(/\r?\n/).map((line) => line.split(",").map((value) => value.trim()))
+        : [[studentInvite.email, studentInvite.name, studentInvite.studentId, studentInvite.branchId, studentInvite.sectionId, studentInvite.year, studentInvite.semester]];
+      if (rows.length > 100) throw new Error("Bulk CSV is limited to 100 rows.");
+      if (rows.some((row) => row.length !== 7)) throw new Error("Each CSV row must contain exactly 7 fields; department is locked to your department.");
+      if (rows.some((row) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row[0]))) throw new Error("Every student email must be valid.");
+      const sanitize = (value: string) => /^[=+\-@]/.test(value) ? `'${value}` : value;
+      for (const row of rows) {
+        await createInvitation({ email: row[0], role: "STUDENT", departmentId: deptId, branchId: Number(row[3]), sectionId: Number(row[4]), profile: { name: sanitize(row[1]), studentId: sanitize(row[2]), departmentId: deptId, branchId: Number(row[3]), sectionId: Number(row[4]), year: Number(row[5]), semester: Number(row[6]) } });
+      }
+      setStudentInviteMsg(`Created ${rows.length} student invitation${rows.length === 1 ? "" : "s"}.`);
+      setBulkStudents("");
+      setStudentInvite({ email: "", name: "", studentId: "", branchId: "", sectionId: "", year: "1", semester: "1" });
+      await loadData();
+    } catch (err) {
+      setStudentInviteMsg(err instanceof Error ? err.message : "Student invitation failed.");
+    } finally {
+      setStudentInviteBusy(false);
     }
   }
 
@@ -193,6 +274,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
           <span>{user.department ? `${user.department} Department` : "Scoped Governance"}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/dashboard/my-posts" className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all">My Posts</Link>
           <Link
             href="/admin/events"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"
@@ -241,6 +323,8 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Faculty Staff</span>
                 <span className="text-2xl font-extrabold text-brand-light">{facultyList.length}</span>
               </div>
+              <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]"><span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Students</span><span className="text-2xl font-extrabold text-teal-light">{analytics?.totalStudents ?? studentList.length}</span></div>
+              <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]"><span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Sections</span><span className="text-2xl font-extrabold text-cyan">{analytics?.totalSections ?? "—"}</span></div>
             </div>
           </div>
 
@@ -265,6 +349,12 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
               }`}
             >
               👨‍🏫 Faculty Mappings & Inviter ({facultyList.length})
+            </button>
+            <button
+              onClick={() => setTab("students")}
+              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${tab === "students" ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow" : "bg-surface-2/60 text-muted hover:text-white"}`}
+            >
+              🎓 Student Management ({studentList.length})
             </button>
             <button
               onClick={() => setTab("promotion")}
@@ -541,6 +631,22 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {!error && tab === "students" && (
+          <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div><h2 className="text-2xl font-extrabold text-white">Student Management</h2><p className="text-xs text-muted">Search, edit, and deactivate students in {user.department || "your department"}.</p></div>
+              <div className="flex flex-wrap gap-2"><input aria-label="Search students" className={`${inputBase} max-w-xs`} placeholder="Search name, ID, email" value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} /><Button variant="primary" onClick={() => setShowStudentInvite(true)}>Invite Students</Button></div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs"><thead className="border-b border-white/10 text-muted uppercase tracking-wider"><tr><th className="py-3 px-4">Student ID</th><th className="py-3 px-4">Name</th><th className="py-3 px-4">Email</th><th className="py-3 px-4">Year</th><th className="py-3 px-4 text-right">Actions</th></tr></thead>
+                <tbody className="divide-y divide-white/[0.06]">{studentList.filter((student) => `${student.studentId} ${student.name} ${student.email}`.toLowerCase().includes(studentSearch.toLowerCase())).map((student) => <tr key={student.id}><td className="py-3 px-4 font-mono font-bold">{student.studentId}</td><td className="py-3 px-4 font-bold">{student.name}</td><td className="py-3 px-4 text-muted">{student.email}</td><td className="py-3 px-4">{student.year}</td><td className="py-3 px-4 text-right"><button className="mr-2 rounded-lg border border-white/10 px-2 py-1 font-bold text-muted" onClick={() => setEditingStudent({ ...student })}>Edit</button><button className="rounded-lg border border-red-400/30 px-2 py-1 font-bold text-red-200" onClick={() => void deactivateStudent(student)}>Deactivate</button></td></tr>)}</tbody>
+              </table>
+            </div>
+            {editingStudent && <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"><form onSubmit={saveStudent} className="w-full max-w-md space-y-4 rounded-2xl border border-white/15 bg-surface p-6"><h3 className="text-lg font-extrabold">Edit Student</h3><Field label="Name"><input className={inputBase} value={editingStudent.name} onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })} /></Field><div className="grid grid-cols-2 gap-3"><Field label="Year"><input type="number" min={1} className={inputBase} value={editingStudent.year} onChange={(e) => setEditingStudent({ ...editingStudent, year: Number(e.target.value) })} /></Field><Field label="Semester"><input type="number" min={1} className={inputBase} value={editingStudent.semester} onChange={(e) => setEditingStudent({ ...editingStudent, semester: Number(e.target.value) })} /></Field></div><div className="flex justify-end gap-2"><Button variant="secondary" type="button" onClick={() => setEditingStudent(null)}>Cancel</Button><Button variant="primary" type="submit">Save changes</Button></div></form></div>}
+            {showStudentInvite && <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"><form onSubmit={inviteStudents} className="w-full max-w-lg space-y-4 rounded-2xl border border-white/15 bg-surface p-6"><h3 className="text-lg font-extrabold">Invite Students</h3><p className="text-xs text-muted">Department locked to {user.department || "your department"}. Bulk rows: email,name,studentId,branchId,sectionId,year,semester.</p><div className="grid gap-3 sm:grid-cols-2"><Field label="Email"><input required={!bulkStudents} type="email" className={inputBase} value={studentInvite.email} onChange={(e) => setStudentInvite({ ...studentInvite, email: e.target.value })} /></Field><Field label="Name"><input required={!bulkStudents} className={inputBase} value={studentInvite.name} onChange={(e) => setStudentInvite({ ...studentInvite, name: e.target.value })} /></Field><Field label="Student ID"><input required={!bulkStudents} className={inputBase} value={studentInvite.studentId} onChange={(e) => setStudentInvite({ ...studentInvite, studentId: e.target.value })} /></Field><Field label="Branch"><select required={!bulkStudents} className={inputBase} value={studentInvite.branchId} onChange={(e) => setStudentInvite({ ...studentInvite, branchId: e.target.value, sectionId: "" })}><option value="">Choose branch</option>{branches.filter((branch) => branch.departmentId === deptId && branch.active).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></Field><Field label="Section"><select required={!bulkStudents} className={inputBase} value={studentInvite.sectionId} onChange={(e) => setStudentInvite({ ...studentInvite, sectionId: e.target.value })}><option value="">Choose section</option>{sections.filter((section) => section.departmentId === deptId && String(section.branchId) === studentInvite.branchId && section.active).map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}</select></Field><Field label="Year"><input required={!bulkStudents} type="number" min={1} className={inputBase} value={studentInvite.year} onChange={(e) => setStudentInvite({ ...studentInvite, year: e.target.value })} /></Field><Field label="Semester"><input required={!bulkStudents} type="number" min={1} className={inputBase} value={studentInvite.semester} onChange={(e) => setStudentInvite({ ...studentInvite, semester: e.target.value })} /></Field></div><Field label="Bulk CSV rows"><textarea className={textareaBase} rows={4} value={bulkStudents} onChange={(e) => setBulkStudents(e.target.value)} placeholder="email,name,studentId,branchId,sectionId,year,semester" /></Field>{studentInviteMsg && <p className="rounded-xl border border-white/10 p-3 text-xs">{studentInviteMsg}</p>}<div className="flex justify-end gap-2"><Button variant="secondary" type="button" onClick={() => setShowStudentInvite(false)}>Close</Button><Button variant="primary" type="submit" disabled={studentInviteBusy}>{studentInviteBusy ? "Inviting…" : "Create invitations"}</Button></div></form></div>}
           </div>
         )}
 

@@ -41,6 +41,18 @@ import org.springframework.util.StringUtils;
 public class SecurityConfig {
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(12); }
 
+    /**
+     * NotifyHub signs users in through its own AuthService and the JWT filter. Declaring this bean stops Spring Boot
+     * from creating its default in-memory user ("Using generated security password ... for development use only").
+     * It knows no users, so nobody can authenticate through it.
+     */
+    @Bean
+    org.springframework.security.core.userdetails.UserDetailsService noDefaultUserDetailsService() {
+        return username -> {
+            throw new org.springframework.security.core.userdetails.UsernameNotFoundException("Username/password login is handled by /api/v1/auth/login.");
+        };
+    }
+
     @Bean
     CorsConfigurationSource corsConfigurationSource(@Value("${notifyhub.frontend-origin:http://localhost:3000}") String frontendOrigin) {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -71,6 +83,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"))
                         .frameOptions(frame -> frame.deny()).httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000)))
+                .httpBasic(org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer::disable)
+                .formLogin(org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint).accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
@@ -83,6 +97,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/queries/*/answer").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/queries/*").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/queries/my").authenticated()
+                        .requestMatchers("/api/v1/admin/users/**", "/api/v1/admin/roles/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/v1/admin/invitations/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "DEPARTMENT_ADMIN")
+                        .requestMatchers("/api/v1/admin/students/batch-promote").hasAnyRole("ADMIN", "SUPER_ADMIN", "DEPARTMENT_ADMIN")
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/academic-structure/**", "/api/v1/hostels/**").authenticated()

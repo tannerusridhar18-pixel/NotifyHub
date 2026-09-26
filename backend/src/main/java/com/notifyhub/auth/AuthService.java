@@ -62,7 +62,15 @@ public class AuthService {
     public IssuedSession refresh(String rawRefreshToken) {
         if (rawRefreshToken == null || rawRefreshToken.isBlank()) throw invalidRefreshToken();
         RefreshToken current = tokens.findByTokenHash(secureTokens.hash(rawRefreshToken)).orElseThrow(this::invalidRefreshToken);
-        if (current.isRevoked()) { revokeFamily(current.getFamilyId()); throw invalidRefreshToken(); }
+        if (current.isRevoked()) {
+            // Several requests from one browser often refresh at the same moment. The loser presents a token that was
+            // rotated a second ago - that is a race, not theft, so give it a fresh token instead of killing the session.
+            if (isRecentRotation(current) && current.getExpiresAt().isAfter(Instant.now()) && current.getUser().isActive()) {
+                return issue(current.getUser(), current.getFamilyId());
+            }
+            revokeFamily(current.getFamilyId());
+            throw invalidRefreshToken();
+        }
         if (current.getExpiresAt().isBefore(Instant.now()) || !current.getUser().isActive()) {
             current.setRevoked(true); tokens.save(current); throw invalidRefreshToken();
         }
@@ -132,6 +140,15 @@ public class AuthService {
                 user.getEffectiveRoleName(),
                 user.isMustChangePassword()
         );
+    }
+
+    private static final java.time.Duration ROTATION_GRACE = java.time.Duration.ofSeconds(10);
+
+    /** True when the token was replaced by normal rotation moments ago and its replacement is still valid. */
+    private boolean isRecentRotation(RefreshToken token) {
+        if (token.getReplacedByHash() == null || token.getRevokedAt() == null) return false;
+        if (token.getRevokedAt().isBefore(Instant.now().minus(ROTATION_GRACE))) return false;
+        return tokens.findByTokenHash(token.getReplacedByHash()).map(next -> !next.isRevoked()).orElse(false);
     }
 
     private void revokeFamily(UUID familyId) { List<RefreshToken> family = tokens.findByFamilyId(familyId); family.forEach(token -> token.setRevoked(true)); tokens.saveAll(family); }

@@ -1,30 +1,36 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { currentUser } from "@/lib/api";
+import { Loading } from "@/components/States";
+import { getRoleRoute } from "@/config/roles";
 
-export default async function DashboardIndexPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("NH_ACCESS")?.value;
-  if (!token) {
-    redirect("/auth/login");
-  }
-  try {
-    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf-8"));
-    const roleLevel = payload.roleLevel !== undefined ? Number(payload.roleLevel) : 5;
+export default function DashboardIndexPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
-    if (roleLevel === 0) {
-      redirect("/admin/dashboard");
-    } else if (roleLevel === 1) {
-      redirect("/dashboard/principal");
-    } else if (roleLevel === 2) {
-      redirect("/dashboard/dean");
-    } else if (roleLevel === 3) {
-      redirect("/dashboard/hod");
-    } else if (roleLevel === 4) {
-      redirect("/dashboard/faculty");
-    } else {
-      redirect("/dashboard/student");
-    }
-  } catch {
-    redirect("/dashboard/student");
-  }
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const u = await currentUser();
+        if (!alive) return;
+        if (!u) {
+          router.replace("/auth/login");
+          return;
+        }
+        const targetRoute = getRoleRoute(u.role, u.roleLevel);
+        router.replace(targetRoute);
+      } catch {
+        if (alive) router.replace("/auth/login");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [router]);
+
+  return <Loading label="Loading workspace…" />;
 }

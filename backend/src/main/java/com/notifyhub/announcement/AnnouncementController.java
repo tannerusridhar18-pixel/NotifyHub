@@ -36,5 +36,5 @@ public class AnnouncementController {
     @PostMapping("/{id}/publish") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> publish(@PathVariable Long id, Authentication a) { return ResponseEntity.ok(ApiResponse.ok(service.publish(id, a.getName()))); }
     @PostMapping("/{id}/unpublish") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> unpublish(@PathVariable Long id, Authentication a) { return ResponseEntity.ok(ApiResponse.ok(service.unpublish(id, a.getName()))); }
     @PostMapping("/{id}/archive") public ResponseEntity<ApiResponse<AnnouncementService.AnnouncementDto>> archive(@PathVariable Long id, Authentication a) { return ResponseEntity.ok(ApiResponse.ok(service.archive(id, a.getName()))); }
-    @DeleteMapping("/{id}") public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id, Authentication a) { service.delete(id, a.getName()); return ResponseEntity.ok(ApiResponse.message("Announcement deleted.")); }
+    @DeleteMapping("/{id}") public ResponseEntity<Void> delete(@PathVariable Long id, Authentication a) { service.delete(id, a.getName()); return ResponseEntity.noContent().build(); }
 }

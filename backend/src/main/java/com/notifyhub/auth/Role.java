@@ -7,6 +7,7 @@ public enum Role {
     DEAN,
     HOD,
     FACULTY,
+    DEPARTMENT_ADMIN,
     STUDENT,
     CUSTOM;
 
