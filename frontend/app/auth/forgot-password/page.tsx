@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { forgotPassword } from "@/lib/api";
 import styles from "../AuthKit.module.css";
+import AuthFloatingCards from "@/components/auth/AuthFloatingCards";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -28,7 +29,8 @@ export default function ForgotPassword() {
     <main className={styles.page}>
       <div className={styles.ambient} />
       <div className={styles.shell}>
-        <div className={styles.stack}>
+        <div className={`${styles.stack} ${styles["authkit-hero"]}`}>
+          <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
             <span>NotifyHub</span>
