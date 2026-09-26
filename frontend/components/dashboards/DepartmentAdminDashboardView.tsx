@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   scopedQueries,
   queryUsersByFilters,
-  removeAdminUser,
   answerScopedQuery,
   departmentFacultyList,
   departmentStudentList,
@@ -185,10 +184,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
   async function deleteStudent(student: DepartmentStudentItem) {
     if (!confirm(`Permanently delete ${student.name}? This cannot be undone.`)) return;
     try {
-      const users = await queryUsersByFilters({ search: student.email, department: String(deptId) });
-      const target = users.content?.find((u) => u.email?.toLowerCase() === student.email?.toLowerCase());
-      if (!target?.publicId) throw new Error("Could not resolve the student's account for deletion.");
-      await removeAdminUser(target.publicId);
+      await deleteDepartmentStudent(deptId, student.id);
       await loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete student.");
