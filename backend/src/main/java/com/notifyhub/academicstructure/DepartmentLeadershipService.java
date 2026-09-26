@@ -82,16 +82,27 @@ public class DepartmentLeadershipService {
 
         List<StudentProfile> eligible = students.findByDepartmentIdAndYear(departmentId, fromYear);
         int promotedCount = 0;
+        int graduatedCount = 0;
         int skippedMaxYearCount = 0;
+        boolean graduating = toYear == 5;
 
         for (StudentProfile sp : eligible) {
             Branch b = sp.getBranch();
-            if (b != null && toYear > b.getMaxYear()) {
+            if (!graduating && b != null && toYear > b.getMaxYear()) {
                 skippedMaxYearCount++;
                 continue;
             }
 
-            // Invariant check: Resolve corresponding section for toYear in the same branch to prevent orphaned section assignments
+            if (graduating) {
+                sp.setYear(5);
+                sp.setSemester(0);
+                sp.setSection(null);
+                students.save(sp);
+                graduatedCount++;
+                continue;
+            }
+
+            // Resolve the corresponding section for the target year when available.
             Section currentSection = sp.getSection();
             if (currentSection != null && currentSection.getAcademicYear() != toYear) {
                 Optional<Section> matchingSection = sections.findByDepartmentIdAndBranchIdAndAcademicYearAndNameIgnoreCase(
@@ -113,14 +124,16 @@ public class DepartmentLeadershipService {
             promotedCount++;
         }
 
-        String metadata = "{\"departmentId\":" + departmentId + ",\"fromYear\":" + fromYear + ",\"toYear\":" + toYear + ",\"promotedCount\":" + promotedCount + ",\"skippedMaxYear\":" + skippedMaxYearCount + "}";
+        String metadata = "{\"departmentId\":" + departmentId + ",\"fromYear\":" + fromYear + ",\"toYear\":" + toYear + ",\"promotedCount\":" + promotedCount + ",\"graduatedCount\":" + graduatedCount + ",\"skippedMaxYear\":" + skippedMaxYearCount + "}";
         audit.save(new AuditLog(actor, "USER_BATCH_PROMOTE", "DEPARTMENT", String.valueOf(departmentId), metadata));
 
-        String message = "Successfully promoted " + promotedCount + " students from Year " + fromYear + " to Year " + toYear + " in " + dept.getName() + ".";
+        String message = graduating
+                ? "Successfully graduated " + graduatedCount + " students from Year " + fromYear + " in " + dept.getName() + "."
+                : "Successfully promoted " + promotedCount + " students from Year " + fromYear + " to Year " + toYear + " in " + dept.getName() + ".";
         if (skippedMaxYearCount > 0) {
             message += " (" + skippedMaxYearCount + " students reached branch max year limit and were not promoted).";
         }
-        return new BatchPromoteResult(departmentId, fromYear, toYear, promotedCount, skippedMaxYearCount, message);
+        return new BatchPromoteResult(departmentId, fromYear, toYear, promotedCount, graduatedCount, skippedMaxYearCount, message);
     }
 
     public void assignHod(Long departmentId, Long userId, String actorUsername) {
@@ -346,7 +359,7 @@ public class DepartmentLeadershipService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."));
     }
 
-    public record BatchPromoteResult(Long departmentId, int fromYear, int toYear, int promotedCount, int skippedMaxYearCount, String message) {}
+    public record BatchPromoteResult(Long departmentId, int fromYear, int toYear, int promotedCount, int graduatedCount, int skippedMaxYearCount, String message) {}
     public record DepartmentAnalyticsDto(Long departmentId, String departmentName, long studentCount, long facultyCount, long openQueries, long answeredQueries) {}
     public record DepartmentOverviewDto(Long departmentId, String departmentName, boolean active, String hodName, String hodEmail, long studentCount, long facultyCount) {}
     public record DepartmentFacultyDto(Long id, String facultyId, String name, String designation, Long departmentId, String departmentName, String relationship, Long userId, String email) {}
