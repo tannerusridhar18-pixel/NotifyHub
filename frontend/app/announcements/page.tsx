@@ -29,7 +29,16 @@ export default function AnnouncementsPage() {
   }, [items, query, urgentOnly]);
 
   return (
-    <section className="nh-public-page mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
+    <section
+      className="nh-public-page mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6"
+      onMouseMove={(e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+        e.currentTarget.style.setProperty("--orbit-x", `${x * 10}px`);
+        e.currentTarget.style.setProperty("--orbit-y", `${y * 8}px`);
+        e.currentTarget.style.setProperty("--orbit-rx", `${y * -4}deg`);
+        e.currentTarget.style.setProperty("--orbit-ry", `${x * 5}deg`);
+      }}>
       <div className="nh-public-orbit" aria-hidden="true">
           <div className="nh-public-stars" />
           <div className="nh-public-sun"><span /></div>
