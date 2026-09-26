@@ -83,15 +83,19 @@ export default function ManageUsersPage() {
     setLoading(true);
     setError("");
     try {
-      const hasScopedFilters = Object.values(scopedFilters).some(Boolean);
       const isDepartmentAdmin = currentUserRole === "DEPARTMENT_ADMIN";
+      const directoryFilters: Record<string, string> = { ...scopedFilters };
+      if (searchQuery) directoryFilters.search = searchQuery;
+      if (roleFilter) directoryFilters.role = roleFilter;
+      if (statusFilter) directoryFilters.status = statusFilter;
+      if (isDepartmentAdmin && currentUserDepartmentId != null) {
+        directoryFilters.department = String(currentUserDepartmentId);
+      } else if (deptFilter) {
+        directoryFilters.department = deptFilter;
+      }
+      const hasDirectoryFilters = Object.values(directoryFilters).some(Boolean);
       const [uList, rList, dList, sList, hList, bList, eList] = await Promise.all([
-        hasScopedFilters ? queryUsersByFilters(scopedFilters as Record<string, string>) : listAdminUsers({
-          role: roleFilter || undefined,
-          departmentId: isDepartmentAdmin ? currentUserDepartmentId ?? undefined : (deptFilter ? Number(deptFilter) : undefined),
-          search: searchQuery || undefined,
-          status: statusFilter || undefined,
-        }),
+        hasDirectoryFilters ? queryUsersByFilters(directoryFilters) : listAdminUsers(),
         listRoles(),
         structureDepartments(),
         structureSections(),
