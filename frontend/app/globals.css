@@ -1651,3 +1651,245 @@
     font-size: clamp(2rem, 11vw, 2.75rem);
   }
 }
+
+
+/* Mobile-first polish — public pages + landing page */
+@media (max-width: 767px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .nh-home {
+    overflow: hidden;
+  }
+
+  .nh-public-page {
+    box-sizing: border-box;
+  }
+
+  .nh-public-page > .nh-public-orbit {
+    pointer-events: none;
+  }
+
+  .nh-public-content-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .nh-public-page .nh-public-content-card {
+    padding: 1rem;
+    border-radius: 18px;
+  }
+
+  .nh-public-page .nh-public-content-card h3 {
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+
+  .nh-public-page .nh-public-content-card p {
+    font-size: .8rem;
+    line-height: 1.65;
+  }
+
+  .nh-public-page .nh-public-content-card button,
+  .nh-public-page .nh-public-content-card a {
+    max-width: 100%;
+  }
+
+  /* Event cards collapse into a single comfortable mobile column. */
+  .nh-public-page .nh-public-content-card.grid {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: .8rem;
+  }
+
+  .nh-public-page .nh-public-content-card.grid > div:first-child {
+    min-width: 0;
+  }
+
+  .nh-public-page .nh-public-content-card.grid > div:first-child b {
+    font-size: 1.45rem;
+  }
+
+  .nh-public-page .nh-public-content-card.grid > div:last-of-type {
+    min-width: 0;
+  }
+
+  .nh-public-page .nh-public-content-card img {
+    max-height: 180px;
+  }
+
+  .nh-public-page .nh-public-content-card .ml-auto {
+    margin-left: 0;
+  }
+
+  /* Keep control bars usable without squeezing search inputs. */
+  .nh-public-page input,
+  .nh-public-page textarea,
+  .nh-public-page select {
+    font-size: 16px;
+  }
+
+  /* Home hero */
+  .nh-home .nh-hero {
+    min-height: auto;
+    padding: 5.5rem 1rem 3rem;
+  }
+
+  .nh-home .nh-hero-title {
+    max-width: 10ch;
+    margin-inline: auto;
+    font-size: clamp(2.8rem, 13vw, 4rem);
+    line-height: .98;
+    letter-spacing: -.055em;
+  }
+
+  .nh-home .nh-hero-subtitle {
+    max-width: 34rem;
+    padding-inline: .25rem;
+    font-size: .9rem;
+    line-height: 1.7;
+  }
+
+  .nh-home .nh-hero-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .7rem;
+  }
+
+  .nh-home .nh-hero-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nh-home .nh-hero-stage {
+    height: 300px;
+    margin-top: 1.75rem;
+  }
+
+  .nh-home .nh-product-window {
+    width: 100%;
+    min-height: 260px;
+    border-radius: 18px;
+  }
+
+  .nh-home .nh-product-topbar {
+    height: 46px;
+  }
+
+  .nh-home .nh-product-content {
+    padding: .65rem;
+  }
+
+  .nh-home .nh-product-row {
+    padding: .55rem;
+    border-radius: 12px;
+  }
+
+  .nh-home .nh-section-heading {
+    gap: .75rem;
+  }
+
+  .nh-home .nh-section-heading h2,
+  .nh-home .nh-content-heading h2 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.02;
+  }
+
+  .nh-home .nh-content-heading {
+    gap: 1rem;
+  }
+
+  .nh-home .nh-card-grid {
+    grid-template-columns: 1fr;
+    gap: .8rem;
+  }
+
+  .nh-home .nh-feature-card,
+  .nh-home .nh-float-card {
+    min-width: 0;
+  }
+
+  .nh-home .nh-feature-card {
+    padding: 1.1rem;
+  }
+
+  .nh-home .nh-content-heading-gap {
+    margin-top: 3.5rem;
+  }
+
+  .nh-home .nh-cta-panel {
+    padding: 2.75rem 1rem;
+    border-radius: 22px;
+  }
+
+  .nh-home .nh-cta-panel h2 {
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.05;
+  }
+}
+
+@media (max-width: 480px) {
+  .nh-public-page {
+    padding-left: .8rem;
+    padding-right: .8rem;
+  }
+
+  .nh-public-page .nh-public-content-card {
+    padding: .9rem;
+    border-radius: 16px;
+  }
+
+  .nh-public-page .nh-public-content-card.grid {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: .7rem;
+  }
+
+  .nh-home .nh-hero {
+    padding-inline: .8rem;
+  }
+
+  .nh-home .nh-hero-title {
+    font-size: clamp(2.65rem, 14vw, 3.5rem);
+  }
+
+  .nh-home .nh-hero-stage {
+    height: 270px;
+  }
+
+  .nh-home .nh-product-window {
+    min-height: 235px;
+  }
+
+  .nh-home .nh-product-topbar {
+    height: 42px;
+  }
+
+  .nh-home .nh-product-content {
+    padding: .5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .nh-public-page {
+    padding-left: .65rem;
+    padding-right: .65rem;
+  }
+
+  .nh-public-page .nh-public-content-card {
+    padding: .8rem;
+  }
+
+  .nh-public-page .nh-public-content-card.grid {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: .55rem;
+  }
+
+  .nh-home .nh-hero-title {
+    font-size: 2.5rem;
+  }
+
+  .nh-home .nh-hero-stage {
+    height: 245px;
+  }
+}
