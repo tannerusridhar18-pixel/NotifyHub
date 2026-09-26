@@ -7,6 +7,8 @@ import {
   currentUser,
   managedAnnouncements,
   managedEvents,
+  departmentManagedAnnouncements,
+  departmentManagedEvents,
   myAnnouncements,
   myEvents,
   createAnnouncement,
