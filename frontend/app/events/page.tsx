@@ -19,7 +19,7 @@ export default function EventsPage() {
   }, []);
 
   return (
-    <section className="mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
+    <section className="nh-public-page mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6">
       <div className="nh-public-orbit" aria-hidden="true">
           <div className="nh-public-stars" />
           <div className="nh-public-sun"><span /></div>
