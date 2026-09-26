@@ -101,7 +101,7 @@ export default function ManageUsersPage() {
         structureSections(),
         structureHostels(),
         structureBlocks(),
-        adminEnrollments(),
+        isDepartmentAdmin ? Promise.resolve([] as EnrollmentItem[]) : adminEnrollments(),
       ]);
       setUsers(uList.content);
       setRoles(rList);
@@ -278,7 +278,9 @@ export default function ManageUsersPage() {
             </strong>
             <span className="text-xs font-bold tracking-wide text-muted">Total Accounts</span>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)}>+ Provision User</Button>
+          {currentUserRole !== "DEPARTMENT_ADMIN" && (
+            <Button onClick={() => setIsCreateOpen(true)}>+ Provision User</Button>
+          )}
         </div>
       </header>
 
@@ -294,6 +296,7 @@ export default function ManageUsersPage() {
         >
           All Users ({users.length})
         </button>
+        {currentUserRole !== "DEPARTMENT_ADMIN" && (
         <button
           onClick={() => setActiveTab("enrollments")}
           className={`rounded-xl px-4 py-2 text-xs font-extrabold transition-colors ${
@@ -304,7 +307,7 @@ export default function ManageUsersPage() {
         >
           Student Enrollments ({enrollments.length})
         </button>
-      </div>
+      </div>\n        )}
 
       {error && <ErrorState message={error} onRetry={() => void load()} />}
 
