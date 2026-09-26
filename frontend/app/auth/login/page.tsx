@@ -66,7 +66,7 @@ export default function UserLogin() {
             <h2 className={styles.cardTitle}>Continue to NotifyHub</h2>
             <p className={styles.cardDescription}>Sign in with your registered campus credentials.</p>
 
-            <form onSubmit={submit} className={styles.form}>
+            <form onSubmit={submit} className={styles.form} suppressHydrationWarning>
               <Field label="Campus Email" htmlFor="email">
                 <input
                   id="email"
@@ -94,7 +94,7 @@ export default function UserLogin() {
 
               {error && <div className={styles.error}>{error}</div>}
 
-              <button type="submit" className={styles.cta} disabled={busy}>
+              <button type="submit" className={styles.cta} disabled={busy} suppressHydrationWarning>
                 {busy ? "Authenticating…" : "Sign in to Dashboard →"}
               </button>
             </form>
