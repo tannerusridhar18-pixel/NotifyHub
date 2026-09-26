@@ -29,7 +29,8 @@ export default function EventsPage() {
         e.currentTarget.style.setProperty("--orbit-rx", `${y * -4}deg`);
         e.currentTarget.style.setProperty("--orbit-ry", `${x * 5}deg`);
       }}>
-      <div className="nh-public-orbit" aria-hidden="true">
+      <div className="nh-qronos-cyclone" aria-hidden="true"><span className="nh-qronos-cyclone-core" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-1" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-2" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-3" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-1" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-2" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-3" /></div>
+        <div className="nh-public-orbit" aria-hidden="true">
           <div className="nh-public-stars" />
           <div className="nh-public-sun"><span /></div>
           <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
