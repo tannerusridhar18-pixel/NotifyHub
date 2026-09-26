@@ -1520,14 +1520,15 @@
 }
 /* Home-only orbit placement: centered and enlarged without affecting public pages */
 .nh-home .nh-public-orbit-home {
-  top: 50%!important;
+  top: -300px!important;
   left: 50%!important;
   right: auto!important;
-  width: min(1350px, 110vw)!important;
-  height: min(1350px, 110vw)!important;
+  width: min(1550px, 125vw)!important;
+  height: min(1550px, 125vw)!important;
   margin: 0!important;
-  transform: translate3d(-50%, -50%, 0)!important;
-  opacity: .76!important;
+  transform: translateX(-50%)!important;
+  opacity: .72!important;
+  z-index: 1!important;
 }
 .nh-home .nh-public-orbit-d { width:820px;height:350px;margin:-175px 0 0 -410px;transform:rotateX(70deg) rotateZ(-65deg);animation:nh-public-orbit-d 35s linear infinite reverse; }
 .nh-home .nh-public-orbit-e { width:410px;height:180px;margin:-90px 0 0 -205px;transform:rotateX(63deg) rotateZ(86deg);animation:nh-public-orbit-e 15s linear infinite; }
