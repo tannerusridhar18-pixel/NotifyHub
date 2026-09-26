@@ -76,7 +76,8 @@ export default function Home() {
 
   return (
     <main className="nh-home overflow-x-hidden">
-      <section className="nh-hero">\n        <div className="nh-public-orbit nh-public-orbit-home" aria-hidden="true">
+      <section className="nh-hero">
+        <div className="nh-public-orbit nh-public-orbit-home" aria-hidden="true">
           <div className="nh-public-stars" />
           <div className="nh-public-sun" />
           <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
