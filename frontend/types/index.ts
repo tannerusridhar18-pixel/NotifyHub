@@ -76,7 +76,7 @@ export type EventItem = {
   location: string;
   startAt: string;
   endAt: string;
-  status: "DRAFT" | "PUBLISHED" | "CANCELLED";
+  status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "ARCHIVED";
   targetType: TargetType;
   departmentId: number | null;
   branchId: number | null;
