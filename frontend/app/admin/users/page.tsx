@@ -127,7 +127,13 @@ export default function ManageUsersPage() {
     }
   };
   const setScopedFilter = (key: ScopedFilterKey, value: string) => setScopedFilters(previous => ({ ...previous, [key]: value }));
-  const clearScopedFilters = () => setScopedFilters({});
+  const clearScopedFilters = () => {
+    setScopedFilters({});
+    setSearchQuery("");
+    setRoleFilter("");
+    if (currentUserRole !== "DEPARTMENT_ADMIN") setDeptFilter("");
+    setStatusFilter("");
+  };
 
   useEffect(() => {
     let alive = true;
