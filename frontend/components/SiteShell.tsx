@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cx } from "@/components/ui/classes";
+import QronosBackground from "@/components/ui/QronosBackground";
 
 const links = [
   ["/", "Home"],
@@ -28,6 +29,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <QronosBackground />
       <div className="nh-qronos-shell-background">
         <div className="nh-qronos-shell-frame">
           <span>NOTIFYHUB</span>
