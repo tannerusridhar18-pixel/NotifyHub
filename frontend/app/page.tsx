@@ -100,7 +100,7 @@ export default function Home() {
         </div>
         <div className="nh-hero-grid bg-grid-pattern pointer-events-none" />
 
-        <div className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-20 sm:px-6 sm:pt-28 lg:pt-32">
+        <div className="nh-home-hero-inner mx-auto w-full max-w-[1240px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:pt-14">
           <div className="nh-hero-copy">
             <Reveal variant="fade">
               <span className="nh-kicker rounded-full px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80 sm:text-[11px]">
