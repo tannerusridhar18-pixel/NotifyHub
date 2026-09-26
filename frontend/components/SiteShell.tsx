@@ -28,25 +28,24 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-bg/85 backdrop-blur-2xl transition-all duration-300">
-        <div className="mx-auto flex h-[74px] max-w-[1240px] items-center gap-4 px-4 sm:h-[82px] sm:gap-8 sm:px-6">
-          <Link href="/" className="group flex items-center gap-3 font-display text-xl font-bold tracking-tight text-ink">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-glow-violet">
-              ◈
+      <div className="nh-qronos-shell-background">
+        <div className="nh-qronos-shell-frame">
+          <span>NOTIFYHUB</span>
+          <span>SMART CAMPUS COMMUNICATION</span>
+        </div>
+      </div>
+      <header className="sticky top-0 z-40 border-b border-white/[0.12] bg-black/55 backdrop-blur-md transition-all duration-300">
+        <div className="mx-auto flex h-[72px] max-w-[1240px] items-center gap-4 px-4 sm:h-[82px] sm:gap-8 sm:px-6">
+          <Link href="/" className="group flex items-center gap-3 font-display text-xl font-bold tracking-tight text-white">
+            <span className="grid h-9 w-9 place-items-center rounded-full border border-white/70 bg-white text-black text-sm font-black transition-transform duration-300 group-hover:rotate-6">
+              N
             </span>
-            <span className="flex items-center text-xl font-extrabold tracking-tight">
-              Notify<span className="text-gradient-animated">Hub</span>
-            </span>
+            <span className="text-[17px] font-extrabold uppercase tracking-[0.04em]">NotifyHub</span>
           </Link>
 
-          {/* Live Campus Signal Beacon */}
-          <div className="hidden items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3.5 py-1 text-[11px] font-extrabold text-teal-light shadow-[0_0_15px_rgba(45,212,191,0.2)] backdrop-blur-md lg:flex">
-            <span className="relative flex h-2 w-2 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
-            </span>
-            <span>CAMPUS SIGNAL</span>
-            <span className="rounded bg-teal-light/20 px-1.5 py-0.2 text-[9px] font-black tracking-widest text-[#5eead4]">LIVE</span>
+          <div className="hidden items-center gap-2 border-l border-white/10 pl-5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/35 lg:flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
+            Campus signal online
           </div>
 
           <nav aria-label="Public navigation" className="hidden flex-1 items-center justify-center gap-1.5 md:flex">
@@ -57,10 +56,10 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                   key={href}
                   href={href}
                   className={cx(
-                    "relative rounded-xl px-4 py-2 text-[13px] font-extrabold tracking-wide transition-all duration-200",
+                    "relative rounded-none px-4 py-2 text-[12px] font-medium tracking-[0.02em] transition-all duration-200",
                     active
-                      ? "bg-surface-2/95 text-white shadow-soft border border-white/12"
-                      : "text-muted hover:bg-surface-2/65 hover:text-ink hover:-translate-y-0.5"
+                      ? "text-white"
+                      : "text-white/55 hover:text-white"
                   )}
                 >
                   {label}
@@ -75,9 +74,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           <div className="ml-auto flex items-center gap-3 md:ml-0">
             <Link
               href={isLoggedIn ? "/dashboard" : "/auth/login"}
-              className="btn-shine rounded-xl border border-brand/50 bg-gradient-to-r from-brand via-brand-light to-brand-2 px-4 py-2 text-[13px] font-extrabold text-white shadow-glow transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow-violet"
+              className="btn-shine rounded-full border border-white/35 bg-transparent px-5 py-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-white transition-all duration-200 hover:bg-white hover:text-black"
             >
-              {isLoggedIn ? "Dashboard →" : "Sign in →"}
+              {isLoggedIn ? "Dashboard  ↗" : "Get started  ↗"}
             </Link>
             <button
               className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-surface-2/90 text-ink md:hidden transition-all duration-200 hover:bg-surface-2 hover:border-white/20 active:scale-95"
@@ -123,9 +122,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="relative">{children}</main>
+      <main className="relative z-[2]">{children}</main>
 
-      <footer className="border-t border-white/[0.08] bg-bg/95 backdrop-blur-xl">
+      <footer className="relative z-[2] border-t border-white/[0.12] bg-black/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-4 px-4 py-8 text-xs text-muted sm:flex-row sm:px-6">
           <div className="flex items-center gap-2.5 text-center sm:text-left">
             <span className="grid h-7 w-7 place-items-center rounded-xl bg-brand-50 text-xs font-bold text-brand-light border border-brand/20">◈</span>
