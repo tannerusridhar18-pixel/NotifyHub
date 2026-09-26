@@ -148,7 +148,7 @@ public class EventService {
     public EventDto update(Long id, Request request, String username) {
         assertCanManage(id, username);
         Event event = get(id);
-        if (event.getStatus() != EventStatus.DRAFT) throw conflict("Only draft events may be edited.");
+        if (event.getStatus() != EventStatus.DRAFT && event.getStatus() != EventStatus.ARCHIVED) throw conflict("Only draft or archived events may be edited.");
         User sender = user(username);
         List<String> targetList = parseTargets(request.recipientTargets());
         targeting.validateSenderPermissions(sender, request.recipientType(), targetList, request.departmentId(), request.targetType(), request.branchId(), request.sectionId(), request.userEmail(), request.role());
@@ -167,7 +167,7 @@ public class EventService {
 
     public EventDto publish(Long id) {
         Event event = get(id);
-        if (event.getStatus() != EventStatus.DRAFT) throw conflict("Only draft events may be published.");
+        if (event.getStatus() != EventStatus.DRAFT && event.getStatus() != EventStatus.ARCHIVED) throw conflict("Only draft or archived events may be published.");
         event.setStatus(EventStatus.PUBLISHED);
         event.setPublishedAt(Instant.now());
         audit.save(new AuditLog(event.getCreatedBy(), "EVENT_PUBLISH", "EVENT", String.valueOf(event.getId()), "{}"));
@@ -185,7 +185,6 @@ public class EventService {
 
     public EventDto cancel(Long id) {
         Event event = get(id);
-        if (event.getStatus() == EventStatus.ARCHIVED) throw conflict("Archived events cannot be modified or deleted.");
         if (event.getStatus() == EventStatus.CANCELLED) throw conflict("Event is already cancelled.");
         event.setStatus(EventStatus.CANCELLED);
         audit.save(new AuditLog(event.getCreatedBy(), "EVENT_CANCEL", "EVENT", String.valueOf(event.getId()), "{}"));
@@ -201,7 +200,6 @@ public class EventService {
 
     public void delete(Long id) {
         Event event = get(id);
-        if (event.getStatus() == EventStatus.ARCHIVED) throw conflict("Archived events cannot be modified or deleted.");
         if (event.getStatus() == EventStatus.PUBLISHED) throw conflict("Unpublish or cancel this event before deleting it.");
         audit.save(new AuditLog(event.getCreatedBy(), "EVENT_DELETE", "EVENT", String.valueOf(event.getId()), "{}"));
         repo.delete(event);
