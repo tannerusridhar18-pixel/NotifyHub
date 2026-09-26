@@ -379,6 +379,8 @@ export const updateDepartmentStudent = (departmentId: number, studentId: number,
 
 export const deactivateDepartmentStudent = (departmentId: number, studentId: number) =>
   request<void>(`/departments/${departmentId}/students/${studentId}/status`, { method: "PATCH" });
+export const deleteDepartmentStudent = (departmentId: number, studentId: number) =>
+  request<void>(`/departments/${departmentId}/students/${studentId}`, { method: "DELETE" });
 
 export const batchPromoteStudents = (departmentId: number, fromYear: number, toYear: number) =>
   request<import("@/types").BatchPromoteResult>("/admin/students/batch-promote", {
