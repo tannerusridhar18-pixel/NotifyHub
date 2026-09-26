@@ -1523,8 +1523,8 @@
   top: -620px!important;
   left: 50%!important;
   right: auto!important;
-  width: min(1850px, 150vw)!important;
-  height: min(1850px, 150vw)!important;
+  width: min(2250px, 180vw)!important;
+  height: min(2250px, 180vw)!important;
   margin: 0!important;
   transform: translateX(-50%)!important;
   opacity: .72!important;
