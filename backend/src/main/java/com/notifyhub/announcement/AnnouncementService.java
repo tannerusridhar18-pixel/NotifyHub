@@ -103,6 +103,15 @@ public class AnnouncementService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<AnnouncementDto> departmentManage(String username, int page, int size) {
+        User actor = user(username);
+        if (!"DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin access required.");
+        Long deptId = actor.getDepartmentEntity() == null ? null : actor.getDepartmentEntity().getId();
+        if (deptId == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        return PageResponse.from(repo.findByDepartment(deptId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AnnouncementDto::from));
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<AnnouncementDto> manage(int page, int size) {
         return PageResponse.from(repo.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AnnouncementDto::from));
     }
