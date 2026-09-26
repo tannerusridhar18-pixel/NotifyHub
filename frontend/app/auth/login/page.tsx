@@ -5,6 +5,7 @@ import Link from "next/link";
 import { login as loginUser } from "@/lib/api";
 import Field from "@/components/ui/Field";
 import styles from "../AuthKit.module.css";
+import AuthFloatingCards from "@/components/auth/AuthFloatingCards";
 
 export default function UserLogin() {
   const router = useRouter();
@@ -43,7 +44,8 @@ export default function UserLogin() {
     <main className={styles.page}>
       <div className={styles.ambient} />
       <div className={styles.shell}>
-        <div className={styles.stack}>
+        <div className={`${styles.stack} ${styles["authkit-hero"]}`}>
+          <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
             <span>NotifyHub</span>
@@ -55,6 +57,7 @@ export default function UserLogin() {
             Access your personalized campus feed, faculty broadcasts, academic calendars, and department inquiries.
           </p>
 
+          <div className={styles["authkit-card-stage"]}>
           <section className={styles.card} aria-label="Sign in form">
             <span className={styles.cardLabel}>
               <span className={styles.cardLabelDot} />
@@ -111,6 +114,7 @@ export default function UserLogin() {
               </p>
             </div>
           </section>
+          </div>
 
           <p className={styles.helper}>Secure campus identity · Role-aware access · Session protected</p>
         </div>
