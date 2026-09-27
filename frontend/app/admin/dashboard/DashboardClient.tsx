@@ -233,7 +233,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         userEmail: a.userEmail || undefined,
         role: a.targetType === "DEPARTMENT_HOD" ? "HOD" : (a.role || undefined),
       });
-      setA(blankA);
+      setA({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" : blankA.targetType });
     }, "Announcement draft saved.");
   }
 
@@ -280,7 +280,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         registrationEnabled: ev.registrationEnabled,
         registrationDeadline: ev.registrationDeadline ? new Date(ev.registrationDeadline).toISOString() : undefined,
       });
-      setEv(blankE);
+      setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
     }, "Event draft saved.");
   }
 
