@@ -13,6 +13,104 @@ function radiusAt(y: number) {
   return WAIST_RADIUS + (EDGE_RADIUS - WAIST_RADIUS) * eased;
 }
 
+
+const FLOW_VERTEX = `
+  uniform float uTime;
+  uniform float uFlow;
+  varying float vEnergy;
+
+  void main() {
+    vec3 p = position;
+    float radius = max(length(p.xz), 0.001);
+    float angle = atan(p.z, p.x);
+
+    float waveA = sin(p.y * 2.15 + angle * 5.0 + uTime * uFlow);
+    float waveB = sin(p.y * 4.8 - angle * 3.0 + uTime * uFlow * 0.62);
+    float twist = (waveA * 0.045 + waveB * 0.018) * smoothstep(0.0, 1.0, radius / 4.2);
+
+    float a = angle + twist + sin(p.y * 0.75 + uTime * 0.22) * 0.012;
+    p.x = cos(a) * radius;
+    p.z = sin(a) * radius;
+
+    p.y += sin(angle * 3.0 + p.y * 1.7 + uTime * 0.42) * 0.018;
+
+    vEnergy = 0.55 + 0.45 * (0.5 + 0.5 * waveA);
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  }
+`;
+
+const FLOW_FRAGMENT = `
+  uniform vec3 uColor;
+  uniform float uOpacity;
+  varying float vEnergy;
+
+  void main() {
+    float brightness = mix(0.72, 1.0, vEnergy);
+    gl_FragColor = vec4(uColor * brightness, uOpacity * brightness);
+  }
+`;
+
+const GROUND_VERTEX = `
+  uniform float uTime;
+  varying float vEnergy;
+
+  void main() {
+    vec3 p = position;
+    float radius = length(p.xz);
+    float angle = atan(p.z, p.x);
+
+    float wave = sin(radius * 2.25 - uTime * 0.85 + angle * 3.0);
+    float wave2 = sin(radius * 5.2 - uTime * 0.42 + angle * 7.0);
+
+    p.y += wave * 0.035 + wave2 * 0.012;
+    p.xz *= 1.0 + wave * 0.004;
+
+    vEnergy = 0.55 + 0.45 * (0.5 + 0.5 * wave);
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  }
+`;
+
+const GROUND_FRAGMENT = `
+  uniform vec3 uColor;
+  uniform float uOpacity;
+  varying float vEnergy;
+
+  void main() {
+    gl_FragColor = vec4(uColor, uOpacity * (0.72 + vEnergy * 0.28));
+  }
+`;
+
+function createFlowMaterial(color: number, opacity: number, flow: number) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uFlow: { value: flow },
+      uColor: { value: new THREE.Color(color) },
+      uOpacity: { value: opacity },
+    },
+    vertexShader: FLOW_VERTEX,
+    fragmentShader: FLOW_FRAGMENT,
+    transparent: true,
+    depthWrite: false,
+  });
+}
+
+function createGroundMaterial(color: number, opacity: number) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uColor: { value: new THREE.Color(color) },
+      uOpacity: { value: opacity },
+    },
+    vertexShader: GROUND_VERTEX,
+    fragmentShader: GROUND_FRAGMENT,
+    transparent: true,
+    depthWrite: false,
+  });
+}
+
 function buildContourGeometry() {
   const positions: number[] = [];
   const rings = 108;
@@ -218,39 +316,19 @@ export default function HeroVortex() {
 
     const vortex = new THREE.Group();
 
-    const contourMaterial = new THREE.LineBasicMaterial({
-      color: 0xf4f6f8,
-      transparent: true,
-      opacity: 0.105,
-      depthWrite: false,
-    });
+    const contourMaterial = createFlowMaterial(0xf4f6f8, 0.105, 0.34);
     const contourGeometry = buildContourGeometry();
     const contours = new THREE.LineSegments(contourGeometry, contourMaterial);
 
-    const flowMaterial = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.19,
-      depthWrite: false,
-    });
+    const flowMaterial = createFlowMaterial(0xffffff, 0.19, 0.78);
     const flowGeometry = buildFlowGeometry();
     const flowLines = new THREE.LineSegments(flowGeometry, flowMaterial);
 
-    const groundFlowMaterial = new THREE.LineBasicMaterial({
-      color: 0xf4f6f8,
-      transparent: true,
-      opacity: 0.24,
-      depthWrite: false,
-    });
+    const groundFlowMaterial = createGroundMaterial(0xf4f6f8, 0.24);
     const groundFlowGeometry = buildGroundFlowGeometry();
     const groundFlow = new THREE.LineSegments(groundFlowGeometry, groundFlowMaterial);
 
-    const groundContourMaterial = new THREE.LineBasicMaterial({
-      color: 0xdde3e9,
-      transparent: true,
-      opacity: 0.075,
-      depthWrite: false,
-    });
+    const groundContourMaterial = createGroundMaterial(0xdde3e9, 0.075);
     const groundContourGeometry = buildGroundContoursGeometry();
     const groundContours = new THREE.LineSegments(
       groundContourGeometry,
@@ -315,12 +393,19 @@ export default function HeroVortex() {
       if (!active) return;
 
       const elapsed = clock.getElapsedTime();
+
       if (!reducedMotion) {
         vortex.rotation.y = elapsed * 0.012;
         vortex.rotation.z = Math.sin(elapsed * 0.09) * 0.008;
         groundFlow.rotation.y = -elapsed * 0.005;
         groundContours.rotation.y = -elapsed * 0.003;
       }
+
+      const animationTime = reducedMotion ? 0 : elapsed;
+      (contourMaterial.uniforms.uTime.value = animationTime);
+      (flowMaterial.uniforms.uTime.value = animationTime);
+      (groundFlowMaterial.uniforms.uTime.value = animationTime);
+      (groundContourMaterial.uniforms.uTime.value = animationTime);
 
       scrollProgress += (targetScroll - scrollProgress) * 0.055;
 
@@ -331,11 +416,11 @@ export default function HeroVortex() {
       groundContours.position.y = -scrollProgress * 0.48;
 
       const fade = 1 - scrollProgress * 0.72;
-      flowMaterial.opacity = 0.19 * fade;
-      contourMaterial.opacity = 0.105 * fade;
+      flowMaterial.uniforms.uOpacity.value = 0.19 * fade;
+      contourMaterial.uniforms.uOpacity.value = 0.105 * fade;
       particleMaterial.opacity = 0.3 * fade;
-      groundFlowMaterial.opacity = 0.24 * fade;
-      groundContourMaterial.opacity = 0.075 * fade;
+      groundFlowMaterial.uniforms.uOpacity.value = 0.24 * fade;
+      groundContourMaterial.uniforms.uOpacity.value = 0.075 * fade;
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(animate);
