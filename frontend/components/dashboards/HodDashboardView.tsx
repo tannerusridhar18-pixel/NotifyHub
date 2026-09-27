@@ -135,15 +135,15 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110">
+          <span className="grid h-10 w-10 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-inset)] transition-transform duration-200 group-hover:scale-105">
             ◈
           </span>
-          <span className="tracking-tight text-xl font-extrabold">
+          <span className="tracking-tight text-xl font-medium">
             Notify<span className="text-brand-light">Hub</span>
           </span>
         </Link>
         <div className="hidden items-center gap-2 text-xs font-semibold text-muted md:flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 px-3 py-0.5 text-[10px] font-extrabold uppercase text-purple-400 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 px-3 py-0.5 text-[10px] font-medium uppercase text-purple-400 shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             HOD EXECUTIVE
           </span>
@@ -172,10 +172,10 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
         <section className="mb-8 rounded-3xl border border-white/12 bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 shadow-lift backdrop-blur-2xl sm:p-8">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-2/30 bg-brand-50 px-3 py-1 text-[10px] font-extrabold tracking-widest text-brand-2-light uppercase">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-2/30 bg-brand-50 px-3 py-1 text-[10px] font-medium tracking-widest text-brand-2-light uppercase">
                 Department Leadership (Level 3)
               </span>
-              <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="mt-2 text-3xl sm:text-4xl font-medium tracking-tight">
                 {user.department ? `${user.department} Department` : "Department"} Command Center
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -185,15 +185,15 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
             <div className="flex flex-wrap gap-3">
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Enrolled Students</span>
-                <span className="text-2xl font-extrabold text-white">{analytics?.totalStudents ?? students.length}</span>
+                <span className="text-2xl font-medium text-white">{analytics?.totalStudents ?? students.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Faculty Staff</span>
-                <span className="text-2xl font-extrabold text-brand-light">{analytics?.totalFaculty ?? "—"}</span>
+                <span className="text-2xl font-medium text-brand-light">{analytics?.totalFaculty ?? "—"}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Open Inquiries</span>
-                <span className="text-2xl font-extrabold text-amber-400">{analytics?.openQueries ?? "—"}</span>
+                <span className="text-2xl font-medium text-amber-400">{analytics?.openQueries ?? "—"}</span>
               </div>
             </div>
           </div>
@@ -202,7 +202,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
           <div className="mt-8 flex gap-2 border-t border-white/[0.08] pt-6 overflow-x-auto">
             <button
               onClick={() => setTab("analytics")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "analytics"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -212,7 +212,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("directives")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "directives"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -222,7 +222,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("broadcast")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "broadcast"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -232,7 +232,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("roster")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "roster"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -242,7 +242,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("faculty")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "faculty"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -259,23 +259,23 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
           <div className="space-y-6">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-3xl border border-white/10 bg-surface/90 p-6 shadow-lift">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-muted">Total Students</span>
-                <p className="mt-2 text-4xl font-extrabold text-white">{analytics?.totalStudents ?? 0}</p>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted">Total Students</span>
+                <p className="mt-2 text-4xl font-medium text-white">{analytics?.totalStudents ?? 0}</p>
                 <span className="mt-2 block text-xs text-muted">Across all branches & batches</span>
               </div>
               <div className="rounded-3xl border border-white/10 bg-surface/90 p-6 shadow-lift">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-muted">Faculty Staff</span>
-                <p className="mt-2 text-4xl font-extrabold text-brand-light">{analytics?.totalFaculty ?? 0}</p>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted">Faculty Staff</span>
+                <p className="mt-2 text-4xl font-medium text-brand-light">{analytics?.totalFaculty ?? 0}</p>
                 <span className="mt-2 block text-xs text-muted">HOME & Cross-Department mappings</span>
               </div>
               <div className="rounded-3xl border border-white/10 bg-surface/90 p-6 shadow-lift">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-muted">Active Announcements</span>
-                <p className="mt-2 text-4xl font-extrabold text-teal-light">{analytics?.activeAnnouncements ?? 0}</p>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted">Active Announcements</span>
+                <p className="mt-2 text-4xl font-medium text-teal-light">{analytics?.activeAnnouncements ?? 0}</p>
                 <span className="mt-2 block text-xs text-muted">Live department bulletins</span>
               </div>
               <div className="rounded-3xl border border-white/10 bg-surface/90 p-6 shadow-lift">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-muted">Inquiries Desk</span>
-                <p className="mt-2 text-4xl font-extrabold text-amber-400">{analytics?.openQueries ?? 0}</p>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted">Inquiries Desk</span>
+                <p className="mt-2 text-4xl font-medium text-amber-400">{analytics?.openQueries ?? 0}</p>
                 <span className="mt-2 block text-xs text-muted">Pending student & staff resolutions</span>
               </div>
             </div>
@@ -286,7 +286,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
           <div className="space-y-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Institutional Directives</h2>
+                <h2 className="text-2xl font-medium text-white">Institutional Directives</h2>
                 <p className="text-xs text-muted">Official communications and executive notices from Principal & Dean offices.</p>
               </div>
             </div>
@@ -305,7 +305,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
         {!error && tab === "broadcast" && (
           <div className="max-w-2xl mx-auto">
             <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-              <h2 className="text-2xl font-extrabold text-white">Publish Department Notice</h2>
+              <h2 className="text-2xl font-medium text-white">Publish Department Notice</h2>
               <p className="mt-1 text-xs text-muted">
                 Broadcast official circulars, exam guidelines, or holiday notifications to all students & faculty in {user.department || "the department"}.
               </p>
@@ -382,7 +382,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Department Student Roster</h2>
+                <h2 className="text-2xl font-medium text-white">Department Student Roster</h2>
                 <p className="text-xs text-muted">View student cohorts and reassign section allocations.</p>
               </div>
             </div>
@@ -438,7 +438,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
             {selectedStudent && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                 <div className="w-full max-w-md rounded-2xl border border-white/15 bg-surface p-6 shadow-2xl">
-                  <h3 className="text-lg font-extrabold text-white">Reassign Section</h3>
+                  <h3 className="text-lg font-medium text-white">Reassign Section</h3>
                   <p className="mt-1 text-xs text-muted">
                     Move <strong className="text-white">{selectedStudent.name}</strong> to a different academic section.
                   </p>
@@ -477,7 +477,7 @@ export default function HodDashboardView({ user }: { user: CurrentUser }) {
 
         {!error && tab === "faculty" && (
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-            <h2 className="text-2xl font-extrabold text-white">Department Faculty Roster</h2>
+            <h2 className="text-2xl font-medium text-white">Department Faculty Roster</h2>
             <p className="mt-1 text-xs text-muted">Faculty mapped to this department, including HOME and SUB assignments.</p>
             <div className="mt-6 overflow-x-auto">
               {faculty.length === 0 ? <Empty label="department faculty" /> : (
