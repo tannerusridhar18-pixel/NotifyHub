@@ -3,9 +3,9 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const HALF_HEIGHT = 3.35;
+const HALF_HEIGHT = 3.55;
 const WAIST_RADIUS = 0.18;
-const EDGE_RADIUS = 4.9;
+const EDGE_RADIUS = 4.15;
 
 function radiusAt(y: number) {
   const t = Math.min(Math.abs(y) / HALF_HEIGHT, 1);
@@ -15,8 +15,8 @@ function radiusAt(y: number) {
 
 function buildContourGeometry() {
   const positions: number[] = [];
-  const rings = 92;
-  const segments = 220;
+  const rings = 108;
+  const segments = 260;
 
   for (let ring = 0; ring < rings; ring += 1) {
     const y = -HALF_HEIGHT + (ring / (rings - 1)) * HALF_HEIGHT * 2;
@@ -48,8 +48,8 @@ function buildContourGeometry() {
 
 function buildFlowGeometry() {
   const positions: number[] = [];
-  const lines = 115;
-  const points = 105;
+  const lines = 145;
+  const points = 125;
 
   for (let line = 0; line < lines; line += 1) {
     const base = (line / lines) * Math.PI * 2;
@@ -92,7 +92,7 @@ function buildFlowGeometry() {
 
 function buildGroundFlowGeometry() {
   const positions: number[] = [];
-  const lines = 105;
+  const lines = 125;
   const points = 115;
 
   for (let line = 0; line < lines; line += 1) {
@@ -100,7 +100,7 @@ function buildGroundFlowGeometry() {
     const phase = line * 0.61;
 
     for (let i = 0; i < points - 1; i += 1) {
-      const r0 = 0.18 + (i / (points - 1)) * 6.5;
+      const r0 = 0.18 + (i / (points - 1)) * 6.0;
       const r1 = 0.18 + ((i + 1) / (points - 1)) * 6.5;
 
       const a0 = base + r0 * 0.82 + Math.sin(r0 * 1.7 + phase) * 0.055;
@@ -128,7 +128,7 @@ function buildGroundFlowGeometry() {
 
 function buildGroundContoursGeometry() {
   const positions: number[] = [];
-  const rings = 28;
+  const rings = 32;
   const segments = 240;
 
   for (let ring = 0; ring < rings; ring += 1) {
@@ -159,7 +159,7 @@ function buildGroundContoursGeometry() {
 
 function buildParticles() {
   const positions: number[] = [];
-  const count = 950;
+  const count = 1100;
 
   for (let i = 0; i < count; i += 1) {
     const t = (i * 0.61803398875) % 1;
@@ -190,7 +190,7 @@ export default function HeroVortex() {
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 40);
-    camera.position.set(0, 0.05, 12.6);
+    camera.position.set(0, 0.02, 13.8);
     camera.lookAt(0, -0.15, 0);
 
     let renderer: THREE.WebGLRenderer;
@@ -221,7 +221,7 @@ export default function HeroVortex() {
     const contourMaterial = new THREE.LineBasicMaterial({
       color: 0xf4f6f8,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.105,
       depthWrite: false,
     });
     const contourGeometry = buildContourGeometry();
@@ -230,7 +230,7 @@ export default function HeroVortex() {
     const flowMaterial = new THREE.LineBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.29,
+      opacity: 0.19,
       depthWrite: false,
     });
     const flowGeometry = buildFlowGeometry();
@@ -239,7 +239,7 @@ export default function HeroVortex() {
     const groundFlowMaterial = new THREE.LineBasicMaterial({
       color: 0xf4f6f8,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.24,
       depthWrite: false,
     });
     const groundFlowGeometry = buildGroundFlowGeometry();
@@ -248,7 +248,7 @@ export default function HeroVortex() {
     const groundContourMaterial = new THREE.LineBasicMaterial({
       color: 0xdde3e9,
       transparent: true,
-      opacity: 0.11,
+      opacity: 0.075,
       depthWrite: false,
     });
     const groundContourGeometry = buildGroundContoursGeometry();
@@ -259,9 +259,9 @@ export default function HeroVortex() {
 
     const particleMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 0.024,
+      size: 0.018,
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.3,
       depthWrite: false,
       sizeAttenuation: true,
     });
@@ -316,26 +316,26 @@ export default function HeroVortex() {
 
       const elapsed = clock.getElapsedTime();
       if (!reducedMotion) {
-        vortex.rotation.y = elapsed * 0.032;
-        vortex.rotation.z = Math.sin(elapsed * 0.12) * 0.012;
-        groundFlow.rotation.y = -elapsed * 0.012;
-        groundContours.rotation.y = -elapsed * 0.007;
+        vortex.rotation.y = elapsed * 0.012;
+        vortex.rotation.z = Math.sin(elapsed * 0.09) * 0.008;
+        groundFlow.rotation.y = -elapsed * 0.005;
+        groundContours.rotation.y = -elapsed * 0.003;
       }
 
       scrollProgress += (targetScroll - scrollProgress) * 0.055;
 
-      const lift = scrollProgress * 0.75;
+      const lift = scrollProgress * 1.15;
       vortex.position.y = (mount.clientWidth < 760 ? 0.25 : 0.05) + lift;
-      vortex.scale.setScalar((mount.clientWidth < 760 ? 0.7 : 1) + scrollProgress * 0.08);
-      groundFlow.position.y = -scrollProgress * 0.35;
-      groundContours.position.y = -scrollProgress * 0.35;
+      vortex.scale.setScalar((mount.clientWidth < 760 ? 0.62 : 0.88) + scrollProgress * 0.12);
+      groundFlow.position.y = -scrollProgress * 0.48;
+      groundContours.position.y = -scrollProgress * 0.48;
 
-      const fade = 1 - scrollProgress * 0.62;
-      flowMaterial.opacity = 0.29 * fade;
-      contourMaterial.opacity = 0.16 * fade;
-      particleMaterial.opacity = 0.42 * fade;
-      groundFlowMaterial.opacity = 0.22 * fade;
-      groundContourMaterial.opacity = 0.11 * fade;
+      const fade = 1 - scrollProgress * 0.72;
+      flowMaterial.opacity = 0.19 * fade;
+      contourMaterial.opacity = 0.105 * fade;
+      particleMaterial.opacity = 0.3 * fade;
+      groundFlowMaterial.opacity = 0.24 * fade;
+      groundContourMaterial.opacity = 0.075 * fade;
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(animate);
