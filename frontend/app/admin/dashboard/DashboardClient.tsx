@@ -99,6 +99,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   const [queries, setQueries] = useState<CampusQuery[]>([]);
   const [modalItem, setModalItem] = useState<{ type: "announcement"; data: Announcement } | { type: "event"; data: EventItem } | { type: "query"; data: CampusQuery } | null>(null);
   const [identity, setIdentity] = useState("");
+  const [scopeDepartmentId, setScopeDepartmentId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -152,6 +153,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
           return;
         }
         setIdentity(u.email);
+        setScopeDepartmentId(u.departmentId ?? u.student?.departmentId ?? u.faculty?.departmentId ?? null);
         try {
           await load();
         } catch (e) {
@@ -222,8 +224,8 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         title: a.title,
         content: a.content,
         urgent: a.urgent,
-        targetType: a.targetType,
-        departmentId: a.departmentId ? Number(a.departmentId) : undefined,
+        targetType: departmentScoped ? "DEPARTMENT" : a.targetType,
+        departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (a.departmentId ? Number(a.departmentId) : undefined),
         branchId: a.branchId ? Number(a.branchId) : undefined,
         sectionId: a.sectionId ? Number(a.sectionId) : undefined,
         hostelId: a.hostelId ? Number(a.hostelId) : undefined,
@@ -265,8 +267,8 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         location: ev.location,
         startAt: new Date(ev.startAt).toISOString(),
         endAt: new Date(ev.endAt).toISOString(),
-        targetType: ev.targetType,
-        departmentId: ev.departmentId ? Number(ev.departmentId) : undefined,
+        targetType: departmentScoped ? "DEPARTMENT" : ev.targetType,
+        departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (ev.departmentId ? Number(ev.departmentId) : undefined),
         branchId: ev.branchId ? Number(ev.branchId) : undefined,
         sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
         hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
