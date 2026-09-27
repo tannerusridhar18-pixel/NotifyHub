@@ -17,3 +17,12 @@
 - Removed duplicated decorative cyclone/orbit markup from announcements, events, and Ask Campus so the shared shell provides a cleaner consistent background treatment.
 - No backend, authentication, role, API, or data behavior changes.
 - This branch has no separate `frontend/app/query/page.tsx`; `/ask` is the existing campus-query interface and was styled accordingly.
+
+
+## 2026-09-27 — REKKI tokenized public styling
+- Added `frontend/styles/design-tokens.css` with the supplied REKKI color, typography, spacing, radius, surface, and inset-elevation tokens, exposed through Tailwind v4 `@theme`.
+- Imported the token sheet from `frontend/app/globals.css` and scoped the visual treatment to Home, Announcements, Events, and Ask Campus.
+- Applied Obsidian/Carbon/Graphite/Iron/Steel surfaces, Signal Blue as the only chromatic accent, pill actions, 16px card elevation, 8px inputs, Inter typography, tight tracking, and reduced-motion-safe transitions.
+- Neutralized legacy multi-color public utility classes only inside the selected public-page scopes; admin/dashboard pages are not targeted.
+- Restyled the shared public shell only when one of the selected pages is active, without changing routes, API calls, or component behavior.
+- No data, authentication, backend, or role logic changes.
