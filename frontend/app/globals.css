@@ -2958,3 +2958,168 @@ footer {
     filter: brightness(1.12);
   }
 }
+
+
+/* REKKI system layer for all non-hero surfaces.
+ * Shared tokens/components remain the source of truth; this layer only neutralizes
+ * legacy per-page palette utilities inside scoped public/auth/dashboard surfaces.
+ */
+@layer components {
+  .nh-rekki-scope,
+  .nh-rekki-auth {
+    background: var(--color-obsidian);
+    color: var(--color-paper);
+  }
+
+  .nh-rekki-scope [class*="bg-gradient"],
+  .nh-rekki-auth [class*="bg-gradient"] {
+    background-image: none !important;
+  }
+
+  .nh-rekki-scope [class*="text-brand"],
+  .nh-rekki-scope [class*="text-cyan"],
+  .nh-rekki-scope [class*="text-teal"],
+  .nh-rekki-scope [class*="text-success"],
+  .nh-rekki-scope [class*="text-danger"],
+  .nh-rekki-scope [class*="text-warning"],
+  .nh-rekki-scope [class*="text-amber"],
+  .nh-rekki-scope [class*="text-purple"],
+  .nh-rekki-scope [class*="text-violet"],
+  .nh-rekki-auth [class*="text-brand"],
+  .nh-rekki-auth [class*="text-cyan"],
+  .nh-rekki-auth [class*="text-teal"],
+  .nh-rekki-auth [class*="text-success"],
+  .nh-rekki-auth [class*="text-danger"],
+  .nh-rekki-auth [class*="text-warning"],
+  .nh-rekki-auth [class*="text-amber"],
+  .nh-rekki-auth [class*="text-purple"],
+  .nh-rekki-auth [class*="text-violet"] {
+    color: var(--color-signal-blue) !important;
+  }
+
+  .nh-rekki-scope [class*="bg-brand"],
+  .nh-rekki-scope [class*="bg-cyan"],
+  .nh-rekki-scope [class*="bg-teal"],
+  .nh-rekki-scope [class*="bg-success"],
+  .nh-rekki-scope [class*="bg-danger"],
+  .nh-rekki-scope [class*="bg-warning"],
+  .nh-rekki-scope [class*="bg-amber"],
+  .nh-rekki-scope [class*="bg-purple"],
+  .nh-rekki-scope [class*="bg-violet"],
+  .nh-rekki-auth [class*="bg-brand"],
+  .nh-rekki-auth [class*="bg-cyan"],
+  .nh-rekki-auth [class*="bg-teal"],
+  .nh-rekki-auth [class*="bg-success"],
+  .nh-rekki-auth [class*="bg-danger"],
+  .nh-rekki-auth [class*="bg-warning"],
+  .nh-rekki-auth [class*="bg-amber"],
+  .nh-rekki-auth [class*="bg-purple"],
+  .nh-rekki-auth [class*="bg-violet"] {
+    background-color: var(--color-graphite) !important;
+  }
+
+  .nh-rekki-scope [class*="border-brand"],
+  .nh-rekki-scope [class*="border-cyan"],
+  .nh-rekki-scope [class*="border-teal"],
+  .nh-rekki-scope [class*="border-success"],
+  .nh-rekki-scope [class*="border-danger"],
+  .nh-rekki-scope [class*="border-warning"],
+  .nh-rekki-scope [class*="border-amber"],
+  .nh-rekki-scope [class*="border-purple"],
+  .nh-rekki-scope [class*="border-violet"],
+  .nh-rekki-auth [class*="border-brand"],
+  .nh-rekki-auth [class*="border-cyan"],
+  .nh-rekki-auth [class*="border-teal"],
+  .nh-rekki-auth [class*="border-success"],
+  .nh-rekki-auth [class*="border-danger"],
+  .nh-rekki-auth [class*="border-warning"],
+  .nh-rekki-auth [class*="border-amber"],
+  .nh-rekki-auth [class*="border-purple"],
+  .nh-rekki-auth [class*="border-violet"] {
+    border-color: rgba(255,255,255,.12) !important;
+  }
+
+  .nh-rekki-scope [class*="shadow-"],
+  .nh-rekki-auth [class*="shadow-"] {
+    box-shadow: var(--shadow-subtle) !important;
+  }
+
+  .nh-rekki-scope [class*="rounded-3xl"],
+  .nh-rekki-scope [class*="rounded-[22px]"],
+  .nh-rekki-scope [class*="rounded-[24px]"],
+  .nh-rekki-scope [class*="rounded-[26px]"],
+  .nh-rekki-auth [class*="rounded-3xl"],
+  .nh-rekki-auth [class*="rounded-[22px]"],
+  .nh-rekki-auth [class*="rounded-[24px]"],
+  .nh-rekki-auth [class*="rounded-[26px]"] {
+    border-radius: var(--radius-cards) !important;
+  }
+
+  .nh-rekki-scope input:not([type="checkbox"]):not([type="radio"]),
+  .nh-rekki-scope select,
+  .nh-rekki-scope textarea,
+  .nh-rekki-auth input:not([type="checkbox"]):not([type="radio"]),
+  .nh-rekki-auth select,
+  .nh-rekki-auth textarea {
+    background-color: var(--color-iron);
+    border-radius: var(--radius-inputs);
+    color: var(--color-paper);
+    border-color: rgba(255,255,255,.12);
+    box-shadow: var(--shadow-subtle-2);
+  }
+
+  .nh-rekki-scope table,
+  .nh-rekki-scope thead,
+  .nh-rekki-scope tbody,
+  .nh-rekki-scope tr {
+    border-color: rgba(255,255,255,.12);
+  }
+
+  .nh-rekki-scope th {
+    color: var(--color-ash);
+    background: var(--color-carbon);
+    font-weight: 400;
+  }
+
+  .nh-rekki-scope td {
+    color: var(--color-paper);
+    background: var(--color-graphite);
+  }
+
+  .nh-rekki-scope header {
+    background: rgba(0,0,0,.94) !important;
+    border-color: rgba(255,255,255,.12) !important;
+    box-shadow: none !important;
+  }
+
+  .nh-rekki-scope header a,
+  .nh-rekki-scope nav a {
+    color: var(--color-ash);
+    font-weight: 400;
+  }
+
+  .nh-rekki-scope header a:hover,
+  .nh-rekki-scope nav a:hover {
+    color: var(--color-paper);
+  }
+
+  .nh-rekki-scope button[class*="bg-"],
+  .nh-rekki-scope a[class*="bg-"] {
+    border-radius: var(--radius-buttons);
+  }
+
+  .nh-rekki-auth .cta,
+  .nh-rekki-auth button[type="submit"] {
+    background: var(--color-signal-blue) !important;
+    color: var(--color-paper) !important;
+    border-radius: var(--radius-buttons) !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nh-rekki-scope *,
+  .nh-rekki-auth * {
+    transition-duration: 0.01ms !important;
+  }
+}
