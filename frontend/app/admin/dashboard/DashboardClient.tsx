@@ -224,7 +224,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         title: a.title,
         content: a.content,
         urgent: a.urgent,
-        targetType: departmentScoped ? "DEPARTMENT" : a.targetType,
+        targetType: a.targetType,
         departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (a.departmentId ? Number(a.departmentId) : undefined),
         branchId: a.branchId ? Number(a.branchId) : undefined,
         sectionId: a.sectionId ? Number(a.sectionId) : undefined,
@@ -267,7 +267,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         location: ev.location,
         startAt: new Date(ev.startAt).toISOString(),
         endAt: new Date(ev.endAt).toISOString(),
-        targetType: departmentScoped ? "DEPARTMENT" : ev.targetType,
+        targetType: ev.targetType,
         departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (ev.departmentId ? Number(ev.departmentId) : undefined),
         branchId: ev.branchId ? Number(ev.branchId) : undefined,
         sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
@@ -466,7 +466,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
               </div>
               <SoftBadge>DRAFT</SoftBadge>
             </div>
-            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} />
+            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} />
             <Field label="Title" htmlFor="ann-title" className="mb-4">
               <input id="ann-title" required className={inputBase} maxLength={180} value={a.title} onChange={(e) => setA((v) => ({ ...v, title: e.target.value }))} />
             </Field>
@@ -1043,6 +1043,7 @@ function AudienceFields({
   branches,
   sections,
   hostels,
+  departmentScoped = false,
 }: {
   value: { targetType: TargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
   onChange: (v: Partial<typeof value>) => void;
@@ -1050,6 +1051,7 @@ function AudienceFields({
   branches: StructureBranch[];
   sections: StructureSection[];
   hostels: StructureHostel[];
+  departmentScoped?: boolean;
 }) {
   const target = value.targetType;
   const filteredBranches = branches.filter((x) => x.active && (!value.departmentId || String(x.departmentId) === value.departmentId));
@@ -1063,33 +1065,42 @@ function AudienceFields({
           value={target}
           onChange={(e) => onChange({ targetType: e.target.value as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" })}
         >
-          <option value="GLOBAL">Everyone</option>
+          {!departmentScoped && <option value="GLOBAL">Everyone</option>}
           <option value="ROLE">By role</option>
           <option value="DEPARTMENT">Department</option>
-          <option value="BRANCH">Branch</option>
+          {!departmentScoped && <option value="BRANCH">Branch</option>}
           <option value="SECTION">Section</option>
-          <option value="HOSTEL">Hostel</option>
-          <option value="USER">Specific user</option>
+          {!departmentScoped && <option value="HOSTEL">Hostel</option>}
+          {!departmentScoped && <option value="USER">Specific user</option>
         </select>
       </Field>
       {target === "ROLE" && (
         <Field label="Role" htmlFor="audience-role" className="mt-3">
           <select id="audience-role" className={inputBase} value={value.role} onChange={(e) => onChange({ role: e.target.value })}>
             <option value="">Choose target role</option>
-            <option value="PRINCIPAL">Principal (L1)</option>
-            <option value="DEAN">Dean (L2)</option>
-            <option value="HOD">HOD / Department Heads (L3)</option>
-            <option value="FACULTY">Faculty (L4)</option>
-            <option value="STUDENT">Student (L5)</option>
+            {departmentScoped ? (
+              <>
+                <option value="STUDENT">Student</option>
+                <option value="FACULTY">Faculty</option>
+              </>
+            ) : (
+              <>
+                <option value="PRINCIPAL">Principal (L1)</option>
+                <option value="DEAN">Dean (L2)</option>
+                <option value="HOD">HOD / Department Heads (L3)</option>
+                <option value="FACULTY">Faculty (L4)</option>
+                <option value="STUDENT">Student (L5)</option>
+              </>
+            )}
           </select>
         </Field>
       )}
-      {target === "USER" && (
+      {!departmentScoped && target === "USER" && (
         <Field label="User email" htmlFor="audience-user-email" className="mt-3">
           <input id="audience-user-email" required type="email" className={inputBase} value={value.userEmail} onChange={(e) => onChange({ userEmail: e.target.value })} placeholder="person@campus.edu" />
         </Field>
       )}
-      {target === "HOSTEL" && (
+      {!departmentScoped && target === "HOSTEL" && (
         <Field label="Hostel" htmlFor="audience-hostel" className="mt-3">
           <select id="audience-hostel" required className={inputBase} value={value.hostelId} onChange={(e) => onChange({ hostelId: e.target.value })}>
             <option value="">Choose hostel</option>
@@ -1097,7 +1108,7 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {target !== "GLOBAL" && target !== "ROLE" && (
+      {!departmentScoped && target !== "GLOBAL" && target !== "ROLE" && (
         <Field label="Department" htmlFor="audience-department" className="mt-3">
           <select
             id="audience-department"
