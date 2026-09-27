@@ -231,7 +231,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         sectionId: a.sectionId ? Number(a.sectionId) : undefined,
         hostelId: a.hostelId ? Number(a.hostelId) : undefined,
         userEmail: a.userEmail || undefined,
-        role: a.role || undefined,
+        role: a.targetType === "DEPARTMENT_HOD" ? "HOD" : (a.role || undefined),
       });
       setA(blankA);
     }, "Announcement draft saved.");
@@ -274,7 +274,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
         hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
         userEmail: ev.userEmail || undefined,
-        role: ev.role || undefined,
+        role: ev.targetType === "DEPARTMENT_HOD" ? "HOD" : (ev.role || undefined),
         photoUrl: ev.photoUrl || undefined,
         externalLink: ev.externalLink || undefined,
         registrationEnabled: ev.registrationEnabled,
@@ -574,7 +574,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
               </div>
               <SoftBadge>DRAFT</SoftBadge>
             </div>
-            <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} />
+            <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} scopeDepartmentId={scopeDepartmentId} />
             <EventRegistrationFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} />
             <Field label="Event title" htmlFor="event-title" className="mb-4">
               <input id="event-title" required className={inputBase} maxLength={180} value={ev.title} onChange={(e) => setEv((v) => ({ ...v, title: e.target.value }))} />
@@ -1122,11 +1122,12 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {!departmentScoped && target === "USER" && (
+      {target === "USER" && (
         <Field label="User email" htmlFor="audience-user-email" className="mt-3">
-          <input id="audience-user-email" required type="email" className={inputBase} value={value.userEmail} onChange={(e) => onChange({ userEmail: e.target.value })} placeholder="person@campus.edu" />
+          <input id="audience-user-email" required type="email" className={inputBase} value={value.userEmail} onChange={(e) => onChange({ userEmail: e.target.value })} placeholder="student@campus.edu or faculty@campus.edu" />
         </Field>
       )}
+      {target === "DEPARTMENT_HOD" && <p className="mt-3 text-[11px] text-muted">This targets the HOD of your department only.</p>}
       {!departmentScoped && target === "HOSTEL" && (
         <Field label="Hostel" htmlFor="audience-hostel" className="mt-3">
           <select id="audience-hostel" required className={inputBase} value={value.hostelId} onChange={(e) => onChange({ hostelId: e.target.value })}>
@@ -1135,7 +1136,7 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {!departmentScoped && target !== "GLOBAL" && target !== "ROLE" && (
+      {!departmentScoped && target !== "GLOBAL" && target !== "ROLE" && target !== "DEPARTMENT_HOD" && (
         <Field label="Department" htmlFor="audience-department" className="mt-3">
           <select
             id="audience-department"
