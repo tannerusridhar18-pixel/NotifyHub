@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { currentUser, eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
 import type { EventItem } from "@/types";
 
 export default function EventRegistrationPanel({ event, canManageRegistrations }: { event: EventItem; canManageRegistrations: boolean }) {
@@ -8,6 +9,25 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
   const [registrations, setRegistrations] = useState<EventRegistration[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    currentUser()
+      .then(() => {
+        if (alive) setAuthenticated(true);
+      })
+      .catch(() => {
+        if (alive) setAuthenticated(false);
+      })
+      .finally(() => {
+        if (alive) setAuthChecked(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const closed = !event.registrationEnabled || (event.registrationDeadline != null && new Date(event.registrationDeadline) <= new Date());
   const reason = !event.registrationEnabled
@@ -17,6 +37,7 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
     : "";
 
   async function register() {
+    if (!authenticated) return;
     setLoading(true);
     try {
       await registerForEvent(event.id);
@@ -53,7 +74,18 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
   return (
     <section className="mt-4 border-t border-border pt-4" aria-label="Event registration" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-wrap gap-2 print-hide">
-        {closed ? (
+        {!authChecked ? (
+          <span className="inline-flex items-center rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm font-bold text-muted">
+            Checking sign-in…
+          </span>
+        ) : !authenticated ? (
+          <Link
+            href="/auth/login"
+            className="inline-flex items-center rounded-lg bg-brand px-3 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90"
+          >
+            Sign in to register
+          </Link>
+        ) : closed ? (
           <span
             className="inline-flex items-center rounded-full border border-border bg-surface-2 px-3 py-2 text-xs font-bold text-muted"
             aria-label={reason}
