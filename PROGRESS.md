@@ -35,3 +35,10 @@
 - Increased ground contour density with tighter center spacing and shader-based outward opacity fade.
 - Preserved existing colors, layout, pointer-events behavior, 60fps requestAnimationFrame loop, scroll response, and prefers-reduced-motion handling.
 - No backend, data, auth, role, route, or content changes.
+
+
+## 2026-09-27 — Qronos vortex floor integration
+- Merged the lower flowing surface into the funnel geometry so the ground flow now rises continuously from the neck instead of appearing as a detached ring plane.
+- Extended the funnel vertically toward the hero header while preserving the current overall width/placement.
+- Increased visual line presence while retaining the existing white/gray palette and subtle background role.
+- No layout, content, route, data, auth, role, or backend changes.
