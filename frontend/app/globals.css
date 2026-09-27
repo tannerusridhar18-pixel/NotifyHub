@@ -3198,3 +3198,37 @@ footer {
     border-color: rgba(255,255,255,.12) !important;
   }
 }
+
+
+@layer components {
+  .nh-rekki-scope,
+  .nh-rekki-auth,
+  .nh-public-page {
+    font-family: var(--font-inter);
+    font-size: 16px;
+    letter-spacing: -0.007em;
+  }
+
+  .nh-rekki-scope h1,
+  .nh-rekki-scope h2,
+  .nh-rekki-scope h3,
+  .nh-rekki-scope h4,
+  .nh-rekki-scope h5,
+  .nh-rekki-scope h6,
+  .nh-rekki-auth h1,
+  .nh-rekki-auth h2,
+  .nh-rekki-auth h3,
+  .nh-rekki-auth h4,
+  .nh-rekki-auth h5,
+  .nh-rekki-auth h6,
+  .nh-public-page h1,
+  .nh-public-page h2,
+  .nh-public-page h3,
+  .nh-public-page h4,
+  .nh-public-page h5,
+  .nh-public-page h6 {
+    font-family: var(--font-inter);
+    font-weight: 400 !important;
+    letter-spacing: -0.027em;
+  }
+}
