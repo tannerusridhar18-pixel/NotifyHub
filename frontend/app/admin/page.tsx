@@ -109,7 +109,7 @@ export default function AdminLogin() {
 
               {error && <div className={styles.error}>{error}</div>}
 
-              <button type="submit" className={styles.cta} disabled={busy}>
+              <button type="submit" className={styles.cta} disabled={busy} suppressHydrationWarning>
                 {busy ? "Validating Session…" : "Enter Control Room →"}
               </button>
             </form>
