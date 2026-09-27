@@ -287,7 +287,7 @@
   margin-top: 8px;
   border: 0;
   border-radius: var(--radius-inputs);
-  background: #663af3;
+  background: var(--color-signal-blue);
   color: var(--color-paper);
   box-shadow: var(--shadow-subtle);
   padding: 12px 24px;
@@ -301,7 +301,7 @@
 .cta:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 10px 30px rgba(102, 58, 243, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 10px 30px rgba(0, 99, 225, 0.2);
 }
 
 .cta:disabled {
