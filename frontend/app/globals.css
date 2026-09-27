@@ -1965,3 +1965,33 @@
     padding: 1.5rem 1rem;
   }
 }
+
+
+/* Landing-page text token normalization. Keep the existing dark visual language,
+   but collapse one-off computed text colors into the shared semantic palette. */
+.nh-home .text-white\/80,
+.nh-home .text-white\/50,
+.nh-home .text-muted\/80,
+.nh-home .text-muted\/90,
+.nh-home .text-muted\/95 {
+  color: var(--color-muted);
+}
+
+.nh-home .text-white\/80 {
+  color: rgba(248, 250, 252, 0.82);
+}
+
+.nh-home .text-white {
+  color: var(--color-ink);
+}
+
+.nh-home .text-brand-2-light,
+.nh-home .text-brand-light {
+  color: var(--color-brand-2-light);
+}
+
+/* Avoid arbitrary micro-radii on the public event cards. */
+.nh-home .nh-public-content-card .rounded-2xl,
+.nh-home .nh-public-content-card .rounded-xl {
+  border-radius: var(--nh-radius-lg);
+}
