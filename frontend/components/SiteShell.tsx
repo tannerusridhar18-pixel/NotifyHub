@@ -29,7 +29,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <QronosBackground />
+      {path !== "/" && <QronosBackground />}
       <div className="nh-qronos-shell-background">
         <div className="nh-qronos-shell-frame">
           <span>NOTIFYHUB</span>
