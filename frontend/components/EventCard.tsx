@@ -63,7 +63,7 @@ export default function EventCard({ item, canManageRegistrations = false }: { it
               </span>
             </div>
             {item.status === "PUBLISHED" && <Countdown target={item.startAt} />}
-            {item.status === "PUBLISHED" && canManageRegistrations && <EventRegistrationPanel event={item} canManageRegistrations={canManageRegistrations} />}
+            {item.status === "PUBLISHED" && <EventRegistrationPanel event={item} canManageRegistrations={canManageRegistrations} />}
           </div>
         </div>
 
