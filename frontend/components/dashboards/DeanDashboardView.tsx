@@ -95,7 +95,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-ink">
+    <div className="nh-rekki-scope min-h-screen bg-[var(--color-obsidian)] text-[var(--color-paper)]">
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
