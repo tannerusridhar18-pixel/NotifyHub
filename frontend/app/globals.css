@@ -2495,3 +2495,213 @@ footer {
   .nh-rekki-page { padding-top: 54px !important; padding-bottom: 64px !important; }
   .nh-rekki-page h1 { font-size: clamp(2.65rem, 12vw, 4rem) !important; }
 }
+
+
+/* REKKI public-page system — intentionally scoped to Home, Announcements, Events, and Ask. */
+@layer base {
+  .nh-home,
+  .nh-public-page {
+    --page-bg: var(--color-obsidian);
+    --panel-bg: var(--color-carbon);
+    --card-bg: var(--color-graphite);
+    --form-bg: var(--color-iron);
+    --elevated-bg: var(--color-steel);
+    color: var(--color-paper);
+  }
+
+  .nh-home,
+  .nh-public-page {
+    font-family: var(--font-inter);
+  }
+
+  .nh-home h1, .nh-home h2, .nh-home h3, .nh-home h4,
+  .nh-public-page h1, .nh-public-page h2, .nh-public-page h3, .nh-public-page h4 {
+    font-family: var(--font-inter);
+    font-weight: 400 !important;
+    color: var(--color-paper);
+    letter-spacing: -0.027em;
+  }
+
+  .nh-home,
+  .nh-public-page {
+    background: transparent;
+  }
+
+  .nh-home .nh-hero-title {
+    font-weight: 400 !important;
+    letter-spacing: -0.064em;
+  }
+
+  .nh-home [class*="b8ff5a"],
+  .nh-home [class*="6ee7b7"],
+  .nh-home [class*="fda4af"],
+  .nh-home [class*="fde047"] {
+    color: var(--color-paper) !important;
+  }
+
+  .nh-home [class*="bg-[#b8ff5a]"],
+  .nh-home [class*="bg-success"],
+  .nh-home [class*="bg-danger"],
+  .nh-home [class*="bg-warning"] {
+    background-color: var(--color-signal-blue) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  .nh-home [class*="shadow-[0_0_14px_rgba(184,255,90"] {
+    box-shadow: none !important;
+  }
+
+  .nh-home .text-gradient-animated,
+  .nh-home .text-gradient-cyan,
+  .nh-home .text-gradient-amber,
+  .nh-home .text-gradient-danger {
+    background: none !important;
+    color: var(--color-paper) !important;
+    animation: none !important;
+  }
+
+  .nh-public-page [class*="brand"],
+  .nh-public-page [class*="cyan"],
+  .nh-public-page [class*="success"],
+  .nh-public-page [class*="danger"],
+  .nh-public-page [class*="warning"],
+  .nh-public-page [class*="amber"],
+  .nh-public-page [class*="violet"],
+  .nh-public-page [class*="purple"],
+  .nh-public-page [class*="red"],
+  .nh-public-page [class*="green"] {
+    --tw-gradient-from: var(--color-signal-blue) !important;
+    --tw-gradient-to: var(--color-signal-blue) !important;
+    --tw-gradient-stops: var(--color-signal-blue) !important;
+  }
+
+  .nh-public-page [class*="text-brand"],
+  .nh-public-page [class*="text-cyan"],
+  .nh-public-page [class*="text-success"],
+  .nh-public-page [class*="text-danger"],
+  .nh-public-page [class*="text-warning"],
+  .nh-public-page [class*="text-amber"],
+  .nh-public-page [class*="text-violet"],
+  .nh-public-page [class*="text-purple"],
+  .nh-public-page [class*="text-red"],
+  .nh-public-page [class*="text-green"] {
+    color: var(--color-signal-blue) !important;
+  }
+
+  .nh-public-page [class*="bg-brand"],
+  .nh-public-page [class*="bg-cyan"],
+  .nh-public-page [class*="bg-success"],
+  .nh-public-page [class*="bg-danger"],
+  .nh-public-page [class*="bg-warning"],
+  .nh-public-page [class*="bg-amber"],
+  .nh-public-page [class*="bg-violet"],
+  .nh-public-page [class*="bg-purple"],
+  .nh-public-page [class*="bg-red"],
+  .nh-public-page [class*="bg-green"] {
+    background-color: var(--color-graphite) !important;
+    background-image: none !important;
+  }
+
+  .nh-public-page [class*="border-brand"],
+  .nh-public-page [class*="border-cyan"],
+  .nh-public-page [class*="border-success"],
+  .nh-public-page [class*="border-danger"],
+  .nh-public-page [class*="border-warning"],
+  .nh-public-page [class*="border-amber"],
+  .nh-public-page [class*="border-violet"],
+  .nh-public-page [class*="border-purple"],
+  .nh-public-page [class*="border-red"],
+  .nh-public-page [class*="border-green"] {
+    border-color: rgba(255,255,255,.12) !important;
+  }
+
+  .nh-public-page input,
+  .nh-public-page textarea,
+  .nh-public-page select {
+    background: var(--color-iron) !important;
+    color: var(--color-paper) !important;
+    border-radius: var(--radius-inputs) !important;
+    box-shadow: var(--shadow-subtle-2) !important;
+  }
+
+  .nh-public-page input::placeholder,
+  .nh-public-page textarea::placeholder {
+    color: var(--color-ash) !important;
+  }
+
+  .nh-public-page button,
+  .nh-home button {
+    transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, filter 180ms ease !important;
+  }
+
+  .nh-public-page .rounded-full,
+  .nh-home .rounded-full {
+    border-radius: var(--radius-buttons);
+  }
+
+  .nh-public-page .shadow-lift,
+  .nh-public-page .shadow-soft,
+  .nh-public-page [class*="shadow-[0_0_"],
+  .nh-home .shadow-lift,
+  .nh-home .shadow-soft {
+    box-shadow: none !important;
+  }
+
+  .nh-public-page [class*="bg-surface"],
+  .nh-public-page [class*="bg-surface-2"],
+  .nh-public-page [class*="bg-surface-3"] {
+    background-color: var(--color-graphite) !important;
+    background-image: none !important;
+  }
+
+  .nh-public-page .border-white\/10,
+  .nh-public-page .border-white\/12,
+  .nh-public-page .border-white\/20 {
+    border-color: rgba(255,255,255,.12) !important;
+  }
+
+  .nh-rekki-page > * {
+    position: relative;
+  }
+
+  .nh-rekki-page .rounded-2xl,
+  .nh-rekki-page .rounded-xl,
+  .nh-rekki-page .rounded-\[26px\] {
+    box-shadow: var(--shadow-subtle) !important;
+  }
+
+  .nh-rekki-page .rounded-2xl,
+  .nh-rekki-page .rounded-xl {
+    background-color: var(--color-graphite);
+  }
+
+  .nh-rekki-page button[class*="bg-"],
+  .nh-rekki-page a[class*="bg-gradient"],
+  .nh-rekki-page a[class*="bg-brand"] {
+    background: var(--color-signal-blue) !important;
+    color: var(--color-paper) !important;
+    border-color: var(--color-signal-blue) !important;
+    box-shadow: none !important;
+    border-radius: var(--radius-buttons) !important;
+  }
+
+  .nh-rekki-page button[class*="bg-"]:hover,
+  .nh-rekki-page a[class*="bg-gradient"]:hover,
+  .nh-rekki-page a[class*="bg-brand"]:hover {
+    filter: brightness(1.12);
+  }
+
+  .nh-home .nh-kicker {
+    background: var(--color-carbon);
+    border-color: rgba(255,255,255,.12);
+    box-shadow: var(--shadow-subtle);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nh-home *,
+  .nh-public-page * {
+    transition-duration: .01ms !important;
+  }
+}
