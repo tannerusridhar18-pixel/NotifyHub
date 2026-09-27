@@ -126,11 +126,7 @@
   }
   body {
     background-color: var(--color-bg);
-    background-image:
-      radial-gradient(900px circle at 85% -10%, color-mix(in srgb, var(--color-brand) 25%, transparent), transparent 65%),
-      radial-gradient(800px circle at -8% 30%, color-mix(in srgb, var(--color-brand-2) 20%, transparent), transparent 60%),
-      radial-gradient(650px circle at 90% 65%, color-mix(in srgb, var(--color-cyan) 15%, transparent), transparent 55%),
-      radial-gradient(700px circle at 40% 100%, color-mix(in srgb, var(--color-brand-magenta) 12%, transparent), transparent 60%);
+    background-image: radial-gradient(900px circle at 50% -10%, rgba(184,255,90,.08), transparent 65%), radial-gradient(700px circle at 100% 80%, rgba(118,215,255,.05), transparent 60%);
     background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
@@ -139,7 +135,7 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: -0.02em;
   }
   a {
