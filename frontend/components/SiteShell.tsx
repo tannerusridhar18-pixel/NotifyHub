@@ -3,7 +3,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cx } from "@/components/ui/classes";
-import QronosBackground from "@/components/ui/QronosBackground";
 
 const links = [
   ["/", "Home"],
@@ -29,7 +28,6 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {path !== "/" && <QronosBackground />}
       <div className="nh-qronos-shell-background">
         <div className="nh-qronos-shell-frame">
           <span>NOTIFYHUB</span>
@@ -59,14 +57,12 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                   href={href}
                   className={cx(
                     "relative rounded-none px-4 py-2 text-[12px] font-medium tracking-[0.02em] transition-all duration-200",
-                    active
-                      ? "text-white"
-                      : "text-white/55 hover:text-white"
+                    active ? "text-white" : "text-white/55 hover:text-white"
                   )}
                 >
                   {label}
                   {active && (
-                    <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-brand via-brand-2 to-cyan shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                    <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-[var(--color-signal-blue)]" />
                   )}
                 </Link>
               );
@@ -76,7 +72,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           <div className="ml-auto flex items-center gap-3 md:ml-0">
             <Link
               href={isLoggedIn ? "/dashboard" : "/auth/login"}
-              className="btn-shine rounded-full border border-white/35 bg-transparent px-5 py-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-white transition-all duration-200 hover:bg-white hover:text-black"
+              className="rounded-full border border-white/35 bg-transparent px-5 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-white transition-all duration-200 hover:border-[var(--color-signal-blue)] hover:bg-[var(--color-signal-blue)]"
             >
               {isLoggedIn ? "Dashboard  ↗" : "Get started  ↗"}
             </Link>
@@ -91,7 +87,6 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Mobile dropdown drawer */}
         {open && (
           <nav
             aria-label="Public navigation (mobile)"
@@ -103,19 +98,21 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cx(
-                  "flex items-center justify-between rounded-xl px-4 py-3 text-sm font-extrabold transition-all duration-200",
-                  path === href ? "bg-brand-50 text-brand-light border border-brand/40 shadow-soft" : "text-muted hover:bg-surface-2 hover:text-ink"
+                  "flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
+                  path === href
+                    ? "bg-[var(--color-signal-blue)]/15 text-white border border-[var(--color-signal-blue)]/40"
+                    : "text-muted hover:bg-surface-2 hover:text-ink"
                 )}
               >
                 <span>{label}</span>
-                {path === href && <span className="text-xs text-brand-light">●</span>}
+                {path === href && <span className="text-xs text-[var(--color-signal-blue)]">●</span>}
               </Link>
             ))}
             <div className="my-2 border-t border-white/[0.08]" />
             <Link
               href={isLoggedIn ? "/dashboard" : "/auth/login"}
               onClick={() => setOpen(false)}
-              className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-extrabold text-muted hover:bg-surface-2 hover:text-ink"
+              className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
             >
               <span>{isLoggedIn ? "Dashboard" : "Sign in"}</span>
               <span>→</span>
