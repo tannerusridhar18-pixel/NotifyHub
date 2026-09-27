@@ -30,9 +30,9 @@ export default function AuthenticatedContentShell({ children, role }: { children
   }
 
   return (
-    <div className="min-h-screen bg-bg text-ink">
-      <header className="sticky top-0 z-30 flex min-h-[72px] flex-wrap items-center gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-xl sm:min-h-[80px] sm:flex-nowrap sm:px-8">
-        <Link href={dashboardHref} className="group flex items-center gap-3 font-display text-lg font-bold">
+    <div className="nh-rekki-scope min-h-screen bg-[var(--color-obsidian)] text-[var(--color-paper)]">
+      <header className="sticky top-0 z-30 flex min-h-[72px] flex-wrap items-center gap-4 border-b border-white/[0.08] bg-[var(--color-obsidian)] px-4 py-3 backdrop-blur-xl sm:min-h-[80px] sm:flex-nowrap sm:px-8">
+        <Link href={dashboardHref} className="group flex items-center gap-3 font-display text-lg font-normal">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand to-brand-2 text-white shadow-glow transition-transform duration-300 group-hover:scale-105">
             ◈
           </span>
@@ -40,24 +40,24 @@ export default function AuthenticatedContentShell({ children, role }: { children
             Notify<span className="text-brand">Hub</span>
           </span>
         </Link>
-        <span className="hidden items-center gap-2 rounded-full border border-border/80 bg-surface-2/80 px-3 py-1 text-xs font-bold text-muted md:inline-flex">
+        <span className="hidden items-center gap-2 rounded-full border border-border/80 bg-surface-2/80 px-3 py-1 text-xs font-normal text-muted md:inline-flex">
           <span className="h-1.5 w-1.5 rounded-full bg-brand" />
           {role} · Campus workspace
         </span>
         <nav className="ml-auto flex items-center gap-1.5 sm:gap-2.5" aria-label="Authenticated dashboard navigation">
-          <Link href={`/dashboard/feed?from=${from}`} className="rounded-xl px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
+          <Link href={`/dashboard/feed?from=${from}`} className="rounded-[var(--radius-nav)] px-3 py-2 text-xs font-normal text-[var(--color-ash)] hover:bg-[var(--color-graphite)] hover:text-[var(--color-paper)] transition-colors">
             Feed
           </Link>
-          <Link href={`/dashboard/calendar?from=${from}`} className="rounded-xl px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
+          <Link href={`/dashboard/calendar?from=${from}`} className="rounded-[var(--radius-nav)] px-3 py-2 text-xs font-normal text-[var(--color-ash)] hover:bg-[var(--color-graphite)] hover:text-[var(--color-paper)] transition-colors">
             Calendar
           </Link>
-          <Link href={`/dashboard/ask?from=${from}`} className="rounded-xl px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
+          <Link href={`/dashboard/ask?from=${from}`} className="rounded-[var(--radius-nav)] px-3 py-2 text-xs font-normal text-[var(--color-ash)] hover:bg-[var(--color-graphite)] hover:text-[var(--color-paper)] transition-colors">
             Ask
           </Link>
-          <Link href={`/dashboard/profile?from=${from}`} className="rounded-xl px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
+          <Link href={`/dashboard/profile?from=${from}`} className="rounded-[var(--radius-nav)] px-3 py-2 text-xs font-normal text-[var(--color-ash)] hover:bg-[var(--color-graphite)] hover:text-[var(--color-paper)] transition-colors">
             Profile
           </Link>
-          <Link href={dashboardHref} className="rounded-xl px-3 py-2 text-xs font-bold text-brand-light bg-brand-50/80 border border-brand/30 hover:bg-brand-50 transition-colors">
+          <Link href={dashboardHref} className="rounded-[var(--radius-nav)] px-3 py-2 text-xs font-normal text-[var(--color-paper)] bg-[var(--color-graphite)] border border-white/12 hover:bg-[var(--color-steel)] transition-colors">
             Dashboard
           </Link>
           <button className={buttonClasses("secondary", "!px-3.5 !py-2 !text-xs")} onClick={() => void signOut()}>
