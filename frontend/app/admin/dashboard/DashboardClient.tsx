@@ -50,14 +50,14 @@ import EventRegistrationFields from "@/components/EventRegistrationFields";
 
 type ComposerTargetType = TargetType | "DEPARTMENT_HOD";
 
-const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
+const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as ComposerTargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
 const blankE = {
   title: "",
   description: "",
   location: "",
   startAt: "",
   endAt: "",
-  targetType: "GLOBAL" as TargetType,
+  targetType: "GLOBAL" as ComposerTargetType,
   departmentId: "",
   branchId: "",
   sectionId: "",
