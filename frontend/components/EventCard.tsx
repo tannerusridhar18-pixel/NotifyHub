@@ -32,7 +32,7 @@ export default function EventCard({ item, canManageRegistrations = false }: { it
 
         <div className="min-w-0 flex flex-col justify-between" onClick={() => setOpen(true)}>
           <div>
-            {item.photoUrl && <img src={item.photoUrl} alt="" className="mb-3 h-32 w-full rounded-xl object-cover" />}
+            {item.photoUrl && <img src={item.photoUrl} alt={item.title} loading="lazy" className="mb-3 h-32 w-full rounded-xl object-cover" />}
             <div className="mb-2.5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2/95 px-3 py-1 text-xs font-extrabold tracking-wider uppercase text-muted transition-[transform,border-color] duration-200 ease-out group-hover:scale-105 group-hover:border-white/25">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-2 shadow-[0_0_8px_rgba(147,51,234,0.85)]" />
