@@ -138,7 +138,8 @@ function buildContourGeometry() {
   const segments = 360;
 
   for (let ring = 0; ring < rings; ring += 1) {
-    const y = -HALF_HEIGHT + (ring / (rings - 1)) * HALF_HEIGHT * 2;
+    const t = ring / (rings - 1);
+    const y = -0.08 + t * (HALF_HEIGHT + 0.08);
     const radius = radiusAt(y);
 
     for (let i = 0; i < segments; i += 1) {
@@ -175,8 +176,10 @@ function buildFlowGeometry() {
     const phase = line * 0.37;
 
     for (let i = 0; i < points - 1; i += 1) {
-      const y0 = -HALF_HEIGHT + (i / (points - 1)) * HALF_HEIGHT * 2;
-      const y1 = -HALF_HEIGHT + ((i + 1) / (points - 1)) * HALF_HEIGHT * 2;
+      const t0 = i / (points - 1);
+      const t1 = (i + 1) / (points - 1);
+      const y0 = -0.08 + t0 * (HALF_HEIGHT + 0.08);
+      const y1 = -0.08 + t1 * (HALF_HEIGHT + 0.08);
 
       const twist0 =
         base +
@@ -227,8 +230,8 @@ function buildGroundFlowGeometry() {
       const a0 = base + r0 * 0.82 + Math.sin(r0 * 1.7 + phase) * 0.055;
       const a1 = base + r1 * 0.82 + Math.sin(r1 * 1.7 + phase) * 0.055;
 
-      const y0 = -0.16 - Math.pow(t0, 0.78) * 3.55 + Math.sin(r0 * 1.6 + phase) * 0.035;
-      const y1 = -0.16 - Math.pow(t1, 0.78) * 3.55 + Math.sin(r1 * 1.6 + phase) * 0.035;
+      const y0 = -0.08 - Math.pow(t0, 0.78) * 3.55 + Math.sin(r0 * 1.6 + phase) * 0.035;
+      const y1 = -0.08 - Math.pow(t1, 0.78) * 3.55 + Math.sin(r1 * 1.6 + phase) * 0.035;
 
       positions.push(
         Math.cos(a0) * r0,
@@ -255,7 +258,7 @@ function buildGroundContoursGeometry() {
   for (let ring = 0; ring < rings; ring += 1) {
     const t = ring / (rings - 1);
     const radius = 0.16 + Math.pow(t, 1.72) * 6.2;
-    const floorY = -0.16 - Math.pow(t, 0.78) * 3.55;
+    const floorY = -0.08 - Math.pow(t, 0.78) * 3.55;
 
     for (let i = 0; i < segments; i += 1) {
       const a0 = (i / segments) * Math.PI * 2;
@@ -286,7 +289,7 @@ function buildParticles() {
 
   for (let i = 0; i < count; i += 1) {
     const t = (i * 0.61803398875) % 1;
-    const y = -HALF_HEIGHT + t * HALF_HEIGHT * 2;
+    const y = -0.08 + t * (HALF_HEIGHT + 0.08);
     const theta = (i * 2.3999632297) % (Math.PI * 2);
     const radius = radiusAt(y) * (0.94 + ((i * 0.754877666) % 1) * 0.09);
 
@@ -434,7 +437,7 @@ export default function HeroVortex() {
 
       scrollProgress += (targetScroll - scrollProgress) * 0.055;
 
-      const lift = scrollProgress * 1.15;
+      const lift = scrollProgress * 0.9;
       vortex.position.y = (mount.clientWidth < 760 ? 0.25 : 0.05) + lift;
       vortex.scale.setScalar((mount.clientWidth < 760 ? 0.62 : 0.88) + scrollProgress * 0.12);
       groundFlow.position.y = -scrollProgress * 0.48;
