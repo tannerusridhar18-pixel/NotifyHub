@@ -23,9 +23,7 @@ export default function AuthSplit({
       <section
         className={cx(
           "relative flex min-h-[440px] flex-col justify-between overflow-hidden border-b border-white/12 px-6 py-10 sm:px-[6vw] sm:py-14 lg:min-h-0 lg:border-b-0 lg:border-r",
-          tone === "admin"
-            ? "bg-[radial-gradient(circle_at_75%_20%,rgba(16,185,129,0.18),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(6,182,212,0.12),transparent_45%),linear-gradient(160deg,#040609_0%,#07140e_60%,#0c1f17_100%)]"
-            : "bg-[radial-gradient(circle_at_75%_20%,rgba(168,85,247,0.18),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(99,102,241,0.15),transparent_45%),linear-gradient(160deg,#060813_0%,#0d112b_50%,#131945_100%)]"
+          "bg-[var(--color-carbon)]"
         )}
       >
         <div className="relative z-10">
@@ -43,7 +41,7 @@ export default function AuthSplit({
           <span
             className={cx(
               "inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-[11px] font-normal tracking-[0.14em] uppercase backdrop-blur-xl ",
-              border border-white/12 bg-[var(--color-carbon)] text-[var(--color-paper)]
+              "border border-white/12 bg-[var(--color-carbon)] text-[var(--color-paper)]"
             )}
           >
             <span className="relative flex h-2 w-2 items-center justify-center">
