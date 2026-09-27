@@ -1071,7 +1071,7 @@ function AudienceFields({
           {!departmentScoped && <option value="BRANCH">Branch</option>}
           <option value="SECTION">Section</option>
           {!departmentScoped && <option value="HOSTEL">Hostel</option>}
-          {!departmentScoped && <option value="USER">Specific user</option>
+          {!departmentScoped && <option value="USER">Specific user</option>}
         </select>
       </Field>
       {target === "ROLE" && (
