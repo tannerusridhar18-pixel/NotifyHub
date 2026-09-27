@@ -13,5 +13,5 @@
 - Restyled shared buttons, cards/inputs, badges, loading/empty/error states, public content cards, modals/toasts, authentication screens, and dashboard chrome to consume the home visual system.
 - Kept page logic, routing, data/API calls, permissions, and behavior unchanged.
 
-- Extended the home-derived visual system through role dashboards (Student, Faculty, HOD, Department Admin, Principal, Dean, SuperAdmin/admin chrome), shared navigation, authentication primitives, badges, tables/forms, and dashboard controls without changing application behavior.
+- Extended the home-derived visual system through role dashboards and unified each role's accent treatment to the shared home palette (Student, Faculty, HOD, Department Admin, Principal, Dean, SuperAdmin/admin chrome), shared navigation, authentication primitives, badges, tables/forms, and dashboard controls without changing application behavior.
 - Removed legacy global gradient palette from the shared body surface so secondary pages inherit the same home visual foundation.
