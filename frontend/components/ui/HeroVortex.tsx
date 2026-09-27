@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const HALF_HEIGHT = 3.55;
+const HALF_HEIGHT = 3.95;
 const WAIST_RADIUS = 0.18;
 const EDGE_RADIUS = 4.15;
 
@@ -219,14 +219,16 @@ function buildGroundFlowGeometry() {
     const phase = line * 0.61;
 
     for (let i = 0; i < points - 1; i += 1) {
-      const r0 = 0.18 + (i / (points - 1)) * 6.0;
-      const r1 = 0.18 + ((i + 1) / (points - 1)) * 6.5;
+      const t0 = i / (points - 1);
+      const t1 = (i + 1) / (points - 1);
+      const r0 = 0.16 + t0 * 6.5;
+      const r1 = 0.16 + t1 * 6.5;
 
       const a0 = base + r0 * 0.82 + Math.sin(r0 * 1.7 + phase) * 0.055;
       const a1 = base + r1 * 0.82 + Math.sin(r1 * 1.7 + phase) * 0.055;
 
-      const y0 = -3.25 + Math.sin(r0 * 1.6 + phase) * 0.035;
-      const y1 = -3.25 + Math.sin(r1 * 1.6 + phase) * 0.035;
+      const y0 = -0.24 - Math.pow(t0, 0.72) * 3.22 + Math.sin(r0 * 1.6 + phase) * 0.035;
+      const y1 = -0.24 - Math.pow(t1, 0.72) * 3.22 + Math.sin(r1 * 1.6 + phase) * 0.035;
 
       positions.push(
         Math.cos(a0) * r0,
@@ -253,6 +255,7 @@ function buildGroundContoursGeometry() {
   for (let ring = 0; ring < rings; ring += 1) {
     const t = ring / (rings - 1);
     const radius = 0.16 + Math.pow(t, 1.72) * 6.2;
+    const floorY = -0.24 - Math.pow(t, 0.72) * 3.22;
 
     for (let i = 0; i < segments; i += 1) {
       const a0 = (i / segments) * Math.PI * 2;
@@ -262,10 +265,10 @@ function buildGroundContoursGeometry() {
 
       positions.push(
         Math.cos(a0) * (radius + wave0),
-        -3.27,
+        floorY + Math.sin(a0 * 3 + radius) * 0.018,
         Math.sin(a0) * (radius + wave0),
         Math.cos(a1) * (radius + wave1),
-        -3.27,
+        floorY + Math.sin(a1 * 3 + radius) * 0.018,
         Math.sin(a1) * (radius + wave1),
       );
     }
@@ -310,7 +313,7 @@ export default function HeroVortex() {
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 40);
-    camera.position.set(0, 0.02, 13.8);
+    camera.position.set(0, 0.18, 14.2);
     camera.lookAt(0, -0.15, 0);
 
     let renderer: THREE.WebGLRenderer;
@@ -338,19 +341,19 @@ export default function HeroVortex() {
 
     const vortex = new THREE.Group();
 
-    const contourMaterial = createFlowMaterial(0xf4f6f8, 0.105, 0.34);
+    const contourMaterial = createFlowMaterial(0xf4f6f8, 0.16, 0.34);
     const contourGeometry = buildContourGeometry();
     const contours = new THREE.LineSegments(contourGeometry, contourMaterial);
 
-    const flowMaterial = createFlowMaterial(0xffffff, 0.19, 0.78);
+    const flowMaterial = createFlowMaterial(0xffffff, 0.27, 0.78);
     const flowGeometry = buildFlowGeometry();
     const flowLines = new THREE.LineSegments(flowGeometry, flowMaterial);
 
-    const groundFlowMaterial = createGroundMaterial(0xf4f6f8, 0.24);
+    const groundFlowMaterial = createGroundMaterial(0xf4f6f8, 0.32);
     const groundFlowGeometry = buildGroundFlowGeometry();
     const groundFlow = new THREE.LineSegments(groundFlowGeometry, groundFlowMaterial);
 
-    const groundContourMaterial = createGroundMaterial(0xdde3e9, 0.075);
+    const groundContourMaterial = createGroundMaterial(0xdde3e9, 0.12);
     const groundContourGeometry = buildGroundContoursGeometry();
     const groundContours = new THREE.LineSegments(
       groundContourGeometry,
@@ -361,7 +364,7 @@ export default function HeroVortex() {
       color: 0xffffff,
       size: 0.018,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.42,
       depthWrite: false,
       sizeAttenuation: true,
     });
@@ -438,11 +441,11 @@ export default function HeroVortex() {
       groundContours.position.y = -scrollProgress * 0.48;
 
       const fade = 1 - scrollProgress * 0.72;
-      flowMaterial.uniforms.uOpacity.value = 0.19 * fade;
-      contourMaterial.uniforms.uOpacity.value = 0.105 * fade;
-      particleMaterial.opacity = 0.3 * fade;
-      groundFlowMaterial.uniforms.uOpacity.value = 0.24 * fade;
-      groundContourMaterial.uniforms.uOpacity.value = 0.075 * fade;
+      flowMaterial.uniforms.uOpacity.value = 0.27 * fade;
+      contourMaterial.uniforms.uOpacity.value = 0.16 * fade;
+      particleMaterial.opacity = 0.42 * fade;
+      groundFlowMaterial.uniforms.uOpacity.value = 0.32 * fade;
+      groundContourMaterial.uniforms.uOpacity.value = 0.12 * fade;
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(animate);
