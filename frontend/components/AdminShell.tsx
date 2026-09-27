@@ -55,8 +55,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   if (checking) return <Loading label="Verifying control room credentials…" />;
   if (error)
     return (
-      <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_50%_0,#1a1f46,#05060c_65%)] p-6 text-ink">
-        <div className="w-full max-w-[560px] rounded-[26px] border border-white/12 bg-surface/95 p-8 shadow-lift backdrop-blur-2xl">
+      <main className="grid min-h-screen place-items-center bg-bg p-6 text-ink">
+        <div className="w-full max-w-[560px] rounded-[var(--nh-radius-lg)] border border-white/12 bg-surface/95 p-8 shadow-[var(--nh-shadow-float)] backdrop-blur-2xl">
           <span className="text-[11px] font-extrabold uppercase tracking-widest text-danger-light">Control room error</span>
           <h1 className="my-3 text-3xl font-extrabold">Session verification failed</h1>
           <p className="leading-relaxed text-muted/90">{error}</p>
@@ -77,7 +77,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <aside className="z-40 flex flex-col border-b border-white/[0.08] bg-ink-900/98 p-4 text-ink md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r md:p-6 backdrop-blur-2xl">
         <div className="flex items-center justify-between gap-3">
           <Link href="/admin/dashboard" className="group flex items-center gap-3 font-display text-lg font-bold">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow-violet">
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-brand text-white shadow-glow transition-all duration-300 group-hover:scale-110 group-hover:shadow-[var(--nh-shadow-glow-green)]">
               ◈
             </span>
             <span className="tracking-tight text-xl font-extrabold">
@@ -108,16 +108,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 className={cx(
                   "relative flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-extrabold transition-all duration-200",
                   active
-                    ? "bg-brand-50 text-white shadow-soft border border-brand/50"
+                    ? "bg-brand-50 text-ink shadow-[var(--nh-shadow-inset)] border border-brand/35"
                     : "text-muted hover:bg-white/[0.06] hover:text-white hover:translate-x-1"
                 )}
               >
-                <span className={cx("w-5 text-center text-sm font-bold", active ? "text-brand-light" : "text-muted")}>
+                <span className={cx("w-5 text-center text-sm font-bold", active ? "text-brand" : "text-muted")}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
                 {active && (
-                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-brand to-brand-2 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-brand" />
                 )}
               </Link>
             );
@@ -126,7 +126,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
         <div className="hidden flex-1 md:block" />
 
-        <div className="mt-4 hidden items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5 backdrop-blur-xl md:flex shadow-soft transition-all hover:border-white/15">
+        <div className="mt-4 hidden items-center gap-3 rounded-[var(--nh-radius-lg)] border border-white/10 bg-surface p-3.5 backdrop-blur-xl md:flex shadow-[var(--nh-shadow-card)] transition-all hover:border-white/15">
           <div className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-gradient-to-br from-brand-50 to-surface-2 text-xs font-black text-brand-2-light border border-brand/30 shadow-inner">
             {email.slice(0, 1).toUpperCase() || "A"}
           </div>
