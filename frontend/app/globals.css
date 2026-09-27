@@ -1976,3 +1976,46 @@
 .nh-public-page .rounded-\[22px\] {
   border-radius: var(--nh-radius-lg);
 }
+
+/* Dashboard-wide home-system normalization */
+.nh-dashboard-view h1,
+.nh-dashboard-view h2,
+.nh-dashboard-view h3,
+.nh-dashboard-view h4,
+.nh-dashboard-view h5,
+.nh-dashboard-view h6 {
+  font-family: var(--nh-font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.nh-dashboard-view header,
+.nh-dashboard-view aside {
+  border-color: var(--nh-border);
+}
+.nh-dashboard-view .bg-gradient-to-br.from-brand,
+.nh-dashboard-view .bg-gradient-to-r.from-brand {
+  background-image: none;
+}
+.nh-dashboard-view .shadow-glow,
+.nh-dashboard-view .shadow-glow-violet,
+.nh-dashboard-view .shadow-glow-cyan {
+  box-shadow: var(--nh-shadow-inset);
+}
+.nh-dashboard-view input,
+.nh-dashboard-view textarea,
+.nh-dashboard-view select {
+  border-radius: var(--nh-radius-md);
+  background-color: var(--nh-surface-2);
+  border-color: var(--nh-border);
+  box-shadow: var(--nh-shadow-inset);
+}
+.nh-dashboard-view table {
+  border-color: var(--nh-border);
+}
+.nh-dashboard-view th {
+  font-weight: 500;
+}
+.nh-dashboard-view button,
+.nh-dashboard-view a[class*="rounded-xl"] {
+  transition-duration: 200ms;
+}
