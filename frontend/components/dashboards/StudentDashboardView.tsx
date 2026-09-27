@@ -131,15 +131,15 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110">
+          <span className="grid h-10 w-10 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-inset)] transition-transform duration-200 group-hover:scale-105">
             ◈
           </span>
-          <span className="tracking-tight text-xl font-extrabold">
+          <span className="tracking-tight text-xl font-medium">
             Notify<span className="text-brand-light">Hub</span>
           </span>
         </Link>
         <div className="hidden items-center gap-2 text-xs font-semibold text-muted md:flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/40 bg-teal-soft px-3 py-0.5 text-[10px] font-extrabold uppercase text-teal-light shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/40 bg-teal-soft px-3 py-0.5 text-[10px] font-medium uppercase text-teal-light shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             STUDENT PORTAL
           </span>
@@ -173,10 +173,10 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
         <section className="mb-8 rounded-3xl border border-white/12 bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 shadow-lift backdrop-blur-2xl sm:p-8">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-teal-light/30 bg-teal-soft/80 px-3 py-1 text-[10px] font-extrabold tracking-widest text-teal-light uppercase">
+              <span className="inline-flex items-center gap-2 rounded-full border border-teal-light/30 bg-teal-soft/80 px-3 py-1 text-[10px] font-medium tracking-widest text-teal-light uppercase">
                 Academic Year {student?.year || 1} · Semester {student?.semester || 1}
               </span>
-              <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="mt-2 text-3xl sm:text-4xl font-medium tracking-tight">
                 Welcome, <span className="text-gradient-animated">{student?.name || "Student"}</span>
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -186,15 +186,15 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             <div className="flex flex-wrap gap-3">
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Updates</span>
-                <span className="text-2xl font-extrabold text-white">{anns.length}</span>
+                <span className="text-2xl font-medium text-white">{anns.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Registrations</span>
-                <span className="text-2xl font-extrabold text-teal-light">{myRegs.length}</span>
+                <span className="text-2xl font-medium text-teal-light">{myRegs.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">My Queries</span>
-                <span className="text-2xl font-extrabold text-brand-light">{queriesList.length}</span>
+                <span className="text-2xl font-medium text-brand-light">{queriesList.length}</span>
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
           <div className="mt-8 flex gap-2 border-t border-white/[0.08] pt-6 overflow-x-auto">
             <button
               onClick={() => setTab("feed")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "feed"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -213,7 +213,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("registrations")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "registrations"
                   ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -223,7 +223,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("queries")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "queries"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -241,7 +241,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             {/* Announcements Section */}
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-extrabold text-white">Targeted Campus Notices</h2>
+                <h2 className="text-xl font-medium text-white">Targeted Campus Notices</h2>
                 <span className="text-xs font-bold text-muted">{anns.length} Active Notices</span>
               </div>
               {anns.length === 0 ? (
@@ -258,7 +258,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             {/* Events Section */}
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-extrabold text-white">Upcoming Campus Events</h2>
+                <h2 className="text-xl font-medium text-white">Upcoming Campus Events</h2>
                 <span className="text-xs font-bold text-muted">{eventsList.length} Scheduled</span>
               </div>
               {eventsList.length === 0 ? (
@@ -278,7 +278,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
           <div>
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">My Event Registrations</h2>
+                <h2 className="text-2xl font-medium text-white">My Event Registrations</h2>
                 <p className="text-xs text-muted">All active events you have successfully registered for.</p>
               </div>
             </div>
@@ -299,7 +299,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             {/* Ask Query Form */}
             <div className="lg:col-span-5">
               <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 shadow-lift">
-                <h2 className="text-xl font-extrabold text-white">Send Direct Inquiry</h2>
+                <h2 className="text-xl font-medium text-white">Send Direct Inquiry</h2>
                 <p className="mt-1 text-xs text-muted">
                   Route your question to your department faculty coordinator or administrative desk.
                 </p>
@@ -313,7 +313,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
                       <button
                         type="button"
                         onClick={() => setTargetType("FACULTY")}
-                        className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                        className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                           targetType === "FACULTY"
                             ? "border-brand bg-brand-50 text-brand-light shadow-sm"
                             : "border-white/10 bg-surface-2/60 text-muted"
@@ -324,7 +324,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
                       <button
                         type="button"
                         onClick={() => setTargetType("DEPARTMENT_ADMIN")}
-                        className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                        className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                           targetType === "DEPARTMENT_ADMIN"
                             ? "border-brand bg-brand-50 text-brand-light shadow-sm"
                             : "border-white/10 bg-surface-2/60 text-muted"
@@ -398,7 +398,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             <div className="lg:col-span-7">
               <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 shadow-lift">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xl font-extrabold text-white">Your Sent Inquiries</h2>
+                  <h2 className="text-xl font-medium text-white">Your Sent Inquiries</h2>
                   <span className="text-xs font-bold text-muted">{queriesList.length} Total</span>
                 </div>
 
@@ -412,7 +412,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
                         className="rounded-2xl border border-white/10 bg-surface-2/70 p-4 transition-all hover:border-white/20"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-xs font-extrabold text-white">{q.subject || "Campus Inquiry"}</span>
+                          <span className="text-xs font-medium text-white">{q.subject || "Campus Inquiry"}</span>
                           <StatusBadge status={q.status} />
                         </div>
                         <p className="mt-2 text-xs text-muted/90">{q.message || q.question}</p>
@@ -424,7 +424,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
 
                         {q.adminResponse && (
                           <div className="mt-3 rounded-xl border border-brand/30 bg-brand-50/60 p-3">
-                            <span className="block text-[10px] font-extrabold uppercase tracking-wider text-brand-light">
+                            <span className="block text-[10px] font-medium uppercase tracking-wider text-brand-light">
                               Official Response:
                             </span>
                             <p className="mt-1 text-xs text-ink">{q.adminResponse}</p>
