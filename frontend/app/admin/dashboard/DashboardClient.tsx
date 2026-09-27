@@ -343,16 +343,19 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   return (
     <div className="mx-auto w-full max-w-[1450px] px-4 py-8 sm:px-8 sm:py-10 lg:px-[clamp(20px,4vw,60px)]">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:flex-row">
-        {departmentScoped && (
+      {departmentScoped && (
+        <div className="mb-5">
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
-            className="fixed left-5 top-5 z-50 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2/95 px-3.5 py-2 text-xs font-extrabold text-ink shadow-soft backdrop-blur-xl transition hover:border-brand/50 hover:bg-brand-50 hover:text-brand-light"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2/90 px-3.5 py-2 text-xs font-extrabold text-muted shadow-soft backdrop-blur-xl transition hover:border-brand/50 hover:bg-brand-50 hover:text-ink"
           >
-            ← Department Dashboard
+            <span aria-hidden="true">←</span>
+            <span>Back to Department Dashboard</span>
           </button>
-        )}
+        </div>
+      )}
+      <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:flex-row">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_12px_rgba(99,102,241,0.2)] backdrop-blur-md">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-light animate-pulse" />
