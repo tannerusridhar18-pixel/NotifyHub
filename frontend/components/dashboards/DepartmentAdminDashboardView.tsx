@@ -12,6 +12,7 @@ import {
   departmentAnalytics,
   updateDepartmentStudent,
   deactivateDepartmentStudent,
+  deleteDepartmentStudent,
   createInvitation,
   batchPromoteStudents,
   assignDepartmentHod,
