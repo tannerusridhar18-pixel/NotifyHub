@@ -276,15 +276,15 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110">
+          <span className="grid h-10 w-10 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-inset)] transition-transform duration-200 group-hover:scale-105">
             ◈
           </span>
-          <span className="tracking-tight text-xl font-extrabold">
+          <span className="tracking-tight text-xl font-medium">
             Notify<span className="text-brand-light">Hub</span>
           </span>
         </Link>
         <div className="hidden items-center gap-2 text-xs font-semibold text-muted md:flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-2/40 bg-brand-50 px-3 py-0.5 text-[10px] font-extrabold uppercase text-brand-2-light shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-2/40 bg-brand-50 px-3 py-0.5 text-[10px] font-medium uppercase text-brand-2-light shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             DEPARTMENT ADMIN
           </span>
@@ -319,10 +319,10 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
         <section className="mb-8 rounded-3xl border border-white/12 bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 shadow-lift backdrop-blur-2xl sm:p-8">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-2/30 bg-brand-50 px-3 py-1 text-[10px] font-extrabold tracking-widest text-brand-2-light uppercase">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-2/30 bg-brand-50 px-3 py-1 text-[10px] font-medium tracking-widest text-brand-2-light uppercase">
                 Department Scoped Governance
               </span>
-              <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="mt-2 text-3xl sm:text-4xl font-medium tracking-tight">
                 {user.department ? `${user.department} Administration` : "Department Operations"}
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -332,16 +332,16 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
             <div className="flex flex-wrap gap-3">
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Open Queries</span>
-                <span className="text-2xl font-extrabold text-amber-400">
+                <span className="text-2xl font-medium text-amber-400">
                   {queries.filter((q) => q.status === "OPEN").length}
                 </span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Faculty Staff</span>
-                <span className="text-2xl font-extrabold text-brand-light">{facultyList.length}</span>
+                <span className="text-2xl font-medium text-brand-light">{facultyList.length}</span>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]"><span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Students</span><span className="text-2xl font-extrabold text-teal-light">{analytics?.totalStudents ?? studentList.length}</span></div>
-              <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]"><span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Sections</span><span className="text-2xl font-extrabold text-cyan">{analytics?.totalSections ?? "—"}</span></div>
+              <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]"><span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Students</span><span className="text-2xl font-medium text-teal-light">{analytics?.totalStudents ?? studentList.length}</span></div>
+              <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]"><span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Sections</span><span className="text-2xl font-medium text-cyan">{analytics?.totalSections ?? "—"}</span></div>
             </div>
           </div>
 
@@ -349,7 +349,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
           <div className="mt-8 flex gap-2 border-t border-white/[0.08] pt-6 overflow-x-auto">
             <button
               onClick={() => setTab("inbox")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "inbox"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -359,7 +359,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
             </button>
             <button
               onClick={() => setTab("faculty")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "faculty"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -369,13 +369,13 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
             </button>
             <button
               onClick={() => setTab("students")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${tab === "students" ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow" : "bg-surface-2/60 text-muted hover:text-white"}`}
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${tab === "students" ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow" : "bg-surface-2/60 text-muted hover:text-white"}`}
             >
               🎓 Student Management ({studentList.length})
             </button>
             <button
               onClick={() => setTab("promotion")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "promotion"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -385,7 +385,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
             </button>
             <button
               onClick={() => setTab("hod")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "hod"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -402,7 +402,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Department Inquiries Desk</h2>
+                <h2 className="text-2xl font-medium text-white">Department Inquiries Desk</h2>
                 <p className="text-xs text-muted">Manage queries received from students and faculty members.</p>
               </div>
             </div>
@@ -419,9 +419,9 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-extrabold text-white">{q.subject || "Campus Inquiry"}</span>
+                          <span className="text-sm font-medium text-white">{q.subject || "Campus Inquiry"}</span>
                           {q.askerType && (
-                            <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[9px] font-extrabold text-brand-light">
+                            <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[9px] font-medium text-brand-light">
                               {q.askerType} ASKER
                             </span>
                           )}
@@ -439,7 +439,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
 
                     {q.adminResponse ? (
                       <div className="rounded-xl border border-teal-500/30 bg-teal-soft/60 p-3.5 text-xs">
-                        <span className="block text-[10px] font-extrabold uppercase tracking-wider text-teal-light">
+                        <span className="block text-[10px] font-medium uppercase tracking-wider text-teal-light">
                           Resolution Answer:
                         </span>
                         <p className="mt-1 text-ink">{q.adminResponse}</p>
@@ -499,7 +499,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Faculty Department Mappings</h2>
+                <h2 className="text-2xl font-medium text-white">Faculty Department Mappings</h2>
                 <p className="text-xs text-muted">
                   Faculty members assigned with HOME (Primary) or SUB (Cross-Department) appointments.
                 </p>
@@ -531,7 +531,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                         <td className="py-3 px-4 text-muted">{f.designation}</td>
                         <td className="py-3 px-4">
                           <span
-                            className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-extrabold ${
+                            className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-medium ${
                               f.relationship === "HOME"
                                 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                                 : "bg-brand-50 text-brand-light border border-brand/20"
@@ -553,7 +553,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                 <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-surface p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
                   <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                    <h3 className="text-lg font-extrabold text-white">Invite Faculty with Department Scope</h3>
+                    <h3 className="text-lg font-medium text-white">Invite Faculty with Department Scope</h3>
                     <button onClick={() => setShowInviteModal(false)} className="text-muted hover:text-white">✕</button>
                   </div>
 
@@ -654,7 +654,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
         {!error && tab === "students" && (
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div><h2 className="text-2xl font-extrabold text-white">Student Management</h2><p className="text-xs text-muted">Students in {user.department || "your department"}.</p></div>
+              <div><h2 className="text-2xl font-medium text-white">Student Management</h2><p className="text-xs text-muted">Students in {user.department || "your department"}.</p></div>
               <Button variant="primary" onClick={() => setShowStudentInvite(true)}>Invite Students</Button>
             </div>
             <div className="mb-5 grid gap-3 rounded-2xl border border-white/10 bg-surface-2/60 p-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -669,18 +669,18 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                 <tbody className="divide-y divide-white/[0.06]">{studentList.filter((student) => `${student.studentId} ${student.name} ${student.email}`.toLowerCase().includes(studentSearch.toLowerCase()) && (!studentYearFilter || String(student.year) === studentYearFilter) && (!studentSectionFilter || String(student.sectionId) === studentSectionFilter) && (!studentHostelFilter || (studentHostelFilter === "HOSTELLER" ? student.hosteller : !student.hosteller)) && (!studentStatusFilter || student.status === studentStatusFilter)).map((student) => <tr key={student.id}><td className="py-3 px-4 font-mono font-bold">{student.studentId}</td><td className="py-3 px-4 font-bold">{student.name}</td><td className="py-3 px-4 text-muted">{student.email}</td><td className="py-3 px-4">{student.year}</td><td className="py-3 px-4 text-right"><button className="mr-2 rounded-lg border border-white/10 px-2 py-1 font-bold text-muted" onClick={() => setEditingStudent({ ...student })}>Edit</button><button className="rounded-lg border border-red-400/30 px-2 py-1 font-bold text-red-200" onClick={() => void deactivateStudent(student)}>Deactivate</button><button className="rounded-lg border border-danger/40 bg-danger-soft px-2 py-1 font-bold text-danger-light" onClick={() => void deleteStudent(student)}>Delete</button></td></tr>)}</tbody>
               </table>
             </div>
-            {editingStudent && <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"><form onSubmit={saveStudent} className="w-full max-w-md space-y-4 rounded-2xl border border-white/15 bg-surface p-6"><h3 className="text-lg font-extrabold">Edit Student</h3><Field label="Name"><input className={inputBase} value={editingStudent.name} onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })} /></Field><div className="grid grid-cols-2 gap-3"><Field label="Year"><input type="number" min={1} className={inputBase} value={editingStudent.year} onChange={(e) => setEditingStudent({ ...editingStudent, year: Number(e.target.value) })} /></Field><Field label="Semester"><input type="number" min={1} className={inputBase} value={editingStudent.semester} onChange={(e) => setEditingStudent({ ...editingStudent, semester: Number(e.target.value) })} /></Field></div><div className="flex justify-end gap-2"><Button variant="secondary" type="button" onClick={() => setEditingStudent(null)}>Cancel</Button><Button variant="primary" type="submit">Save changes</Button></div></form></div>}
-            {showStudentInvite && <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"><form onSubmit={inviteStudents} className="w-full max-w-lg space-y-4 rounded-2xl border border-white/15 bg-surface p-6"><h3 className="text-lg font-extrabold">Invite Students</h3><p className="text-xs text-muted">Department locked to {user.department || "your department"}. Bulk rows: email,name,studentId,branchId,sectionId,year,semester.</p><div className="grid gap-3 sm:grid-cols-2"><Field label="Email"><input required={!bulkStudents} type="email" className={inputBase} value={studentInvite.email} onChange={(e) => setStudentInvite({ ...studentInvite, email: e.target.value })} /></Field><Field label="Name"><input required={!bulkStudents} className={inputBase} value={studentInvite.name} onChange={(e) => setStudentInvite({ ...studentInvite, name: e.target.value })} /></Field><Field label="Student ID"><input required={!bulkStudents} className={inputBase} value={studentInvite.studentId} onChange={(e) => setStudentInvite({ ...studentInvite, studentId: e.target.value })} /></Field><Field label="Branch"><select required={!bulkStudents} className={inputBase} value={studentInvite.branchId} onChange={(e) => setStudentInvite({ ...studentInvite, branchId: e.target.value, sectionId: "" })}><option value="">Choose branch</option>{branches.filter((branch) => branch.departmentId === deptId && branch.active).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></Field><Field label="Section"><select required={!bulkStudents} className={inputBase} value={studentInvite.sectionId} onChange={(e) => setStudentInvite({ ...studentInvite, sectionId: e.target.value })}><option value="">Choose section</option>{sections.filter((section) => section.departmentId === deptId && String(section.branchId) === studentInvite.branchId && section.active).map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}</select></Field><Field label="Year"><input required={!bulkStudents} type="number" min={1} className={inputBase} value={studentInvite.year} onChange={(e) => setStudentInvite({ ...studentInvite, year: e.target.value })} /></Field><Field label="Semester"><input required={!bulkStudents} type="number" min={1} className={inputBase} value={studentInvite.semester} onChange={(e) => setStudentInvite({ ...studentInvite, semester: e.target.value })} /></Field></div><Field label="Bulk CSV rows"><textarea className={textareaBase} rows={4} value={bulkStudents} onChange={(e) => setBulkStudents(e.target.value)} placeholder="email,name,studentId,branchId,sectionId,year,semester" /></Field>{studentInviteMsg && <p className="rounded-xl border border-white/10 p-3 text-xs">{studentInviteMsg}</p>}<div className="flex justify-end gap-2"><Button variant="secondary" type="button" onClick={() => setShowStudentInvite(false)}>Close</Button><Button variant="primary" type="submit" disabled={studentInviteBusy}>{studentInviteBusy ? "Inviting…" : "Create invitations"}</Button></div></form></div>}
+            {editingStudent && <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"><form onSubmit={saveStudent} className="w-full max-w-md space-y-4 rounded-2xl border border-white/15 bg-surface p-6"><h3 className="text-lg font-medium">Edit Student</h3><Field label="Name"><input className={inputBase} value={editingStudent.name} onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })} /></Field><div className="grid grid-cols-2 gap-3"><Field label="Year"><input type="number" min={1} className={inputBase} value={editingStudent.year} onChange={(e) => setEditingStudent({ ...editingStudent, year: Number(e.target.value) })} /></Field><Field label="Semester"><input type="number" min={1} className={inputBase} value={editingStudent.semester} onChange={(e) => setEditingStudent({ ...editingStudent, semester: Number(e.target.value) })} /></Field></div><div className="flex justify-end gap-2"><Button variant="secondary" type="button" onClick={() => setEditingStudent(null)}>Cancel</Button><Button variant="primary" type="submit">Save changes</Button></div></form></div>}
+            {showStudentInvite && <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"><form onSubmit={inviteStudents} className="w-full max-w-lg space-y-4 rounded-2xl border border-white/15 bg-surface p-6"><h3 className="text-lg font-medium">Invite Students</h3><p className="text-xs text-muted">Department locked to {user.department || "your department"}. Bulk rows: email,name,studentId,branchId,sectionId,year,semester.</p><div className="grid gap-3 sm:grid-cols-2"><Field label="Email"><input required={!bulkStudents} type="email" className={inputBase} value={studentInvite.email} onChange={(e) => setStudentInvite({ ...studentInvite, email: e.target.value })} /></Field><Field label="Name"><input required={!bulkStudents} className={inputBase} value={studentInvite.name} onChange={(e) => setStudentInvite({ ...studentInvite, name: e.target.value })} /></Field><Field label="Student ID"><input required={!bulkStudents} className={inputBase} value={studentInvite.studentId} onChange={(e) => setStudentInvite({ ...studentInvite, studentId: e.target.value })} /></Field><Field label="Branch"><select required={!bulkStudents} className={inputBase} value={studentInvite.branchId} onChange={(e) => setStudentInvite({ ...studentInvite, branchId: e.target.value, sectionId: "" })}><option value="">Choose branch</option>{branches.filter((branch) => branch.departmentId === deptId && branch.active).map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></Field><Field label="Section"><select required={!bulkStudents} className={inputBase} value={studentInvite.sectionId} onChange={(e) => setStudentInvite({ ...studentInvite, sectionId: e.target.value })}><option value="">Choose section</option>{sections.filter((section) => section.departmentId === deptId && String(section.branchId) === studentInvite.branchId && section.active).map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}</select></Field><Field label="Year"><input required={!bulkStudents} type="number" min={1} className={inputBase} value={studentInvite.year} onChange={(e) => setStudentInvite({ ...studentInvite, year: e.target.value })} /></Field><Field label="Semester"><input required={!bulkStudents} type="number" min={1} className={inputBase} value={studentInvite.semester} onChange={(e) => setStudentInvite({ ...studentInvite, semester: e.target.value })} /></Field></div><Field label="Bulk CSV rows"><textarea className={textareaBase} rows={4} value={bulkStudents} onChange={(e) => setBulkStudents(e.target.value)} placeholder="email,name,studentId,branchId,sectionId,year,semester" /></Field>{studentInviteMsg && <p className="rounded-xl border border-white/10 p-3 text-xs">{studentInviteMsg}</p>}<div className="flex justify-end gap-2"><Button variant="secondary" type="button" onClick={() => setShowStudentInvite(false)}>Close</Button><Button variant="primary" type="submit" disabled={studentInviteBusy}>{studentInviteBusy ? "Inviting…" : "Create invitations"}</Button></div></form></div>}
           </div>
         )}
 
         {!error && tab === "promotion" && (
           <div className="max-w-2xl mx-auto">
             <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/30 bg-teal-soft px-3 py-1 text-[10px] font-extrabold uppercase text-teal-light">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/30 bg-teal-soft px-3 py-1 text-[10px] font-medium uppercase text-teal-light">
                 Transactional Cohort Promotion
               </span>
-              <h2 className="mt-3 text-2xl font-extrabold text-white">Batch Student Year-Promotion</h2>
+              <h2 className="mt-3 text-2xl font-medium text-white">Batch Student Year-Promotion</h2>
               <p className="mt-1 text-xs text-muted leading-relaxed">
                 Seamlessly advance entire student cohorts to the next academic year. NotifyHub validates branch maximum years, transitions final years to Graduated status, and keeps section mappings consistent.
               </p>
@@ -722,7 +722,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
 
                 {promoteResult && (
                   <div className="rounded-2xl border border-teal-light/40 bg-teal-soft p-4 text-xs">
-                    <strong className="block text-teal-light font-extrabold text-sm">{promoteResult.message}</strong>
+                    <strong className="block text-teal-light font-medium text-sm">{promoteResult.message}</strong>
                     <div className="mt-2 flex gap-4 text-ink">
                       <span>Promoted: <strong>{promoteResult.promotedCount}</strong></span>
                       <span>Graduated: <strong>{promoteResult.graduatedCount}</strong></span>
@@ -746,7 +746,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
         {!error && tab === "hod" && (
           <div className="max-w-2xl mx-auto">
             <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-              <h2 className="text-2xl font-extrabold text-white">Assign Head of Department (HOD)</h2>
+              <h2 className="text-2xl font-medium text-white">Assign Head of Department (HOD)</h2>
               <p className="mt-1 text-xs text-muted">
                 Designate an active department faculty member as the official Head of Department with Level 3 executive permissions.
               </p>
