@@ -88,15 +88,27 @@ export default function HeroVortex() {
     camera.position.set(0, 0.25, 9.2);
     camera.lookAt(0, -0.2, 0);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: false,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: false,
+        alpha: true,
+        powerPreference: "high-performance",
+      });
+    } catch {
+      // Keep the homepage usable when WebGL is unavailable or the browser
+      // cannot create a graphics context.
+      return;
+    }
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.setAttribute("aria-hidden", "true");
+    renderer.domElement.style.position = "absolute";
+    renderer.domElement.style.inset = "0";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
     renderer.domElement.style.pointerEvents = "none";
     renderer.domElement.style.display = "block";
     mount.appendChild(renderer.domElement);
@@ -147,8 +159,12 @@ export default function HeroVortex() {
     observer.observe(mount);
 
     let frame = 0;
+    let active = true;
     const clock = new THREE.Clock();
+
     const animate = () => {
+      if (!active) return;
+
       const elapsed = clock.getElapsedTime();
       if (!reducedMotion) {
         vortex.rotation.y = elapsed * 0.055;
@@ -158,10 +174,24 @@ export default function HeroVortex() {
       renderer.render(scene, camera);
       frame = requestAnimationFrame(animate);
     };
+
+    const visibility = () => {
+      active = !document.hidden;
+      if (active) {
+        clock.start();
+        cancelAnimationFrame(frame);
+        animate();
+      } else {
+        cancelAnimationFrame(frame);
+      }
+    };
+
+    document.addEventListener("visibilitychange", visibility);
     animate();
 
     return () => {
       cancelAnimationFrame(frame);
+      document.removeEventListener("visibilitychange", visibility);
       observer.disconnect();
       vortexGeometry.dispose();
       waistGeometry.dispose();
