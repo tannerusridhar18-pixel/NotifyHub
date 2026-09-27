@@ -9,6 +9,9 @@ import EventCard from "@/components/EventCard";
 import { ErrorState, CardSkeletons } from "@/components/States";
 import { buttonClasses } from "@/components/ui/Button";
 import Reveal from "@/components/ui/Reveal";
+import dynamic from "next/dynamic";
+
+const HeroVortex = dynamic(() => import("@/components/ui/HeroVortex"), { ssr: false });
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-IN", {
@@ -22,7 +25,7 @@ function formatDate(value: string) {
 const featureItems = [
   {
     number: "01",
-    label: "Announcements",
+    label: "Real-time communication",
     title: "Keep everyone informed.",
     text: "Official campus announcements are published in one place, so students and staff can find current information without searching through scattered channels.",
     tone: "green",
@@ -31,20 +34,20 @@ const featureItems = [
     number: "02",
     label: "Events",
     title: "Never miss what is happening.",
-    text: "Campus and academic events stay organized with dates, times, locations, and the information your campus community needs.",
+    text: "Publish timely campus updates and events in a shared feed with the context your community needs.",
     tone: "blue",
   },
   {
     number: "03",
     label: "Urgent Announcements",
-    title: "Put important updates first.",
+    title: "Make important updates impossible to miss.",
     text: "Urgent announcements are separated from the regular feed so time-sensitive campus information gets the attention it needs.",
     tone: "red",
   },
   {
     number: "04",
     label: "Role-aware communication",
-    title: "The right information for the right people.",
+    title: "Reach the right people, without noise.",
     text: "NotifyHub supports targeted communication across roles and academic structures, including departments, branches, sections, hostels, and individual users.",
     tone: "violet",
   },
@@ -77,29 +80,7 @@ export default function Home() {
   return (
     <main className="nh-home overflow-x-hidden">
       <section className="nh-hero">
-        <div className="nh-public-orbit nh-public-orbit-home" aria-hidden="true">
-          <div className="nh-public-stars" />
-          <div className="nh-public-sun" />
-          <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-d"><i className="nh-public-planet nh-public-planet-d" /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-e"><i className="nh-public-planet nh-public-planet-e" /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-f"><i className="nh-public-planet nh-public-planet-f" /></div>
-        </div>
-
-        <div className="nh-qronos-cyclone" aria-hidden="true"><span className="nh-qronos-cyclone-core" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-1" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-2" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-3" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-1" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-2" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-3" /></div>
-        <div className="nh-bg-animation" aria-hidden="true">
-          <span className="nh-bg-orb nh-bg-orb-1" />
-          <span className="nh-bg-orb nh-bg-orb-2" />
-          <span className="nh-bg-orb nh-bg-orb-3" />
-          <span className="nh-bg-ring nh-bg-ring-1" />
-          <span className="nh-bg-ring nh-bg-ring-2" />
-          <span className="nh-bg-particles nh-bg-particles-1" />
-          <span className="nh-bg-particles nh-bg-particles-2" />
-          <span className="nh-bg-scanline" />
-        </div>
-        <div className="nh-hero-grid bg-grid-pattern pointer-events-none" />
+        <HeroVortex />
 
         <div className="nh-home-hero-inner mx-auto w-full max-w-[1240px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:pt-14">
           <div className="nh-hero-copy">
@@ -141,109 +122,17 @@ export default function Home() {
             </Reveal>
           </div>
 
-          <Reveal variant="scale" delay={340}>
-            <div className="nh-product-stage">
-              <div className="nh-stage-floor" />
 
-              <div className="nh-float-card nh-float-left hidden md:block nh-card-urgent">
-                <div className="flex items-center justify-between">
-                  <span className="nh-card-label">Urgent announcement</span>
-                  <span className="nh-status-dot nh-status-red" />
-                </div>
-                <strong className="mt-5 block text-sm font-extrabold text-white">
-                  {urgent.length ? urgent[0].title : "Priority updates"}
-                </strong>
-                <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-white/50">
-                  {urgent.length ? urgent[0].content : "Time-sensitive campus announcements appear here."}
-                </p>
-              </div>
-
-              <div className="nh-float-card nh-float-right hidden md:block nh-card-event">
-                <div className="flex items-center justify-between">
-                  <span className="nh-card-label">Upcoming event</span>
-                  <span className="nh-status-dot nh-status-blue" />
-                </div>
-                <strong className="mt-5 block text-sm font-extrabold text-white">
-                  {upcoming.length ? upcoming[0].title : "Campus events"}
-                </strong>
-                <p className="mt-2 text-xs leading-relaxed text-white/50">
-                  {upcoming.length
-                    ? formatDate(upcoming[0].startAt) + " · " + upcoming[0].location
-                    : "Academic and campus events appear here."}
-                </p>
-              </div>
-
-              <div className="nh-product-window">
-                <div className="nh-product-topbar">
-                  <div className="flex items-center gap-3">
-                    <span className="nh-product-logo">N</span>
-                    <div>
-                      <p>NotifyHub</p>
-                      <span>Campus communication</span>
-                    </div>
-                  </div>
-                  <span className="nh-live-pill">
-                    <span />
-                    LIVE
-                  </span>
-                </div>
-
-                <div className="nh-product-content">
-                  <div className="nh-product-feed">
-                    <div className="mb-5">
-                      <span className="nh-product-eyebrow">Campus feed</span>
-                      <h2>Latest announcements</h2>
-                    </div>
-
-                    <div className="nh-product-list">
-                      {items.length ? (
-                        items.map((item) => (
-                          <div className="nh-product-row" key={item.id}>
-                            <span className="nh-row-icon">◈</span>
-                            <div>
-                              <strong>{item.title}</strong>
-                              <span>
-                                {item.publishedAt
-                                  ? formatDate(item.publishedAt)
-                                  : "Published announcement"}
-                              </span>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="nh-empty-row">No announcements published yet.</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="nh-product-side">
-                    <div>
-                      <span>Announcements</span>
-                      <strong>{items.length}</strong>
-                    </div>
-                    <div>
-                      <span>Events</span>
-                      <strong>{upcoming.length}</strong>
-                    </div>
-                    <div className="nh-product-urgent">
-                      <span>Urgent</span>
-                      <strong>{urgent.length}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Reveal>
         </div>
       </section>
 
       <section className="nh-features mx-auto w-full max-w-[1240px] px-4 py-10 sm:px-6 sm:py-16">
         <Reveal className="nh-section-intro">
-          <span>Everything your campus needs to communicate clearly</span>
-          <h2>One platform for everyday updates and important moments.</h2>
+          <span>Built for every campus signal</span>
+          <h2>Target the right people. Publish once. Keep everyone aligned.</h2>
           <p>
-            NotifyHub keeps the public campus signal simple while giving authorized users
-            the tools to publish and manage communication.
+            NotifyHub gives authorized campus teams one place to reach departments, sections,
+            roles, and individual users with clear, real-time communication.
           </p>
         </Reveal>
 
