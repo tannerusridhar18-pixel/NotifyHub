@@ -3,7 +3,7 @@ import { buttonClasses } from "@/components/ui/Button";
 export function Loading({ label = "Loading NotifyHub…" }: { label?: string }) {
   return (
     <div className="grid place-items-center gap-4 py-20 text-center text-muted">
-      <div className="relative grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white font-black shadow-glow animate-spin-slow text-xl">
+      <div className="relative grid h-14 w-14 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-white font-black shadow-glow animate-spin-slow text-xl">
         <span className="drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">◈</span>
       </div>
       <p className="text-sm font-bold tracking-wide text-ink/90">{label}</p>
@@ -18,7 +18,7 @@ export function CardSkeletons({ count = 3 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="relative overflow-hidden rounded-[22px] border border-white/[0.08] bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 backdrop-blur-xl shadow-soft"
+          className="relative overflow-hidden rounded-[var(--nh-radius-lg)] border border-white/10 bg-surface p-6 shadow-[var(--nh-shadow-card)]"
         >
           <div className="animate-pulse">
             <div className="mb-4 h-4 w-28 rounded-full bg-white/[0.08]" />
@@ -37,8 +37,8 @@ export function CardSkeletons({ count = 3 }: { count?: number }) {
 
 export function Empty({ label }: { label: string }) {
   return (
-    <div className="rounded-[24px] border border-dashed border-border/90 bg-gradient-to-br from-surface/70 to-surface-2/70 py-18 px-6 text-center text-muted backdrop-blur-xl">
-      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-brand/40 bg-brand-50/90 text-2xl font-black text-brand-light shadow-glow">
+    <div className="rounded-[var(--nh-radius-lg)] border border-dashed border-white/10 bg-surface py-18 px-6 text-center text-muted backdrop-blur-xl">
+      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-[var(--nh-radius-lg)] border border-brand/40 bg-brand-50 text-2xl font-medium text-brand shadow-[var(--nh-shadow-glow-green)]">
         ＋
       </div>
       <h3 className="text-xl font-extrabold text-ink">No {label} yet</h3>
@@ -51,12 +51,12 @@ export function Empty({ label }: { label: string }) {
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="rounded-[24px] border border-danger/40 bg-gradient-to-br from-[#240e17]/90 via-surface/95 to-surface-2/90 py-14 px-6 text-center text-[#fca5a5] shadow-lift backdrop-blur-2xl">
+    <div className="rounded-[var(--nh-radius-lg)] border border-danger/35 bg-surface py-14 px-6 text-center text-ink shadow-[var(--nh-shadow-float)] backdrop-blur-2xl">
       <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-danger/50 bg-danger-soft text-2xl font-black text-[#ff8ba0] shadow-[0_0_20px_rgba(244,63,94,0.35)]">
         !
       </div>
-      <h3 className="text-xl font-extrabold text-white">Something needs attention</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-[#fca5a5]/90">{message}</p>
+      <h3 className="text-xl font-bold text-ink">Something needs attention</h3>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">{message}</p>
       {onRetry && (
         <button
           className={`${buttonClasses("secondary")} mt-6 !border-danger/40 !bg-surface-2/90 !text-white hover:!border-danger/70 hover:!bg-danger-soft/50`}
