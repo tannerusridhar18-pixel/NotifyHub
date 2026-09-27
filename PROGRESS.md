@@ -35,3 +35,10 @@
 - Increased ground contour density with tighter center spacing and shader-based outward opacity fade.
 - Preserved existing colors, layout, pointer-events behavior, 60fps requestAnimationFrame loop, scroll response, and prefers-reduced-motion handling.
 - No backend, data, auth, role, route, or content changes.
+
+
+## 2026-09-27 — REKKI system rollout across app surfaces
+- Reworked shared Button, Badge, form, card, auth-card, authenticated-shell, admin-shell, loading/error, and toast primitives to consume the existing REKKI tokens.
+- Applied the REKKI surface/palette normalization to public pages, authentication surfaces, authenticated shared pages, and all role dashboard roots: Student, Faculty, HOD, Department Admin, Principal, Dean, and Super Admin.
+- Normalized tables, forms, status pills, modals, empty/loading/error states, and shared navigation toward Obsidian/Carbon/Graphite/Iron/Steel with Signal Blue as the only chromatic accent.
+- Left Home hero/vortex geometry, application logic, routing, API/data behavior, and permissions unchanged.
