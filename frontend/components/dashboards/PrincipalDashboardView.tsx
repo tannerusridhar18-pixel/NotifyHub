@@ -103,15 +103,15 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110">
+          <span className="grid h-10 w-10 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-inset)] transition-transform duration-200 group-hover:scale-105">
             ◈
           </span>
-          <span className="tracking-tight text-xl font-extrabold">
+          <span className="tracking-tight text-xl font-medium">
             Notify<span className="text-brand-light">Hub</span>
           </span>
         </Link>
         <div className="hidden items-center gap-2 text-xs font-semibold text-muted md:flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-0.5 text-[10px] font-extrabold uppercase text-amber-400 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-0.5 text-[10px] font-medium uppercase text-amber-400 shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             PRINCIPAL EXECUTIVE
           </span>
@@ -140,10 +140,10 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
         <section className="mb-8 rounded-3xl border border-white/12 bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 shadow-lift backdrop-blur-2xl sm:p-8">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-extrabold tracking-widest text-amber-400 uppercase">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-medium tracking-widest text-amber-400 uppercase">
                 Institutional Executive Leadership (Level 1)
               </span>
-              <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="mt-2 text-3xl sm:text-4xl font-medium tracking-tight">
                 Principal Office & Campus Command
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -153,15 +153,15 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
             <div className="flex flex-wrap gap-3">
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Departments</span>
-                <span className="text-2xl font-extrabold text-white">{departments.length}</span>
+                <span className="text-2xl font-medium text-white">{departments.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Total Students</span>
-                <span className="text-2xl font-extrabold text-teal-light">{totalCampusStudents}</span>
+                <span className="text-2xl font-medium text-teal-light">{totalCampusStudents}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Total Faculty</span>
-                <span className="text-2xl font-extrabold text-brand-light">{totalCampusFaculty}</span>
+                <span className="text-2xl font-medium text-brand-light">{totalCampusFaculty}</span>
               </div>
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
           <div className="mt-8 flex gap-2 border-t border-white/[0.08] pt-6 overflow-x-auto">
             <button
               onClick={() => setTab("overview")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "overview"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -180,7 +180,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
             </button>
             <button
               onClick={() => setTab("broadcast")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "broadcast"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -190,7 +190,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
             </button>
             <button
               onClick={() => setTab("feed")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "feed"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -208,7 +208,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
             <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-extrabold text-white">Academic Departments Directory</h2>
+                  <h2 className="text-2xl font-medium text-white">Academic Departments Directory</h2>
                   <p className="text-xs text-muted">Overview of department leadership, enrollments, and operational pulse.</p>
                 </div>
               </div>
@@ -231,7 +231,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
                     <tbody className="divide-y divide-white/[0.06]">
                       {departments.map((d) => (
                         <tr key={d.departmentId} className="hover:bg-surface-2/50 transition-colors">
-                          <td className="py-3 px-4 font-extrabold text-white">{d.departmentName}</td>
+                          <td className="py-3 px-4 font-medium text-white">{d.departmentName}</td>
                           <td className="py-3 px-4 font-bold text-ink">{d.hodName || "— Not Appointed —"}</td>
                           <td className="py-3 px-4 text-muted">{d.hodEmail || "—"}</td>
                           <td className="py-3 px-4 text-center font-mono font-bold text-teal-light">{d.totalStudents}</td>
@@ -254,7 +254,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
         {!error && tab === "broadcast" && (
           <div className="max-w-2xl mx-auto">
             <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-              <h2 className="text-2xl font-extrabold text-white">Issue Institutional Directive</h2>
+              <h2 className="text-2xl font-medium text-white">Issue Institutional Directive</h2>
               <p className="mt-1 text-xs text-muted">
                 Broadcast executive orders, campus-wide circulars, or targeted communications to HODs and Deans.
               </p>
@@ -275,7 +275,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
                         key={aud.key}
                         type="button"
                         onClick={() => setBroadcastAudience(aud.key)}
-                        className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all text-center ${
+                        className={`rounded-xl border p-2.5 text-xs font-medium transition-all text-center ${
                           broadcastAudience === aud.key
                             ? "border-amber-500 bg-amber-500/20 text-amber-300 shadow-sm"
                             : "border-white/10 bg-surface-2/60 text-muted"
@@ -358,7 +358,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
           <div className="space-y-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Campus Institutional Oversight Feed</h2>
+                <h2 className="text-2xl font-medium text-white">Campus Institutional Oversight Feed</h2>
                 <p className="text-xs text-muted">All active notices across all branches and scopes.</p>
               </div>
             </div>
