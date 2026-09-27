@@ -13,13 +13,13 @@ export function Toast({ message, type = "success", onClose }: { message: string;
       role="status"
       className={cx(
         "fixed bottom-6 right-6 z-[100] flex max-w-[min(460px,calc(100vw-32px))] items-center gap-3.5 rounded-[var(--radius-cards)] border p-4 shadow-[var(--shadow-subtle)] backdrop-blur-2xl animate-toast-in",
-        border-white/12 bg-[var(--color-graphite)]
+        "border-white/12 bg-[var(--color-graphite)]"
       )}
     >
       <span
         className={cx(
           "grid h-9 w-9 flex-none place-items-center rounded-xl font-black text-sm shadow-sm",
-          border border-white/12 bg-[var(--color-carbon)] text-[var(--color-paper)]
+          "border border-white/12 bg-[var(--color-carbon)] text-[var(--color-paper)]"
         )}
       >
         {type === "success" ? "✓" : "!"}
