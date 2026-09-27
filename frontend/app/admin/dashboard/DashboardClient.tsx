@@ -1058,8 +1058,23 @@ function AudienceFields({
 }) {
   const target = value.targetType as ComposerTargetType;
   const scopedDepartmentId = scopeDepartmentId ? String(scopeDepartmentId) : value.departmentId;
+  const cseBranch = departmentScoped
+    ? branches.find(
+        (x) =>
+          x.active &&
+          String(x.departmentId) === scopedDepartmentId &&
+          x.name.trim().toUpperCase() === "CSE"
+      )
+    : undefined;
+  const fixedSectionBranchId = departmentScoped ? String(cseBranch?.id ?? "") : value.branchId;
   const filteredBranches = branches.filter((x) => x.active && (!value.departmentId || String(x.departmentId) === value.departmentId));
-  const filteredSections = sections.filter((x) => x.active && (!value.branchId || String(x.branchId) === value.branchId));
+  const filteredSections = sections.filter(
+    (x) =>
+      x.active &&
+      (departmentScoped
+        ? String(x.branchId) === fixedSectionBranchId
+        : (!value.branchId || String(x.branchId) === value.branchId))
+  );
   return (
     <div className="mb-4 rounded-xl border border-border bg-surface-2 p-3">
       <Field label="Audience" htmlFor="audience-target">
@@ -1072,7 +1087,7 @@ function AudienceFields({
             onChange({
               targetType: next,
               departmentId: departmentScoped ? scopedDepartmentId : "",
-              branchId: "",
+              branchId: departmentScoped && next === "SECTION" ? fixedSectionBranchId : "",
               sectionId: "",
               hostelId: "",
               userEmail: "",
@@ -1154,7 +1169,7 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {(target === "BRANCH" || target === "SECTION") && (
+      {!departmentScoped && target === "BRANCH" && (
         <Field label="Branch" htmlFor="audience-branch" className="mt-3">
           <select
             id="audience-branch"
@@ -1173,9 +1188,17 @@ function AudienceFields({
           </select>
         </Field>
       )}
+
+      {departmentScoped && target === "SECTION" && (
+        <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm">
+          <span className="font-semibold text-muted">Branch</span>
+          <div className="mt-1 font-bold text-ink">{cseBranch?.name ?? "CSE"}</div>
+          {!cseBranch && <p className="mt-1 text-xs text-danger">CSE branch is not configured for your department.</p>}
+        </div>
+      )}
       {target === "SECTION" && (
         <Field label="Section" htmlFor="audience-section" className="mt-3">
-          <select id="audience-section" required className={inputBase} disabled={!value.branchId} value={value.sectionId} onChange={(e) => onChange({ sectionId: e.target.value })}>
+          <select id="audience-section" required className={inputBase} disabled={departmentScoped ? !cseBranch : !value.branchId} value={value.sectionId} onChange={(e) => onChange({ sectionId: e.target.value })}>
             <option value="">Choose section</option>
             {filteredSections.map((x) => (
               <option key={x.id} value={x.id}>
