@@ -16,6 +16,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const isAdmin = path.startsWith("/admin");
   const isDashboard = path.startsWith("/dashboard");
+  const isAuth = path.startsWith("/auth");
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -24,7 +25,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
     setIsLoggedIn(typeof document !== "undefined" && document.cookie.includes("NH_ACCESS="));
   }, [path]);
 
-  if (isAdmin || isDashboard) return <>{children}</>;
+  if (isAdmin || isDashboard || isAuth) return <>{children}</>;
 
   return (
     <>
