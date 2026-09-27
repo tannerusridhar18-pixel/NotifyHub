@@ -90,7 +90,7 @@ public class DepartmentLeadershipService {
 
         for (StudentProfile sp : eligible) {
             Branch b = sp.getBranch();
-            if (!graduating && b != null && toYear > b.getMaxYear()) {
+            if (b != null && toYear > b.getMaxYear()) {
                 skippedMaxYearCount++;
                 continue;
             }
