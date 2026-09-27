@@ -324,7 +324,7 @@ export type EventPayload = {
   registrationDeadline?: string;
 };
 
-export const departmentManagedAnnouncements = (page = 0, size = 50) => request<PageResponse<Announcement>>(`/announcements/department-management?page=${page}&size=${size}`);
+export const departmentManagedAnnouncements = (page = 0, size = 50) => myAnnouncements({ page, size });
 export const managedAnnouncements = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<Announcement>>(`/announcements/management?${q}`);
@@ -339,7 +339,7 @@ export const unarchiveAnnouncement = (id: number) => request<Announcement>(`/ann
 export const unpublishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unpublish`, { method: "POST" });
 export const deleteAnnouncement = (id: number) => request<void>(`/announcements/${id}`, { method: "DELETE" });
 
-export const departmentManagedEvents = (page = 0, size = 50) => request<PageResponse<EventItem>>(`/events/department-management?page=${page}&size=${size}`);
+export const departmentManagedEvents = (page = 0, size = 50) => myEvents({ page, size });
 export const managedEvents = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<EventItem>>(`/events/management?${q}`);
