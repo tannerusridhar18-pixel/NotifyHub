@@ -99,15 +99,15 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110">
+          <span className="grid h-10 w-10 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-inset)] transition-transform duration-200 group-hover:scale-105">
             ◈
           </span>
-          <span className="tracking-tight text-xl font-extrabold">
+          <span className="tracking-tight text-xl font-medium">
             Notify<span className="text-brand-light">Hub</span>
           </span>
         </Link>
         <div className="hidden items-center gap-2 text-xs font-semibold text-muted md:flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-0.5 text-[10px] font-extrabold uppercase text-cyan-400 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-0.5 text-[10px] font-medium uppercase text-cyan-400 shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             DEAN OF ACADEMICS
           </span>
@@ -136,10 +136,10 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
         <section className="mb-8 rounded-3xl border border-white/12 bg-gradient-to-br from-surface/95 via-surface-2/90 to-surface/95 p-6 shadow-lift backdrop-blur-2xl sm:p-8">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-extrabold tracking-widest text-cyan-400 uppercase">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-medium tracking-widest text-cyan-400 uppercase">
                 Academic Affairs & Curriculum Leadership (Level 2)
               </span>
-              <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="mt-2 text-3xl sm:text-4xl font-medium tracking-tight">
                 Dean Office & Academic Operations
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -149,11 +149,11 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
             <div className="flex flex-wrap gap-3">
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Academic Units</span>
-                <span className="text-2xl font-extrabold text-white">{departments.length}</span>
+                <span className="text-2xl font-medium text-white">{departments.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Active Notices</span>
-                <span className="text-2xl font-extrabold text-cyan-400">{directives.length}</span>
+                <span className="text-2xl font-medium text-cyan-400">{directives.length}</span>
               </div>
             </div>
           </div>
@@ -162,7 +162,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
           <div className="mt-8 flex gap-2 border-t border-white/[0.08] pt-6 overflow-x-auto">
             <button
               onClick={() => setTab("communications")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "communications"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -172,7 +172,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("broadcast")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "broadcast"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -182,7 +182,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("departments")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "departments"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -199,7 +199,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
           <div className="space-y-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Executive & Campus Directives</h2>
+                <h2 className="text-2xl font-medium text-white">Executive & Campus Directives</h2>
                 <p className="text-xs text-muted">Communications from Principal Office and institutional governance.</p>
               </div>
             </div>
@@ -218,7 +218,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
         {!error && tab === "broadcast" && (
           <div className="max-w-2xl mx-auto">
             <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-              <h2 className="text-2xl font-extrabold text-white">Broadcast Academic Directive</h2>
+              <h2 className="text-2xl font-medium text-white">Broadcast Academic Directive</h2>
               <p className="mt-1 text-xs text-muted">
                 Issue curriculum directives, exam policies, or faculty guidelines to academic leaders.
               </p>
@@ -232,7 +232,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
                     <button
                       type="button"
                       onClick={() => setBroadcastAudience("HOD")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                      className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                         broadcastAudience === "HOD"
                           ? "border-cyan-500 bg-cyan-500/20 text-cyan-300 shadow-sm"
                           : "border-white/10 bg-surface-2/60 text-muted"
@@ -243,7 +243,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
                     <button
                       type="button"
                       onClick={() => setBroadcastAudience("FACULTY")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                      className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                         broadcastAudience === "FACULTY"
                           ? "border-cyan-500 bg-cyan-500/20 text-cyan-300 shadow-sm"
                           : "border-white/10 bg-surface-2/60 text-muted"
@@ -323,11 +323,11 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
 
         {!error && tab === "departments" && (
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-            <h2 className="text-2xl font-extrabold text-white mb-4">Academic Units Performance</h2>
+            <h2 className="text-2xl font-medium text-white mb-4">Academic Units Performance</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {departments.map((d) => (
                 <div key={d.departmentId} className="rounded-2xl border border-white/10 bg-surface-2/70 p-5">
-                  <h3 className="text-base font-extrabold text-white">{d.departmentName}</h3>
+                  <h3 className="text-base font-medium text-white">{d.departmentName}</h3>
                   <p className="mt-1 text-xs text-muted">HOD: {d.hodName || "Unassigned"}</p>
                   <div className="mt-4 flex justify-between border-t border-white/[0.06] pt-3 text-xs">
                     <span>Students: <strong className="text-teal-light">{d.totalStudents}</strong></span>
