@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap");
 @import "tailwindcss";
+@import "../styles/design-tokens.css";
 
 /*
  * NotifyHub design system — Tailwind v4 theme tokens.
@@ -2703,5 +2704,122 @@ footer {
   .nh-home *,
   .nh-public-page * {
     transition-duration: .01ms !important;
+  }
+}
+
+
+/* REKKI shell treatment is activated only when one of the four styled public pages is present. */
+@layer base {
+  body:has(.nh-home),
+  body:has(.nh-public-page) {
+    background: var(--color-obsidian) !important;
+    background-image: none !important;
+    color: var(--color-paper);
+  }
+
+  body:has(.nh-home) header,
+  body:has(.nh-public-page) header {
+    background: rgba(0,0,0,.92) !important;
+    border-color: rgba(255,255,255,.12) !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.nh-home) header nav a,
+  body:has(.nh-public-page) header nav a {
+    color: var(--color-ash);
+    text-decoration: none;
+    font-family: var(--font-inter);
+    font-weight: 400;
+    letter-spacing: -0.007em;
+  }
+
+  body:has(.nh-home) header nav a:hover,
+  body:has(.nh-public-page) header nav a:hover,
+  body:has(.nh-home) header nav a.text-white,
+  body:has(.nh-public-page) header nav a.text-white {
+    color: var(--color-paper) !important;
+  }
+
+  body:has(.nh-home) header nav a span,
+  body:has(.nh-public-page) header nav a span {
+    background: var(--color-signal-blue) !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.nh-home) header a[href="/auth/login"],
+  body:has(.nh-public-page) header a[href="/auth/login"],
+  body:has(.nh-home) header a[href="/dashboard"],
+  body:has(.nh-public-page) header a[href="/dashboard"] {
+    background: var(--color-signal-blue) !important;
+    color: var(--color-paper) !important;
+    border-color: var(--color-signal-blue) !important;
+    border-radius: var(--radius-buttons) !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.nh-home) header a[href="/auth/login"]:hover,
+  body:has(.nh-public-page) header a[href="/auth/login"]:hover,
+  body:has(.nh-home) header a[href="/dashboard"]:hover,
+  body:has(.nh-public-page) header a[href="/dashboard"]:hover {
+    filter: brightness(1.12);
+    color: var(--color-paper) !important;
+  }
+
+  body:has(.nh-home) footer,
+  body:has(.nh-public-page) footer {
+    background: var(--color-obsidian) !important;
+    border-color: rgba(255,255,255,.12) !important;
+    box-shadow: none !important;
+  }
+
+  body:has(.nh-home) footer [class*="bg-brand"],
+  body:has(.nh-public-page) footer [class*="bg-brand"],
+  body:has(.nh-home) footer [class*="bg-success"],
+  body:has(.nh-public-page) footer [class*="bg-success"],
+  body:has(.nh-home) footer [class*="bg-cyan"],
+  body:has(.nh-public-page) footer [class*="bg-cyan"] {
+    background: var(--color-signal-blue) !important;
+    color: var(--color-paper) !important;
+  }
+
+  body:has(.nh-home) footer [class*="text-muted"],
+  body:has(.nh-public-page) footer [class*="text-muted"] {
+    color: var(--color-ash) !important;
+  }
+
+  .nh-home .nh-feature-card,
+  .nh-public-page [class*="card"],
+  .nh-public-page [class*="rounded-2xl"],
+  .nh-public-page [class*="rounded-[26px]"] {
+    box-shadow: var(--shadow-subtle) !important;
+  }
+
+  .nh-home .nh-feature-card:hover,
+  .nh-public-page [class*="card"]:hover {
+    box-shadow: var(--shadow-subtle) !important;
+    border-color: rgba(255,255,255,.2) !important;
+    transform: none !important;
+  }
+
+  .nh-home a[class*="bg-"],
+  .nh-home button[class*="bg-"] {
+    border-radius: var(--radius-buttons) !important;
+  }
+
+  .nh-home a[class*="bg-brand"],
+  .nh-home a[class*="bg-gradient"],
+  .nh-home button[class*="bg-brand"],
+  .nh-home button[class*="bg-gradient"] {
+    background: var(--color-signal-blue) !important;
+    background-image: none !important;
+    color: var(--color-paper) !important;
+    box-shadow: none !important;
+  }
+
+  .nh-home a[class*="bg-brand"]:hover,
+  .nh-home a[class*="bg-gradient"]:hover,
+  .nh-home button[class*="bg-brand"]:hover,
+  .nh-home button[class*="bg-gradient"]:hover {
+    filter: brightness(1.12);
   }
 }
