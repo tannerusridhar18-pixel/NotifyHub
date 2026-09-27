@@ -85,6 +85,7 @@ const blankInvite = {
   roomId: "",
 };
 type Tab = "announcements" | "events" | "queries" | "people";
+type ComposerTargetType = TargetType | "DEPARTMENT_HOD";
 
 export default function DashboardClient({ departmentScoped = false, initialTab = "announcements" }: { departmentScoped?: boolean; initialTab?: Tab }) {
   const router = useRouter();
@@ -1044,16 +1045,19 @@ function AudienceFields({
   sections,
   hostels,
   departmentScoped = false,
+  scopeDepartmentId = null,
 }: {
-  value: { targetType: TargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
+  value: { targetType: ComposerTargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
   onChange: (v: Partial<typeof value>) => void;
   departments: StructureDepartment[];
   branches: StructureBranch[];
   sections: StructureSection[];
   hostels: StructureHostel[];
   departmentScoped?: boolean;
+  scopeDepartmentId?: number | null;
 }) {
-  const target = value.targetType;
+  const target = value.targetType as ComposerTargetType;
+  const scopedDepartmentId = scopeDepartmentId ? String(scopeDepartmentId) : value.departmentId;
   const filteredBranches = branches.filter((x) => x.active && (!value.departmentId || String(x.departmentId) === value.departmentId));
   const filteredSections = sections.filter((x) => x.active && (!value.branchId || String(x.branchId) === value.branchId));
   return (
@@ -1063,15 +1067,38 @@ function AudienceFields({
           id="audience-target"
           className={inputBase}
           value={target}
-          onChange={(e) => onChange({ targetType: e.target.value as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" })}
+          onChange={(e) => {
+            const next = e.target.value as ComposerTargetType;
+            onChange({
+              targetType: next,
+              departmentId: departmentScoped ? scopedDepartmentId : "",
+              branchId: "",
+              sectionId: "",
+              hostelId: "",
+              userEmail: "",
+              role: next === "DEPARTMENT_HOD" ? "HOD" : "",
+            });
+          }}
         >
-          {!departmentScoped && <option value="GLOBAL">Everyone</option>}
-          <option value="ROLE">By role</option>
-          <option value="DEPARTMENT">Department</option>
-          {!departmentScoped && <option value="BRANCH">Branch</option>}
-          <option value="SECTION">Section</option>
-          {!departmentScoped && <option value="HOSTEL">Hostel</option>}
-          {!departmentScoped && <option value="USER">Specific user</option>}
+          {departmentScoped ? (
+            <>
+              <option value="DEPARTMENT">Department</option>
+              <option value="SECTION">Section wise</option>
+              <option value="ROLE">By role</option>
+              <option value="USER">Specific user</option>
+              <option value="DEPARTMENT_HOD">Department HOD</option>
+            </>
+          ) : (
+            <>
+              <option value="GLOBAL">Everyone</option>
+              <option value="ROLE">By role</option>
+              <option value="DEPARTMENT">Department</option>
+              <option value="BRANCH">Branch</option>
+              <option value="SECTION">Section</option>
+              <option value="HOSTEL">Hostel</option>
+              <option value="USER">Specific user</option>
+            </>
+          )}
         </select>
       </Field>
       {target === "ROLE" && (
