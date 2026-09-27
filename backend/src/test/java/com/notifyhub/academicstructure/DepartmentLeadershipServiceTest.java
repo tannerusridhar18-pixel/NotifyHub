@@ -11,6 +11,7 @@ import com.notifyhub.rbac.AuditLogRepository;
 import com.notifyhub.rbac.RbacAuthorizationService;
 import com.notifyhub.rbac.UserRoleAssignment;
 import com.notifyhub.rbac.UserRoleAssignmentRepository;
+import com.notifyhub.users.IdentityService;
 import com.notifyhub.student.StudentProfile;
 import com.notifyhub.student.StudentProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,7 @@ class DepartmentLeadershipServiceTest {
     @Mock private EventRepository events;
     @Mock private AuditLogRepository audit;
     @Mock private RbacAuthorizationService rbac;
+    @Mock private IdentityService identity;
 
     private DepartmentLeadershipService service;
     private Department dept;
@@ -66,7 +68,8 @@ class DepartmentLeadershipServiceTest {
                 announcements,
                 events,
                 audit,
-                rbac
+                rbac,
+                identity
         );
 
         dept = new Department();
