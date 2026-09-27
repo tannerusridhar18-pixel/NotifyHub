@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap");
 @import "tailwindcss";
+@import "../styles/design-tokens.css";
 
 /*
  * NotifyHub design system — Tailwind v4 theme tokens.
@@ -7,70 +8,6 @@
  * aurora cyan/teal, warm amber pops, holographic glass layers, and GPU-accelerated 3D transforms.
  */
 @theme {
-  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-
-  /* Deep cosmic obsidian midnight navy base */
-  --color-bg: #060816;
-  --color-surface: #0c1229;
-  --color-surface-2: #121a3a;
-  --color-surface-3: #18234e;
-  --color-surface-elevated: #202e64;
-  --color-ink: #f8fafc;
-  --color-muted: #94a3b8;
-  --color-border: #1e2952;
-  --color-border-glow: #3b4d8f;
-
-  /* High-vibrancy electric hyper-cobalt & luminous ultraviolet */
-  --color-brand: #4f46e5;
-  --color-brand-light: #7c3aed;
-  --color-brand-2: #9333ea;
-  --color-brand-2-light: #c084fc;
-  --color-brand-magenta: #ec4899;
-  --color-brand-50: #12183e;
-  --color-brand-100: #1b245a;
-
-  /* Bioluminescent Aurora Aqua & Vivid Mint */
-  --color-cyan: #00d2ff;
-  --color-cyan-light: #38bdf8;
-  --color-teal: #0d9488;
-  --color-teal-light: #00f5a0;
-  --color-teal-soft: #052e26;
-
-  /* Vibrant solar amber & electric sunfire coral */
-  --color-success: #10b981;
-  --color-success-light: #34d399;
-  --color-success-soft: #062b1e;
-
-  --color-danger: #ff2a5f;
-  --color-danger-light: #ff6b8b;
-  --color-danger-soft: #380d19;
-
-  --color-warning: #f59e0b;
-  --color-warning-light: #fde047;
-  --color-warning-soft: #2e1d08;
-
-  --color-amber: #f59e0b;
-  --color-amber-light: #fde047;
-
-  /* Deepest command tones for hero panels and admin sidebar */
-  --color-ink-900: #03050c;
-  --color-ink-800: #060816;
-  --color-ink-700: #0a0f24;
-
-  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
-  --shadow-card: 0 16px 40px -10px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.08);
-  --shadow-card-hover: 0 24px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(124, 58, 237, 0.35);
-  --shadow-lift: 0 25px 60px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.12);
-  --shadow-glow: 0 0 0 1px rgba(79, 70, 229, 0.4), 0 0 35px -4px rgba(79, 70, 229, 0.5);
-  --shadow-glow-violet: 0 0 0 1px rgba(147, 51, 234, 0.4), 0 0 40px -4px rgba(147, 51, 234, 0.5);
-  --shadow-glow-cyan: 0 0 0 1px rgba(0, 210, 255, 0.4), 0 0 35px -4px rgba(0, 210, 255, 0.5);
-  --shadow-glow-danger: 0 0 0 1px rgba(255, 42, 95, 0.4), 0 0 35px -4px rgba(255, 42, 95, 0.5);
-  --shadow-glow-amber: 0 0 0 1px rgba(245, 158, 11, 0.4), 0 0 35px -4px rgba(245, 158, 11, 0.5);
-
-  --radius-card: 20px;
-
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-slow: float-slow 8s ease-in-out infinite;
   --animate-float-reverse: float-reverse 7s ease-in-out infinite;
@@ -83,7 +20,6 @@
   --animate-radar: radar 2s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-shimmer: shimmer 2.2s ease-in-out infinite;
 }
-
 @keyframes marquee {
   to {
     transform: translate3d(-50%, 0, 0);
