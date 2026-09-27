@@ -48,6 +48,8 @@ import DetailModal from "@/components/ui/DetailModal";
 import { inputBase, textareaBase, cx } from "@/components/ui/classes";
 import EventRegistrationFields from "@/components/EventRegistrationFields";
 
+type ComposerTargetType = TargetType | "DEPARTMENT_HOD";
+
 const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
 const blankE = {
   title: "",
@@ -85,8 +87,6 @@ const blankInvite = {
   roomId: "",
 };
 type Tab = "announcements" | "events" | "queries" | "people";
-type ComposerTargetType = TargetType | "DEPARTMENT_HOD";
-
 export default function DashboardClient({ departmentScoped = false, initialTab = "announcements" }: { departmentScoped?: boolean; initialTab?: Tab }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(() => {
@@ -104,8 +104,8 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  const [a, setA] = useState(blankA);
-  const [ev, setEv] = useState(blankE);
+  const [a, setA] = useState(() => ({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankA.targetType }));
+  const [ev, setEv] = useState(() => ({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankE.targetType }));
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [invite, setInvite] = useState(blankInvite);
   const [departments, setDepartments] = useState<StructureDepartment[]>([]);
@@ -225,7 +225,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         title: a.title,
         content: a.content,
         urgent: a.urgent,
-        targetType: a.targetType,
+        targetType: a.targetType === "DEPARTMENT_HOD" ? "ROLE" : a.targetType,
         departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (a.departmentId ? Number(a.departmentId) : undefined),
         branchId: a.branchId ? Number(a.branchId) : undefined,
         sectionId: a.sectionId ? Number(a.sectionId) : undefined,
@@ -268,7 +268,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         location: ev.location,
         startAt: new Date(ev.startAt).toISOString(),
         endAt: new Date(ev.endAt).toISOString(),
-        targetType: ev.targetType,
+        targetType: ev.targetType === "DEPARTMENT_HOD" ? "ROLE" : ev.targetType,
         departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (ev.departmentId ? Number(ev.departmentId) : undefined),
         branchId: ev.branchId ? Number(ev.branchId) : undefined,
         sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
@@ -467,7 +467,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
               </div>
               <SoftBadge>DRAFT</SoftBadge>
             </div>
-            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} />
+            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} scopeDepartmentId={scopeDepartmentId} />
             <Field label="Title" htmlFor="ann-title" className="mb-4">
               <input id="ann-title" required className={inputBase} maxLength={180} value={a.title} onChange={(e) => setA((v) => ({ ...v, title: e.target.value }))} />
             </Field>
