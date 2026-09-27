@@ -42,3 +42,9 @@
 - Applied the REKKI surface/palette normalization to public pages, authentication surfaces, authenticated shared pages, and all role dashboard roots: Student, Faculty, HOD, Department Admin, Principal, Dean, and Super Admin.
 - Normalized tables, forms, status pills, modals, empty/loading/error states, and shared navigation toward Obsidian/Carbon/Graphite/Iron/Steel with Signal Blue as the only chromatic accent.
 - Left Home hero/vortex geometry, application logic, routing, API/data behavior, and permissions unchanged.
+
+
+## 2026-09-27 — REKKI styling validation pass
+- Finalized the authentication split and typography normalization after the shared rollout.
+- Removed remaining auth-specific chromatic gradients from the converted auth shell and kept the existing AuthKit interaction/animation behavior.
+- Added scoped legacy-color neutralization so existing page-specific utility classes resolve into the REKKI surface stack without changing application behavior.
