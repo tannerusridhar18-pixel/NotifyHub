@@ -3,7 +3,7 @@ import { useState } from "react";
 import { eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
 import type { EventItem } from "@/types";
 
-export default function EventRegistrationPanel({ event }: { event: EventItem }) {
+export default function EventRegistrationPanel({ event, canManageRegistrations }: { event: EventItem; canManageRegistrations: boolean }) {
   const [message, setMessage] = useState("");
   const [registrations, setRegistrations] = useState<EventRegistration[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,8 +46,6 @@ export default function EventRegistrationPanel({ event }: { event: EventItem }) 
     ? "Registering…"
     : isRegistered
     ? "Already registered"
-    : closed
-    ? reason
     : "Register";
 
   const buttonDisabled = closed || loading || isRegistered;
@@ -55,25 +53,38 @@ export default function EventRegistrationPanel({ event }: { event: EventItem }) 
   return (
     <section className="mt-4 border-t border-border pt-4" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-wrap gap-2 print-hide">
-        <button
-          disabled={buttonDisabled}
-          onClick={() => void register()}
-          className="rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {buttonText}
-        </button>
-        <button
-          onClick={() => void loadRegistrations()}
-          className="rounded-lg border border-brand/40 px-3 py-2 text-xs font-bold text-brand-light hover:bg-brand-50"
-        >
-          View registrations
-        </button>
-        <a
-          href={eventRegistrationExportUrl(event.id)}
-          className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2"
-        >
-          Export CSV
-        </a>
+        {closed ? (
+          <span
+            className="inline-flex items-center rounded-full border border-border bg-surface-2 px-3 py-2 text-xs font-bold text-muted"
+            aria-label={reason}
+          >
+            {reason}
+          </span>
+        ) : (
+          <button
+            disabled={buttonDisabled}
+            onClick={() => void register()}
+            className="rounded-lg bg-brand px-3 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {buttonText}
+          </button>
+        )}
+        {canManageRegistrations && (
+          <>
+            <button
+              onClick={() => void loadRegistrations()}
+              className="rounded-lg border border-brand/40 px-3 py-2 text-sm font-bold text-brand-light hover:bg-brand-50"
+            >
+              View registrations
+            </button>
+            <a
+              href={eventRegistrationExportUrl(event.id)}
+              className="rounded-lg border border-border px-3 py-2 text-sm font-bold text-muted hover:bg-surface-2"
+            >
+              Export CSV
+            </a>
+          </>
+        )}
       </div>
       {message && <p className="mt-2 text-xs text-muted print-hide">{message}</p>}
       {registrations && (
