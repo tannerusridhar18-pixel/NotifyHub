@@ -343,18 +343,6 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   return (
     <div className="mx-auto w-full max-w-[1450px] px-4 py-8 sm:px-8 sm:py-10 lg:px-[clamp(20px,4vw,60px)]">
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      {departmentScoped && (
-        <div className="mb-5">
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2/90 px-3.5 py-2 text-xs font-extrabold text-muted shadow-soft backdrop-blur-xl transition hover:border-brand/50 hover:bg-brand-50 hover:text-ink"
-          >
-            <span aria-hidden="true">←</span>
-            <span>Back to Department Dashboard</span>
-          </button>
-        </div>
-      )}
       <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:flex-row">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_12px_rgba(99,102,241,0.2)] backdrop-blur-md">
@@ -366,15 +354,27 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
           </h1>
           <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted/90">A focused workspace for publishing, scheduling, and provisioning real-time campus communication.</p>
         </div>
-        <div className="flex items-center gap-3 pt-1">
-          <span className="flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3 py-1.5 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
-            <span className="relative flex h-2 w-2 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
+        <div className="flex flex-col items-end gap-2 pt-1">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3 py-1.5 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
+              <span className="relative flex h-2 w-2 items-center justify-center">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
+              </span>
+              System live
             </span>
-            System live
-          </span>
-          <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
+            <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
+          </div>
+          {departmentScoped && (
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2/90 px-3.5 py-2 text-xs font-extrabold text-muted shadow-soft backdrop-blur-xl transition hover:border-brand/50 hover:bg-brand-50 hover:text-ink"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Back to Department Dashboard</span>
+            </button>
+          )}
         </div>
       </header>
 
