@@ -3,71 +3,175 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-function buildHourglass(): THREE.BufferGeometry {
-  const positions: number[] = [];
-  const radialSteps = 56;
-  const halfHeight = 2.45;
-  const pointsPerCurve = 64;
+const HALF_HEIGHT = 3.35;
+const WAIST_RADIUS = 0.18;
+const EDGE_RADIUS = 4.9;
 
-  const radiusAt = (y: number) => {
-    const normalized = Math.abs(y) / halfHeight;
-    return 0.16 + 1.48 * Math.pow(normalized, 0.78) + 0.08 * Math.sin(normalized * Math.PI * 3);
-  };
-
-  for (let r = 0; r < radialSteps; r += 1) {
-    const theta = (r / radialSteps) * Math.PI * 2;
-    for (let i = 0; i < pointsPerCurve - 1; i += 1) {
-      const y0 = -halfHeight + (i / (pointsPerCurve - 1)) * halfHeight * 2;
-      const y1 = -halfHeight + ((i + 1) / (pointsPerCurve - 1)) * halfHeight * 2;
-      const twist0 = theta + y0 * 0.22 + Math.sin(y0 * 2.2 + theta) * 0.025;
-      const twist1 = theta + y1 * 0.22 + Math.sin(y1 * 2.2 + theta) * 0.025;
-      const r0 = radiusAt(y0);
-      const r1 = radiusAt(y1);
-      positions.push(
-        Math.cos(twist0) * r0, y0, Math.sin(twist0) * r0,
-        Math.cos(twist1) * r1, y1, Math.sin(twist1) * r1,
-      );
-    }
-  }
-
-  for (let y = 0; y < 42; y += 1) {
-    const value = -halfHeight + (y / 41) * halfHeight * 2;
-    const radius = radiusAt(value);
-    const segments = 96;
-    for (let i = 0; i < segments; i += 1) {
-      const a0 = (i / segments) * Math.PI * 2 + value * 0.22;
-      const a1 = ((i + 1) / segments) * Math.PI * 2 + value * 0.22;
-      const wobble0 = 1 + Math.sin(a0 * 7 + value * 2.4) * 0.025;
-      const wobble1 = 1 + Math.sin(a1 * 7 + value * 2.4) * 0.025;
-      positions.push(
-        Math.cos(a0) * radius * wobble0, value, Math.sin(a0) * radius * wobble0,
-        Math.cos(a1) * radius * wobble1, value, Math.sin(a1) * radius * wobble1,
-      );
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  return geometry;
+function radiusAt(y: number) {
+  const t = Math.min(Math.abs(y) / HALF_HEIGHT, 1);
+  const eased = Math.pow(t, 0.58);
+  return WAIST_RADIUS + (EDGE_RADIUS - WAIST_RADIUS) * eased;
 }
 
-function buildGroundRings(): THREE.BufferGeometry {
+function buildContourGeometry() {
   const positions: number[] = [];
-  const rings = 16;
-  const segments = 128;
+  const rings = 92;
+  const segments = 220;
 
   for (let ring = 0; ring < rings; ring += 1) {
-    const radius = 0.25 + (ring / (rings - 1)) * 4.8;
+    const y = -HALF_HEIGHT + (ring / (rings - 1)) * HALF_HEIGHT * 2;
+    const radius = radiusAt(y);
+
     for (let i = 0; i < segments; i += 1) {
       const a0 = (i / segments) * Math.PI * 2;
       const a1 = ((i + 1) / segments) * Math.PI * 2;
-      const wave0 = Math.sin(a0 * 7 + radius * 2.5) * 0.035;
-      const wave1 = Math.sin(a1 * 7 + radius * 2.5) * 0.035;
+      const wave0 = 1 + 0.018 * Math.sin(a0 * 9 + y * 2.4);
+      const wave1 = 1 + 0.018 * Math.sin(a1 * 9 + y * 2.4);
+      const twist = y * 0.17;
+
       positions.push(
-        Math.cos(a0) * (radius + wave0), -2.62, Math.sin(a0) * (radius + wave0),
-        Math.cos(a1) * (radius + wave1), -2.62, Math.sin(a1) * (radius + wave1),
+        Math.cos(a0 + twist) * radius * wave0,
+        y,
+        Math.sin(a0 + twist) * radius * wave0,
+        Math.cos(a1 + twist) * radius * wave1,
+        y,
+        Math.sin(a1 + twist) * radius * wave1,
       );
     }
+  }
+
+  return new THREE.BufferGeometry().setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+}
+
+function buildFlowGeometry() {
+  const positions: number[] = [];
+  const lines = 115;
+  const points = 105;
+
+  for (let line = 0; line < lines; line += 1) {
+    const base = (line / lines) * Math.PI * 2;
+    const phase = line * 0.37;
+
+    for (let i = 0; i < points - 1; i += 1) {
+      const y0 = -HALF_HEIGHT + (i / (points - 1)) * HALF_HEIGHT * 2;
+      const y1 = -HALF_HEIGHT + ((i + 1) / (points - 1)) * HALF_HEIGHT * 2;
+
+      const twist0 =
+        base +
+        y0 * 0.34 +
+        Math.sin(y0 * 1.45 + phase) * 0.075 +
+        Math.sin(y0 * 3.1 + base * 2) * 0.018;
+      const twist1 =
+        base +
+        y1 * 0.34 +
+        Math.sin(y1 * 1.45 + phase) * 0.075 +
+        Math.sin(y1 * 3.1 + base * 2) * 0.018;
+
+      const r0 = radiusAt(y0) * (0.985 + 0.025 * Math.sin(base * 5 + y0 * 1.8));
+      const r1 = radiusAt(y1) * (0.985 + 0.025 * Math.sin(base * 5 + y1 * 1.8));
+
+      positions.push(
+        Math.cos(twist0) * r0,
+        y0,
+        Math.sin(twist0) * r0,
+        Math.cos(twist1) * r1,
+        y1,
+        Math.sin(twist1) * r1,
+      );
+    }
+  }
+
+  return new THREE.BufferGeometry().setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+}
+
+function buildGroundFlowGeometry() {
+  const positions: number[] = [];
+  const lines = 105;
+  const points = 115;
+
+  for (let line = 0; line < lines; line += 1) {
+    const base = (line / lines) * Math.PI * 2;
+    const phase = line * 0.61;
+
+    for (let i = 0; i < points - 1; i += 1) {
+      const r0 = 0.18 + (i / (points - 1)) * 6.5;
+      const r1 = 0.18 + ((i + 1) / (points - 1)) * 6.5;
+
+      const a0 = base + r0 * 0.82 + Math.sin(r0 * 1.7 + phase) * 0.055;
+      const a1 = base + r1 * 0.82 + Math.sin(r1 * 1.7 + phase) * 0.055;
+
+      const y0 = -3.25 + Math.sin(r0 * 1.6 + phase) * 0.035;
+      const y1 = -3.25 + Math.sin(r1 * 1.6 + phase) * 0.035;
+
+      positions.push(
+        Math.cos(a0) * r0,
+        y0,
+        Math.sin(a0) * r0,
+        Math.cos(a1) * r1,
+        y1,
+        Math.sin(a1) * r1,
+      );
+    }
+  }
+
+  return new THREE.BufferGeometry().setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+}
+
+function buildGroundContoursGeometry() {
+  const positions: number[] = [];
+  const rings = 28;
+  const segments = 240;
+
+  for (let ring = 0; ring < rings; ring += 1) {
+    const radius = 0.25 + (ring / (rings - 1)) * 6.2;
+
+    for (let i = 0; i < segments; i += 1) {
+      const a0 = (i / segments) * Math.PI * 2;
+      const a1 = ((i + 1) / segments) * Math.PI * 2;
+      const wave0 = Math.sin(a0 * 7 + radius * 2.3) * 0.045;
+      const wave1 = Math.sin(a1 * 7 + radius * 2.3) * 0.045;
+
+      positions.push(
+        Math.cos(a0) * (radius + wave0),
+        -3.27,
+        Math.sin(a0) * (radius + wave0),
+        Math.cos(a1) * (radius + wave1),
+        -3.27,
+        Math.sin(a1) * (radius + wave1),
+      );
+    }
+  }
+
+  return new THREE.BufferGeometry().setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+}
+
+function buildParticles() {
+  const positions: number[] = [];
+  const count = 950;
+
+  for (let i = 0; i < count; i += 1) {
+    const t = (i * 0.61803398875) % 1;
+    const y = -HALF_HEIGHT + t * HALF_HEIGHT * 2;
+    const theta = (i * 2.3999632297) % (Math.PI * 2);
+    const radius = radiusAt(y) * (0.94 + ((i * 0.754877666) % 1) * 0.09);
+
+    positions.push(
+      Math.cos(theta + y * 0.34) * radius,
+      y,
+      Math.sin(theta + y * 0.34) * radius,
+    );
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -84,9 +188,10 @@ export default function HeroVortex() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 30);
-    camera.position.set(0, 0.25, 9.2);
-    camera.lookAt(0, -0.2, 0);
+
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 40);
+    camera.position.set(0, 0.05, 12.6);
+    camera.lookAt(0, -0.15, 0);
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -96,8 +201,6 @@ export default function HeroVortex() {
         powerPreference: "high-performance",
       });
     } catch {
-      // Keep the homepage usable when WebGL is unavailable or the browser
-      // cannot create a graphics context.
       return;
     }
 
@@ -114,37 +217,59 @@ export default function HeroVortex() {
     mount.appendChild(renderer.domElement);
 
     const vortex = new THREE.Group();
-    const vortexMaterial = new THREE.LineBasicMaterial({
-      color: 0xe9edf2,
-      transparent: true,
-      opacity: 0.33,
-      depthWrite: false,
-    });
-    const vortexGeometry = buildHourglass();
-    const vortexLines = new THREE.LineSegments(vortexGeometry, vortexMaterial);
-    vortex.add(vortexLines);
 
-    const waistMaterial = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.22,
-      depthWrite: false,
-    });
-    const waistGeometry = new THREE.TorusGeometry(0.17, 0.008, 4, 96);
-    const waist = new THREE.LineSegments(new THREE.WireframeGeometry(waistGeometry), waistMaterial);
-    waist.rotation.x = Math.PI / 2;
-    vortex.add(waist);
-
-    const ringMaterial = new THREE.LineBasicMaterial({
-      color: 0xd7dde5,
+    const contourMaterial = new THREE.LineBasicMaterial({
+      color: 0xf4f6f8,
       transparent: true,
       opacity: 0.16,
       depthWrite: false,
     });
-    const ringGeometry = buildGroundRings();
-    const groundRings = new THREE.LineSegments(ringGeometry, ringMaterial);
+    const contourGeometry = buildContourGeometry();
+    const contours = new THREE.LineSegments(contourGeometry, contourMaterial);
 
-    scene.add(vortex, groundRings);
+    const flowMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.29,
+      depthWrite: false,
+    });
+    const flowGeometry = buildFlowGeometry();
+    const flowLines = new THREE.LineSegments(flowGeometry, flowMaterial);
+
+    const groundFlowMaterial = new THREE.LineBasicMaterial({
+      color: 0xf4f6f8,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+    });
+    const groundFlowGeometry = buildGroundFlowGeometry();
+    const groundFlow = new THREE.LineSegments(groundFlowGeometry, groundFlowMaterial);
+
+    const groundContourMaterial = new THREE.LineBasicMaterial({
+      color: 0xdde3e9,
+      transparent: true,
+      opacity: 0.11,
+      depthWrite: false,
+    });
+    const groundContourGeometry = buildGroundContoursGeometry();
+    const groundContours = new THREE.LineSegments(
+      groundContourGeometry,
+      groundContourMaterial,
+    );
+
+    const particleMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.024,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+      sizeAttenuation: true,
+    });
+    const particleGeometry = buildParticles();
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+
+    vortex.add(contours, flowLines, particles);
+    scene.add(vortex, groundFlow, groundContours);
 
     const resize = () => {
       const width = Math.max(mount.clientWidth, 1);
@@ -152,27 +277,27 @@ export default function HeroVortex() {
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
-    };
-    resize();
 
+      const compact = width < 760;
+      vortex.scale.setScalar(compact ? 0.7 : 1.0);
+      vortex.position.y = compact ? 0.25 : 0.05;
+      groundFlow.scale.setScalar(compact ? 0.72 : 1);
+      groundContours.scale.setScalar(compact ? 0.72 : 1);
+    };
+
+    resize();
     const observer = new ResizeObserver(resize);
     observer.observe(mount);
 
     let frame = 0;
     let active = true;
+    let targetScroll = 0;
+    let scrollProgress = 0;
     const clock = new THREE.Clock();
 
-    const animate = () => {
-      if (!active) return;
-
-      const elapsed = clock.getElapsedTime();
-      if (!reducedMotion) {
-        vortex.rotation.y = elapsed * 0.055;
-        vortex.rotation.z = Math.sin(elapsed * 0.17) * 0.035;
-        groundRings.rotation.y = -elapsed * 0.018;
-      }
-      renderer.render(scene, camera);
-      frame = requestAnimationFrame(animate);
+    const onScroll = () => {
+      const max = Math.max(window.innerHeight * 0.9, 1);
+      targetScroll = Math.min(window.scrollY / max, 1);
     };
 
     const visibility = () => {
@@ -186,19 +311,59 @@ export default function HeroVortex() {
       }
     };
 
+    const animate = () => {
+      if (!active) return;
+
+      const elapsed = clock.getElapsedTime();
+      if (!reducedMotion) {
+        vortex.rotation.y = elapsed * 0.032;
+        vortex.rotation.z = Math.sin(elapsed * 0.12) * 0.012;
+        groundFlow.rotation.y = -elapsed * 0.012;
+        groundContours.rotation.y = -elapsed * 0.007;
+      }
+
+      scrollProgress += (targetScroll - scrollProgress) * 0.055;
+
+      const lift = scrollProgress * 0.75;
+      vortex.position.y = (mount.clientWidth < 760 ? 0.25 : 0.05) + lift;
+      vortex.scale.setScalar((mount.clientWidth < 760 ? 0.7 : 1) + scrollProgress * 0.08);
+      groundFlow.position.y = -scrollProgress * 0.35;
+      groundContours.position.y = -scrollProgress * 0.35;
+
+      const fade = 1 - scrollProgress * 0.62;
+      flowMaterial.opacity = 0.29 * fade;
+      contourMaterial.opacity = 0.16 * fade;
+      particleMaterial.opacity = 0.42 * fade;
+      groundFlowMaterial.opacity = 0.22 * fade;
+      groundContourMaterial.opacity = 0.11 * fade;
+
+      renderer.render(scene, camera);
+      frame = requestAnimationFrame(animate);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", visibility);
+    onScroll();
     animate();
 
     return () => {
       cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", visibility);
       observer.disconnect();
-      vortexGeometry.dispose();
-      waistGeometry.dispose();
-      ringGeometry.dispose();
-      vortexMaterial.dispose();
-      waistMaterial.dispose();
-      ringMaterial.dispose();
+
+      contourGeometry.dispose();
+      flowGeometry.dispose();
+      groundFlowGeometry.dispose();
+      groundContourGeometry.dispose();
+      particleGeometry.dispose();
+
+      contourMaterial.dispose();
+      flowMaterial.dispose();
+      groundFlowMaterial.dispose();
+      groundContourMaterial.dispose();
+      particleMaterial.dispose();
+
       renderer.dispose();
       renderer.domElement.remove();
     };
