@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { announcements, upcomingEvents } from "@/lib/api";
+import { announcements, currentUser, upcomingEvents, type CurrentUser } from "@/lib/api";
 import type { Announcement, EventItem } from "@/types";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import EventCard from "@/components/EventCard";
@@ -17,6 +17,12 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function canManageEventRegistrations(user: CurrentUser | null, event: EventItem) {
+  if (!user) return false;
+  if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") return true;
+  return user.role === "DEPARTMENT_ADMIN" && user.departmentId != null && user.departmentId === event.departmentId;
 }
 
 const featureItems = [
@@ -56,17 +62,20 @@ export default function Home() {
   const [urgent, setUrgent] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewer, setViewer] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     Promise.all([
       announcements({ size: 3 }),
       upcomingEvents(0, 3),
       announcements({ size: 3, urgent: true }),
+      currentUser(),
     ])
-      .then(([a, e, u]) => {
+      .then(([a, e, u, user]) => {
         setItems(a.content);
         setUpcoming(e.content);
         setUrgent(u.content);
+        setViewer(user);
       })
       .catch((e) =>
         setError(e instanceof Error ? e.message : "Unable to load campus updates."),
@@ -299,7 +308,10 @@ export default function Home() {
               <div className="nh-card-grid">
                 {upcoming.map((item, index) => (
                   <Reveal key={item.id} delay={index * 70}>
-                    <EventCard item={item} />
+                    <EventCard
+                      item={item}
+                      canManageRegistrations={canManageEventRegistrations(viewer, item)}
+                    />
                   </Reveal>
                 ))}
               </div>
