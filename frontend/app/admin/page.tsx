@@ -18,7 +18,7 @@ export default function AdminLogin() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && u.roleLevel === 0) {
+        if (alive && u && u.roleLevel === 0) {
           router.replace("/admin/dashboard");
         }
       } catch {}
