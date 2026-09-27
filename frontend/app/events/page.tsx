@@ -37,7 +37,7 @@ export default function EventsPage() {
           <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
         </div>
 <Reveal className="max-w-[760px]">
-        <span className="inline-flex items-center gap-2 rounded-full border border-brand-2/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-2-light uppercase shadow-[0_0_16px_rgba(168,85,247,0.25)] backdrop-blur-xl">
+        <span className="inline-flex items-center gap-2 rounded-full border border-brand-2/40 bg-brand-50/90 px-3.5 py-1 text-xs font-extrabold tracking-widest text-brand-2-light uppercase shadow-[0_0_16px_rgba(168,85,247,0.25)] backdrop-blur-xl">
           <span className="relative flex h-2 w-2 items-center justify-center">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-2-light opacity-75" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-2-light" />
@@ -45,7 +45,7 @@ export default function EventsPage() {
           Campus Activity Stream
         </span>
         <h1 className="my-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Upcoming Campus Events</h1>
-        <p className="text-base sm:text-lg leading-relaxed text-muted/95">
+        <p className="text-base sm:text-lg leading-relaxed text-muted">
           Track academic milestones, tech symposiums, workshops, and campus gatherings with synchronized real-time start countdowns.
         </p>
       </Reveal>
