@@ -3178,3 +3178,23 @@ footer {
     border-radius: var(--radius-buttons);
   }
 }
+
+
+@layer components {
+  .nh-rekki-scope [class*="text-[#"],
+  .nh-rekki-auth [class*="text-[#"],
+  .nh-public-page [class*="text-[#"] {
+    color: var(--color-paper) !important;
+  }
+  .nh-rekki-scope [class*="bg-[#"],
+  .nh-rekki-auth [class*="bg-[#"],
+  .nh-public-page [class*="bg-[#"] {
+    background-color: var(--color-graphite) !important;
+    background-image: none !important;
+  }
+  .nh-rekki-scope [class*="border-[#"],
+  .nh-rekki-auth [class*="border-[#"],
+  .nh-public-page [class*="border-[#"] {
+    border-color: rgba(255,255,255,.12) !important;
+  }
+}
