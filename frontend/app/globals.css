@@ -2441,6 +2441,29 @@ body {
   border-radius: 59px;
 }
 
+/* Keep the WebGL hero strictly behind the homepage content. */
+.nh-home .nh-hero {
+  overflow: hidden;
+}
+.nh-home .nh-vortex {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  z-index: 0 !important;
+}
+.nh-home .nh-vortex canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0 !important;
+}
+.nh-home .nh-home-hero-inner,
+.nh-home .nh-hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
 /* Home — preserve the existing Three.js vortex, but align its UI with REKKI. */
 .nh-home .nh-kicker {
   border-color: rgba(255,255,255,.12) !important;
