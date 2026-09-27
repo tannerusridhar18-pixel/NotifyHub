@@ -17,6 +17,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const isAdmin = path.startsWith("/admin");
   const isDashboard = path.startsWith("/dashboard");
+  const isDepartmentAdmin = path.startsWith("/department-admin");
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -28,7 +29,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
     return () => { alive = false; };
   }, [path]);
 
-  if (isAdmin || isDashboard) return <>{children}</>;
+  if (isAdmin || isDashboard || isDepartmentAdmin) return <>{children}</>;
 
   return (
     <>
