@@ -2958,3 +2958,65 @@ footer {
     filter: brightness(1.12);
   }
 }
+
+
+/* Public-site scroll motion — progressive enhancement layered on top of Reveal. */
+@keyframes nh-scroll-lift {
+  from {
+    opacity: .72;
+    transform: translate3d(0, 28px, 0) scale(.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes nh-scroll-drift {
+  from {
+    transform: translate3d(0, 20px, 0) scale(1.015);
+  }
+  to {
+    transform: translate3d(0, -12px, 0) scale(1);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .nh-home .nh-feature-panel,
+  .nh-home .nh-card-grid > *,
+  .nh-home .nh-content-heading,
+  .nh-home .nh-section-intro,
+  .nh-home .nh-cta-panel,
+  .nh-public-page .nh-public-content-card {
+    animation-name: nh-scroll-lift;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 34%;
+    will-change: transform, opacity;
+  }
+
+  .nh-home .nh-vortex {
+    animation-name: nh-scroll-drift;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(root);
+    animation-range: 0 75vh;
+    will-change: transform;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nh-home .nh-feature-panel,
+  .nh-home .nh-card-grid > *,
+  .nh-home .nh-content-heading,
+  .nh-home .nh-section-intro,
+  .nh-home .nh-cta-panel,
+  .nh-public-page .nh-public-content-card,
+  .nh-home .nh-vortex {
+    animation: none !important;
+    will-change: auto;
+  }
+}
