@@ -3,13 +3,13 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const HALF_HEIGHT = 3.95;
+const HALF_HEIGHT = 7.2;
 const WAIST_RADIUS = 0.18;
-const EDGE_RADIUS = 4.15;
+const EDGE_RADIUS = 5.25;
 
 function radiusAt(y: number) {
   const t = Math.min(Math.abs(y) / HALF_HEIGHT, 1);
-  const eased = Math.pow(t, 0.58);
+  const eased = Math.pow(t, 0.62);
   return WAIST_RADIUS + (EDGE_RADIUS - WAIST_RADIUS) * eased;
 }
 
@@ -31,8 +31,8 @@ const FLOW_VERTEX = `
     float streamA = sin(neckDistance * 5.4 - uTime * uFlow + angle * 3.0);
     float streamB = sin(neckDistance * 10.0 - uTime * uFlow * 0.58 - angle * 5.0);
 
-    float surface = smoothstep(0.12, 1.0, radius / 4.15);
-    float twist = (streamA * 0.035 + streamB * 0.012) * surface;
+    float surface = smoothstep(0.06, 1.0, radius / 5.25);
+    float twist = (streamA * 0.028 + streamB * 0.010) * surface;
 
     float a = angle
       + p.y * 0.17
@@ -134,8 +134,8 @@ function createGroundMaterial(color: number, opacity: number) {
 
 function buildContourGeometry() {
   const positions: number[] = [];
-  const rings = 150;
-  const segments = 320;
+  const rings = 190;
+  const segments = 360;
 
   for (let ring = 0; ring < rings; ring += 1) {
     const y = -HALF_HEIGHT + (ring / (rings - 1)) * HALF_HEIGHT * 2;
@@ -167,8 +167,8 @@ function buildContourGeometry() {
 
 function buildFlowGeometry() {
   const positions: number[] = [];
-  const lines = 185;
-  const points = 150;
+  const lines = 215;
+  const points = 175;
 
   for (let line = 0; line < lines; line += 1) {
     const base = (line / lines) * Math.PI * 2;
@@ -227,8 +227,8 @@ function buildGroundFlowGeometry() {
       const a0 = base + r0 * 0.82 + Math.sin(r0 * 1.7 + phase) * 0.055;
       const a1 = base + r1 * 0.82 + Math.sin(r1 * 1.7 + phase) * 0.055;
 
-      const y0 = -0.24 - Math.pow(t0, 0.72) * 3.22 + Math.sin(r0 * 1.6 + phase) * 0.035;
-      const y1 = -0.24 - Math.pow(t1, 0.72) * 3.22 + Math.sin(r1 * 1.6 + phase) * 0.035;
+      const y0 = -0.16 - Math.pow(t0, 0.78) * 3.55 + Math.sin(r0 * 1.6 + phase) * 0.035;
+      const y1 = -0.16 - Math.pow(t1, 0.78) * 3.55 + Math.sin(r1 * 1.6 + phase) * 0.035;
 
       positions.push(
         Math.cos(a0) * r0,
@@ -255,7 +255,7 @@ function buildGroundContoursGeometry() {
   for (let ring = 0; ring < rings; ring += 1) {
     const t = ring / (rings - 1);
     const radius = 0.16 + Math.pow(t, 1.72) * 6.2;
-    const floorY = -0.24 - Math.pow(t, 0.72) * 3.22;
+    const floorY = -0.16 - Math.pow(t, 0.78) * 3.55;
 
     for (let i = 0; i < segments; i += 1) {
       const a0 = (i / segments) * Math.PI * 2;
@@ -313,8 +313,8 @@ export default function HeroVortex() {
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 40);
-    camera.position.set(0, 0.18, 14.2);
-    camera.lookAt(0, -0.15, 0);
+    camera.position.set(0, 0.15, 15.6);
+    camera.lookAt(0, -0.55, 0);
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -341,11 +341,11 @@ export default function HeroVortex() {
 
     const vortex = new THREE.Group();
 
-    const contourMaterial = createFlowMaterial(0xf4f6f8, 0.16, 0.34);
+    const contourMaterial = createFlowMaterial(0xf4f6f8, 0.14, 0.34);
     const contourGeometry = buildContourGeometry();
     const contours = new THREE.LineSegments(contourGeometry, contourMaterial);
 
-    const flowMaterial = createFlowMaterial(0xffffff, 0.27, 0.78);
+    const flowMaterial = createFlowMaterial(0xffffff, 0.24, 0.78);
     const flowGeometry = buildFlowGeometry();
     const flowLines = new THREE.LineSegments(flowGeometry, flowMaterial);
 
@@ -441,8 +441,8 @@ export default function HeroVortex() {
       groundContours.position.y = -scrollProgress * 0.48;
 
       const fade = 1 - scrollProgress * 0.72;
-      flowMaterial.uniforms.uOpacity.value = 0.27 * fade;
-      contourMaterial.uniforms.uOpacity.value = 0.16 * fade;
+      flowMaterial.uniforms.uOpacity.value = 0.24 * fade;
+      contourMaterial.uniforms.uOpacity.value = 0.14 * fade;
       particleMaterial.opacity = 0.42 * fade;
       groundFlowMaterial.uniforms.uOpacity.value = 0.32 * fade;
       groundContourMaterial.uniforms.uOpacity.value = 0.12 * fade;
