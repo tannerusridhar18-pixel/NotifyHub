@@ -23,18 +23,32 @@ const FLOW_VERTEX = `
     vec3 p = position;
     float radius = max(length(p.xz), 0.001);
     float angle = atan(p.z, p.x);
+    float neckDistance = abs(p.y);
 
-    float waveA = sin(p.y * 2.15 + angle * 5.0 + uTime * uFlow);
-    float waveB = sin(p.y * 4.8 - angle * 3.0 + uTime * uFlow * 0.62);
-    float twist = (waveA * 0.045 + waveB * 0.018) * smoothstep(0.0, 1.0, radius / 4.2);
+    // Two opposing waves travel from the wide ends toward the neck.
+    // This creates the reference-like streaming sensation without moving
+    // the whole funnel as a rigid object.
+    float streamA = sin(neckDistance * 5.4 - uTime * uFlow + angle * 3.0);
+    float streamB = sin(neckDistance * 10.0 - uTime * uFlow * 0.58 - angle * 5.0);
 
-    float a = angle + twist + sin(p.y * 0.75 + uTime * 0.22) * 0.012;
-    p.x = cos(a) * radius;
-    p.z = sin(a) * radius;
+    float surface = smoothstep(0.12, 1.0, radius / 4.15);
+    float twist = (streamA * 0.035 + streamB * 0.012) * surface;
 
-    p.y += sin(angle * 3.0 + p.y * 1.7 + uTime * 0.42) * 0.018;
+    float a = angle
+      + p.y * 0.17
+      + twist
+      + sin(p.y * 0.7 + uTime * 0.18) * 0.009;
 
-    vEnergy = 0.55 + 0.45 * (0.5 + 0.5 * waveA);
+    // A very small radial pulse travels inward with the stream phase.
+    float radialFlow = (streamA * 0.012 + streamB * 0.004) * surface;
+    float streamedRadius = radius + radialFlow;
+
+    p.x = cos(a) * streamedRadius;
+    p.z = sin(a) * streamedRadius;
+
+    p.y += sin(angle * 3.0 + p.y * 1.7 + uTime * 0.32) * 0.012;
+
+    vEnergy = 0.52 + 0.48 * (0.5 + 0.5 * streamA);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }
@@ -54,11 +68,13 @@ const FLOW_FRAGMENT = `
 const GROUND_VERTEX = `
   uniform float uTime;
   varying float vEnergy;
+  varying float vRadius;
 
   void main() {
     vec3 p = position;
     float radius = length(p.xz);
     float angle = atan(p.z, p.x);
+    vRadius = radius;
 
     float wave = sin(radius * 2.25 - uTime * 0.85 + angle * 3.0);
     float wave2 = sin(radius * 5.2 - uTime * 0.42 + angle * 7.0);
@@ -76,9 +92,14 @@ const GROUND_FRAGMENT = `
   uniform vec3 uColor;
   uniform float uOpacity;
   varying float vEnergy;
+  varying float vRadius;
 
   void main() {
-    gl_FragColor = vec4(uColor, uOpacity * (0.72 + vEnergy * 0.28));
+    // Keep the center dense and readable while letting rings disappear softly outward.
+    float edgeFade = 1.0 - smoothstep(2.8, 6.25, vRadius);
+    float centerLift = 0.72 + 0.28 * (1.0 - smoothstep(0.0, 1.4, vRadius));
+    float alpha = uOpacity * edgeFade * centerLift * (0.72 + vEnergy * 0.28);
+    gl_FragColor = vec4(uColor, alpha);
   }
 `;
 
@@ -113,8 +134,8 @@ function createGroundMaterial(color: number, opacity: number) {
 
 function buildContourGeometry() {
   const positions: number[] = [];
-  const rings = 108;
-  const segments = 260;
+  const rings = 150;
+  const segments = 320;
 
   for (let ring = 0; ring < rings; ring += 1) {
     const y = -HALF_HEIGHT + (ring / (rings - 1)) * HALF_HEIGHT * 2;
@@ -146,8 +167,8 @@ function buildContourGeometry() {
 
 function buildFlowGeometry() {
   const positions: number[] = [];
-  const lines = 145;
-  const points = 125;
+  const lines = 185;
+  const points = 150;
 
   for (let line = 0; line < lines; line += 1) {
     const base = (line / lines) * Math.PI * 2;
@@ -190,8 +211,8 @@ function buildFlowGeometry() {
 
 function buildGroundFlowGeometry() {
   const positions: number[] = [];
-  const lines = 125;
-  const points = 115;
+  const lines = 150;
+  const points = 125;
 
   for (let line = 0; line < lines; line += 1) {
     const base = (line / lines) * Math.PI * 2;
@@ -226,11 +247,12 @@ function buildGroundFlowGeometry() {
 
 function buildGroundContoursGeometry() {
   const positions: number[] = [];
-  const rings = 32;
-  const segments = 240;
+  const rings = 82;
+  const segments = 300;
 
   for (let ring = 0; ring < rings; ring += 1) {
-    const radius = 0.25 + (ring / (rings - 1)) * 6.2;
+    const t = ring / (rings - 1);
+    const radius = 0.16 + Math.pow(t, 1.72) * 6.2;
 
     for (let i = 0; i < segments; i += 1) {
       const a0 = (i / segments) * Math.PI * 2;
