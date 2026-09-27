@@ -72,7 +72,7 @@ export default function ForgotPassword() {
               {error && <div className={styles.error}>{error}</div>}
               {message && <div className={styles.success}>{message}</div>}
 
-              <button type="submit" className={styles.cta} disabled={busy}>
+              <button type="submit" className={styles.cta} disabled={busy} suppressHydrationWarning>
                 {busy ? "Dispatching Instructions…" : "Send Recovery Instructions →"}
               </button>
             </form>
