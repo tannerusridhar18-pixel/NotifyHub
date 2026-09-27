@@ -1,9 +1,7 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import RoleDashboard from "@/components/RoleDashboard";
 
-export default async function HodDashboard() {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("NH_ACCESS")?.value) redirect("/auth/login");
+export const dynamic = "force-dynamic";
+
+export default function HodDashboard() {
   return <RoleDashboard role="HOD" />;
 }

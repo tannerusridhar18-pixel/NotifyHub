@@ -1,8 +1,11 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function SuperAdminDashboard() {
-  const cookieStore = await cookies();
-  if (!cookieStore.get("NH_ACCESS")?.value) redirect("/admin");
-  redirect("/admin/dashboard");
+export default function SuperAdminDashboard() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/admin/dashboard");
+  }, [router]);
+  return null;
 }

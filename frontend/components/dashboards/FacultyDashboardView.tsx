@@ -16,6 +16,7 @@ import {
   deleteEvent,
   structureSections,
   logout,
+  safeUrl,
   type CurrentUser,
   type StructureSection,
 } from "@/lib/api";
@@ -88,6 +89,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
@@ -212,6 +214,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
           <span>{faculty?.facultyId ? `Staff ID: ${faculty.facultyId}` : user.email}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/dashboard/my-posts" className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all">My Posts</Link>
           <Link
             href="/dashboard/feed?from=faculty"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"
@@ -522,10 +525,10 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                           </button>
                         </div>
                         <p className="mt-1 text-xs text-muted line-clamp-2">{a.content}</p>
-                        {a.attachmentUrl && (
+                        {safeUrl(a.attachmentUrl) && (
                           <div className="mt-2 flex items-center gap-2 text-[11px] text-brand-light">
                             <span>📎</span>
-                            <a href={a.attachmentUrl} target="_blank" rel="noreferrer" className="hover:underline truncate">
+                            <a href={safeUrl(a.attachmentUrl)} target="_blank" rel="noreferrer" className="hover:underline truncate">
                               {a.attachmentName || a.attachmentUrl}
                             </a>
                           </div>

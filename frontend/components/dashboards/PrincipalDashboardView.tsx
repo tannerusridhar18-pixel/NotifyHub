@@ -27,7 +27,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
   const [error, setError] = useState("");
 
   // Broadcaster state
-  const [broadcastAudience, setBroadcastAudience] = useState<"GLOBAL" | "HOD" | "DEAN" | "FACULTY" | "STUDENT">("GLOBAL");
+  const [broadcastAudience, setBroadcastAudience] = useState<"HOD" | "DEAN">("HOD");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [urgent, setUrgent] = useState(false);
@@ -54,6 +54,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
@@ -66,8 +67,8 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
         title,
         content,
         urgent,
-        targetType: broadcastAudience === "GLOBAL" ? "GLOBAL" : "ROLE",
-        role: broadcastAudience === "GLOBAL" ? undefined : broadcastAudience,
+        targetType: "ROLE",
+        role: broadcastAudience,
         attachmentUrl: attachmentUrl.trim() || undefined,
         attachmentName: attachmentName.trim() || undefined,
       });
@@ -117,6 +118,7 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
           <span>Chief Administrative Officer · {user.email}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/dashboard/my-posts" className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all">My Posts</Link>
           <Link
             href="/dashboard/feed?from=principal"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"
@@ -265,11 +267,8 @@ export default function PrincipalDashboardView({ user }: { user: CurrentUser }) 
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                     {(
                       [
-                        { key: "GLOBAL", label: "🌐 All Campus" },
                         { key: "HOD", label: "👑 HODs Only" },
                         { key: "DEAN", label: "🏛️ Deans Only" },
-                        { key: "FACULTY", label: "👨‍🏫 Faculty" },
-                        { key: "STUDENT", label: "🎓 Students" },
                       ] as const
                     ).map((aud) => (
                       <button

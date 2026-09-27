@@ -7,6 +7,7 @@ import { StatusBadge, UrgentBadge } from "@/components/ui/Badge";
 import Countdown from "@/components/Countdown";
 import EventRegistrationPanel from "@/components/EventRegistrationPanel";
 import { buttonClasses } from "@/components/ui/Button";
+import { safeUrl } from "@/lib/api";
 
 export type ModalItem =
   | { type: "announcement"; data: Announcement }
@@ -118,7 +119,7 @@ export default function DetailModal({
                 {item.data.content}
               </div>
 
-              {item.data.attachmentUrl && (
+              {safeUrl(item.data.attachmentUrl) && (
                 <div className="mt-4 rounded-2xl border border-brand/30 bg-brand-50/50 p-4 backdrop-blur-md flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 overflow-hidden">
                     <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-brand/20 text-brand-light font-bold text-lg">
@@ -130,7 +131,7 @@ export default function DetailModal({
                     </div>
                   </div>
                   <a
-                    href={item.data.attachmentUrl}
+                    href={safeUrl(item.data.attachmentUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-none rounded-xl bg-gradient-to-r from-brand to-brand-2 px-4 py-2 text-xs font-bold text-white hover:opacity-90 shadow-glow transition-all"
@@ -155,7 +156,7 @@ export default function DetailModal({
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
                 {item.data.title}
               </h2>
-              {item.data.photoUrl && <img src={item.data.photoUrl} alt="" className="mb-5 h-48 w-full rounded-2xl object-cover" />}
+              {safeUrl(item.data.photoUrl) && <img src={safeUrl(item.data.photoUrl)} alt="" className="mb-5 h-48 w-full rounded-2xl object-cover" />}
 
               <div className="mb-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-3.5">
@@ -183,7 +184,7 @@ export default function DetailModal({
               <div className="rounded-2xl border border-white/[0.08] bg-surface-2/80 p-5 sm:p-6 text-sm sm:text-base leading-relaxed text-muted/95 whitespace-pre-wrap">
                 {item.data.description}
               </div>
-              {item.data.externalLink && <a href={item.data.externalLink} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-brand-light underline">Open event link</a>}
+              {safeUrl(item.data.externalLink) && <a href={safeUrl(item.data.externalLink)} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-brand-light underline">Open event link</a>}
               <EventRegistrationPanel event={item.data} />
             </div>
           )}

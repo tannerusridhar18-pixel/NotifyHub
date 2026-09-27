@@ -76,7 +76,7 @@ export type EventItem = {
   location: string;
   startAt: string;
   endAt: string;
-  status: "DRAFT" | "PUBLISHED" | "CANCELLED";
+  status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "ARCHIVED";
   targetType: TargetType;
   departmentId: number | null;
   branchId: number | null;
@@ -138,6 +138,23 @@ export type DepartmentAnalytics = {
   activeEvents: number;
   openQueries: number;
   answeredQueries: number;
+};
+
+export type DepartmentStudentItem = {
+  id: number;
+  studentId: string;
+  name: string;
+  email: string;
+  departmentId: number | null;
+  departmentName: string | null;
+  year: number;
+  semester: number;
+  branchId: number | null;
+  branchName: string | null;
+  sectionId: number | null;
+  sectionName: string | null;
+  hosteller: boolean;
+  status: string;
 };
 
 export type CampusOverviewDepartment = {

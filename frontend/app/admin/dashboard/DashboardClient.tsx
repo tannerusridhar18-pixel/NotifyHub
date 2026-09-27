@@ -7,15 +7,22 @@ import {
   currentUser,
   managedAnnouncements,
   managedEvents,
+  departmentManagedAnnouncements,
+  departmentManagedEvents,
+  myAnnouncements,
+  myEvents,
   createAnnouncement,
   publishAnnouncement,
   unpublishAnnouncement,
   archiveAnnouncement,
+  unarchiveAnnouncement,
   deleteAnnouncement,
   createEvent,
   publishEvent,
   unpublishEvent,
   cancelEvent,
+  archiveEvent,
+  unarchiveEvent,
   deleteEvent,
   deleteQuery,
   createInvitation,
@@ -26,6 +33,8 @@ import {
   structureHostels,
   structureBlocks,
   structureRooms,
+  eventRegistrations,
+  type EventRegistration,
 } from "@/lib/api";
 import type { StructureDepartment, StructureBranch, StructureSection, StructureHostel, StructureBlock, StructureRoom, InvitableRole } from "@/lib/api";
 import type { Announcement, CampusQuery, EventItem, TargetType } from "@/types";
@@ -39,14 +48,16 @@ import DetailModal from "@/components/ui/DetailModal";
 import { inputBase, textareaBase, cx } from "@/components/ui/classes";
 import EventRegistrationFields from "@/components/EventRegistrationFields";
 
-const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
+type ComposerTargetType = TargetType | "DEPARTMENT_HOD";
+
+const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as ComposerTargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
 const blankE = {
   title: "",
   description: "",
   location: "",
   startAt: "",
   endAt: "",
-  targetType: "GLOBAL" as TargetType,
+  targetType: "GLOBAL" as ComposerTargetType,
   departmentId: "",
   branchId: "",
   sectionId: "",
@@ -76,20 +87,25 @@ const blankInvite = {
   roomId: "",
 };
 type Tab = "announcements" | "events" | "queries" | "people";
-
-export default function DashboardClient() {
+export default function DashboardClient({ departmentScoped = false, initialTab = "announcements" }: { departmentScoped?: boolean; initialTab?: Tab }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("announcements");
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return initialTab;
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    if (departmentScoped) return initialTab;
+    return requestedTab === "events" || requestedTab === "announcements" ? requestedTab : "announcements";
+  });
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [evs, setEvs] = useState<EventItem[]>([]);
   const [queries, setQueries] = useState<CampusQuery[]>([]);
   const [modalItem, setModalItem] = useState<{ type: "announcement"; data: Announcement } | { type: "event"; data: EventItem } | { type: "query"; data: CampusQuery } | null>(null);
   const [identity, setIdentity] = useState("");
+  const [scopeDepartmentId, setScopeDepartmentId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  const [a, setA] = useState(blankA);
-  const [ev, setEv] = useState(blankE);
+  const [a, setA] = useState(() => ({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankA.targetType }));
+  const [ev, setEv] = useState(() => ({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankE.targetType }));
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [invite, setInvite] = useState(blankInvite);
   const [departments, setDepartments] = useState<StructureDepartment[]>([]);
@@ -99,19 +115,21 @@ export default function DashboardClient() {
   const [blocks, setBlocks] = useState<StructureBlock[]>([]);
   const [rooms, setRooms] = useState<StructureRoom[]>([]);
   const [invitableRoleList, setInvitableRoleList] = useState<InvitableRole[]>([]);
+  const [registrationRows, setRegistrationRows] = useState<Record<number, EventRegistration[]>>({});
+  const [registrationLoading, setRegistrationLoading] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const [x, y, z, d, b, s, h, bl, r, rl] = await Promise.all([
-      managedAnnouncements(),
-      managedEvents(),
-      adminQueries(),
-      structureDepartments(),
+      departmentScoped ? departmentManagedAnnouncements() : managedAnnouncements(),
+      departmentScoped ? departmentManagedEvents() : managedEvents(),
+      departmentScoped ? Promise.resolve({ content: [] as CampusQuery[] }) : adminQueries(),
+      departmentScoped ? Promise.resolve([] as StructureDepartment[]) : structureDepartments(),
       structureBranches(),
       structureSections(),
-      structureHostels(),
-      structureBlocks(),
-      structureRooms(),
-      invitableRoles().catch(() => []),
+      departmentScoped ? Promise.resolve([] as StructureHostel[]) : structureHostels(),
+      departmentScoped ? Promise.resolve([] as StructureBlock[]) : structureBlocks(),
+      departmentScoped ? Promise.resolve([] as StructureRoom[]) : structureRooms(),
+      departmentScoped ? Promise.resolve([] as InvitableRole[]) : invitableRoles().catch(() => []),
     ]);
     setAnns(x.content);
     setEvs(y.content);
@@ -131,11 +149,12 @@ export default function DashboardClient() {
       try {
         const u = await currentUser();
         if (cancelled) return;
-        if (u.roleLevel !== 0) {
+        if (!u || (departmentScoped ? u.role !== "DEPARTMENT_ADMIN" : u.roleLevel !== 0)) {
           router.replace("/");
           return;
         }
         setIdentity(u.email);
+        setScopeDepartmentId(u.departmentId ?? u.student?.departmentId ?? u.faculty?.departmentId ?? null);
         try {
           await load();
         } catch (e) {
@@ -148,7 +167,19 @@ export default function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [load, router]);
+  }, [departmentScoped, load, router]);
+
+  async function loadRegistrations(eventId: number) {
+    setRegistrationLoading(eventId);
+    try {
+      const rows = await eventRegistrations(eventId);
+      setRegistrationRows((current) => ({ ...current, [eventId]: rows }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load event registrations.");
+    } finally {
+      setRegistrationLoading(null);
+    }
+  }
 
   const act = useCallback(
     async (fn: () => Promise<unknown>, success: string) => {
@@ -194,15 +225,15 @@ export default function DashboardClient() {
         title: a.title,
         content: a.content,
         urgent: a.urgent,
-        targetType: a.targetType,
-        departmentId: a.departmentId ? Number(a.departmentId) : undefined,
+        targetType: a.targetType === "DEPARTMENT_HOD" ? "ROLE" : a.targetType,
+        departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (a.departmentId ? Number(a.departmentId) : undefined),
         branchId: a.branchId ? Number(a.branchId) : undefined,
         sectionId: a.sectionId ? Number(a.sectionId) : undefined,
         hostelId: a.hostelId ? Number(a.hostelId) : undefined,
         userEmail: a.userEmail || undefined,
-        role: a.role || undefined,
+        role: a.targetType === "DEPARTMENT_HOD" ? "HOD" : (a.role || undefined),
       });
-      setA(blankA);
+      setA({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" : blankA.targetType });
     }, "Announcement draft saved.");
   }
 
@@ -237,19 +268,19 @@ export default function DashboardClient() {
         location: ev.location,
         startAt: new Date(ev.startAt).toISOString(),
         endAt: new Date(ev.endAt).toISOString(),
-        targetType: ev.targetType,
-        departmentId: ev.departmentId ? Number(ev.departmentId) : undefined,
+        targetType: ev.targetType === "DEPARTMENT_HOD" ? "ROLE" : ev.targetType,
+        departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (ev.departmentId ? Number(ev.departmentId) : undefined),
         branchId: ev.branchId ? Number(ev.branchId) : undefined,
         sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
         hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
         userEmail: ev.userEmail || undefined,
-        role: ev.role || undefined,
+        role: ev.targetType === "DEPARTMENT_HOD" ? "HOD" : (ev.role || undefined),
         photoUrl: ev.photoUrl || undefined,
         externalLink: ev.externalLink || undefined,
         registrationEnabled: ev.registrationEnabled,
         registrationDeadline: ev.registrationDeadline ? new Date(ev.registrationDeadline).toISOString() : undefined,
       });
-      setEv(blankE);
+      setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
     }, "Event draft saved.");
   }
 
@@ -324,21 +355,33 @@ export default function DashboardClient() {
           </h1>
           <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted/90">A focused workspace for publishing, scheduling, and provisioning real-time campus communication.</p>
         </div>
-        <div className="flex items-center gap-3 pt-1">
-          <span className="flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3 py-1.5 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
-            <span className="relative flex h-2 w-2 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
+        <div className="flex flex-col items-end gap-2 pt-1">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3 py-1.5 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
+              <span className="relative flex h-2 w-2 items-center justify-center">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
+              </span>
+              System live
             </span>
-            System live
-          </span>
-          <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
+            <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
+          </div>
+          {departmentScoped && (
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2/90 px-3.5 py-2 text-xs font-extrabold text-muted shadow-soft backdrop-blur-xl transition hover:border-brand/50 hover:bg-brand-50 hover:text-ink"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Back to Department Dashboard</span>
+            </button>
+          )}
         </div>
       </header>
 
       {error && <ErrorState message={error} onRetry={() => void load().catch((e) => setError(e instanceof Error ? e.message : "Unable to reload."))} />}
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {!departmentScoped && (      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <button
           className={cx(
             "rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover",
@@ -394,7 +437,9 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
+      )}
+
+      {!departmentScoped && <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
         {(["announcements", "events", "queries", "people"] as Tab[]).map((x) => (
           <button
             key={x}
@@ -409,7 +454,7 @@ export default function DashboardClient() {
             {x === "people" ? "People & invites" : x[0].toUpperCase() + x.slice(1)}
           </button>
         ))}
-      </div>
+      </div>}
 
 
       {tab === "announcements" && (
@@ -422,7 +467,7 @@ export default function DashboardClient() {
               </div>
               <SoftBadge>DRAFT</SoftBadge>
             </div>
-            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} />
+            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} scopeDepartmentId={scopeDepartmentId} />
             <Field label="Title" htmlFor="ann-title" className="mb-4">
               <input id="ann-title" required className={inputBase} maxLength={180} value={a.title} onChange={(e) => setA((v) => ({ ...v, title: e.target.value }))} />
             </Field>
@@ -479,7 +524,14 @@ export default function DashboardClient() {
                               Unpublish
                             </button>
                           )}
-                          {x.status !== "ARCHIVED" && (
+                          {x.status === "ARCHIVED" ? (
+                            <button
+                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
+                              onClick={() => void act(() => unarchiveAnnouncement(x.id), "Announcement unarchived.")}
+                            >
+                              Unarchive
+                            </button>
+                          ) : (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => archiveAnnouncement(x.id), "Announcement archived.")}
@@ -522,7 +574,7 @@ export default function DashboardClient() {
               </div>
               <SoftBadge>DRAFT</SoftBadge>
             </div>
-            <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} />
+            <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} scopeDepartmentId={scopeDepartmentId} />
             <EventRegistrationFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} />
             <Field label="Event title" htmlFor="event-title" className="mb-4">
               <input id="event-title" required className={inputBase} maxLength={180} value={ev.title} onChange={(e) => setEv((v) => ({ ...v, title: e.target.value }))} />
@@ -590,38 +642,63 @@ export default function DashboardClient() {
                         <td className="border-b border-border p-3 align-top">
                           <StatusBadge status={x.status} />
                         </td>
-                        <td className="flex flex-wrap gap-1.5 border-b border-border p-3 align-top">
-                          {x.status === "DRAFT" && (
-                            <button
-                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
-                              onClick={() => void act(() => publishEvent(x.id), "Event published.")}
-                            >
-                              Publish
-                            </button>
-                          )}
-                          {x.status === "PUBLISHED" && (
-                            <button
-                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
-                              onClick={() => void act(() => unpublishEvent(x.id), "Event unpublished.")}
-                            >
-                              Unpublish
-                            </button>
-                          )}
-                          {x.status !== "CANCELLED" && (
-                            <button
-                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
-                              onClick={() => void act(() => cancelEvent(x.id), "Event cancelled.")}
-                            >
-                              Cancel
-                            </button>
-                          )}
-                          {x.status !== "PUBLISHED" && x.status !== "CANCELLED" && (
-                            <button
-                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
-                              onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}
-                            >
-                              Delete
-                            </button>
+                        <td className="border-b border-border p-3 align-top">
+                          <div className="flex flex-wrap gap-1.5">
+                            {x.status === "DRAFT" && (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => publishEvent(x.id), "Event published.")}>Publish</button>
+                            )}
+                            {x.status === "PUBLISHED" && (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => unpublishEvent(x.id), "Event unpublished.")}>Unpublish</button>
+                            )}
+                            {x.status !== "CANCELLED" && x.status !== "ARCHIVED" && (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => cancelEvent(x.id), "Event cancelled.")}>Cancel</button>
+                            )}
+                            {x.status === "ARCHIVED" ? (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => unarchiveEvent(x.id), "Event unarchived.")}>Unarchive</button>
+                            ) : (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => archiveEvent(x.id), "Event archived.")}>Archive</button>
+                            )}
+                            {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}>Delete</button>
+                            )}
+                            {departmentScoped && x.status === "PUBLISHED" && x.registrationEnabled && (
+                              <button className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light" onClick={() => void loadRegistrations(x.id)} disabled={registrationLoading === x.id}>
+                                {registrationLoading === x.id ? "Loading…" : "View registrations"}
+                              </button>
+                            )}
+                          </div>
+                          {departmentScoped && x.status === "PUBLISHED" && registrationRows[x.id] && (
+                            <div className="mt-3 rounded-xl border border-border bg-surface-2/60 p-3">
+                              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                <strong className="text-sm">{registrationRows[x.id].length} registered student{registrationRows[x.id].length === 1 ? "" : "s"}</strong>
+                                <button type="button" className="rounded-lg border border-border px-3 py-1.5 text-[10px] font-extrabold text-muted hover:text-white" onClick={() => window.print()}>Print registration list</button>
+                              </div>
+                              {registrationRows[x.id].length ? (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full min-w-[620px] text-left text-[10px]">
+                                    <thead>
+                                      <tr className="border-b border-border text-muted">
+                                        <th className="p-2">Student</th><th className="p-2">Email</th><th className="p-2">Department</th><th className="p-2">Year</th><th className="p-2">Section</th><th className="p-2">Registered At</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {registrationRows[x.id].map((r) => (
+                                        <tr key={r.id} className="border-b border-border">
+                                          <td className="p-2 font-bold">{r.studentName || "—"}</td>
+                                          <td className="p-2">{r.studentEmail}</td>
+                                          <td className="p-2">{r.department || "—"}</td>
+                                          <td className="p-2">{r.year ? `Year ${r.year}` : "—"}</td>
+                                          <td className="p-2">{r.section || "—"}</td>
+                                          <td className="p-2">{new Date(r.registeredAt).toLocaleString()}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted">No students have registered for this event yet.</p>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -967,17 +1044,37 @@ function AudienceFields({
   branches,
   sections,
   hostels,
+  departmentScoped = false,
+  scopeDepartmentId = null,
 }: {
-  value: { targetType: TargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
+  value: { targetType: ComposerTargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
   onChange: (v: Partial<typeof value>) => void;
   departments: StructureDepartment[];
   branches: StructureBranch[];
   sections: StructureSection[];
   hostels: StructureHostel[];
+  departmentScoped?: boolean;
+  scopeDepartmentId?: number | null;
 }) {
-  const target = value.targetType;
+  const target = value.targetType as ComposerTargetType;
+  const scopedDepartmentId = scopeDepartmentId ? String(scopeDepartmentId) : value.departmentId;
+  const cseBranch = departmentScoped
+    ? branches.find(
+        (x) =>
+          x.active &&
+          String(x.departmentId) === scopedDepartmentId &&
+          x.name.trim().toUpperCase() === "CSE"
+      )
+    : undefined;
+  const fixedSectionBranchId = departmentScoped ? String(cseBranch?.id ?? "") : value.branchId;
   const filteredBranches = branches.filter((x) => x.active && (!value.departmentId || String(x.departmentId) === value.departmentId));
-  const filteredSections = sections.filter((x) => x.active && (!value.branchId || String(x.branchId) === value.branchId));
+  const filteredSections = sections.filter(
+    (x) =>
+      x.active &&
+      (departmentScoped
+        ? String(x.branchId) === fixedSectionBranchId
+        : (!value.branchId || String(x.branchId) === value.branchId))
+  );
   return (
     <div className="mb-4 rounded-xl border border-border bg-surface-2 p-3">
       <Field label="Audience" htmlFor="audience-target">
@@ -985,35 +1082,68 @@ function AudienceFields({
           id="audience-target"
           className={inputBase}
           value={target}
-          onChange={(e) => onChange({ targetType: e.target.value as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" })}
+          onChange={(e) => {
+            const next = e.target.value as ComposerTargetType;
+            onChange({
+              targetType: next,
+              departmentId: departmentScoped ? scopedDepartmentId : "",
+              branchId: departmentScoped && next === "SECTION" ? fixedSectionBranchId : "",
+              sectionId: "",
+              hostelId: "",
+              userEmail: "",
+              role: next === "DEPARTMENT_HOD" ? "HOD" : "",
+            });
+          }}
         >
-          <option value="GLOBAL">Everyone</option>
-          <option value="ROLE">By role</option>
-          <option value="DEPARTMENT">Department</option>
-          <option value="BRANCH">Branch</option>
-          <option value="SECTION">Section</option>
-          <option value="HOSTEL">Hostel</option>
-          <option value="USER">Specific user</option>
+          {departmentScoped ? (
+            <>
+              <option value="DEPARTMENT">Department</option>
+              <option value="SECTION">Section wise</option>
+              <option value="ROLE">By role</option>
+              <option value="USER">Specific user</option>
+              <option value="DEPARTMENT_HOD">Department HOD</option>
+            </>
+          ) : (
+            <>
+              <option value="GLOBAL">Everyone</option>
+              <option value="ROLE">By role</option>
+              <option value="DEPARTMENT">Department</option>
+              <option value="BRANCH">Branch</option>
+              <option value="SECTION">Section</option>
+              <option value="HOSTEL">Hostel</option>
+              <option value="USER">Specific user</option>
+            </>
+          )}
         </select>
       </Field>
       {target === "ROLE" && (
         <Field label="Role" htmlFor="audience-role" className="mt-3">
           <select id="audience-role" className={inputBase} value={value.role} onChange={(e) => onChange({ role: e.target.value })}>
             <option value="">Choose target role</option>
-            <option value="PRINCIPAL">Principal (L1)</option>
-            <option value="DEAN">Dean (L2)</option>
-            <option value="HOD">HOD / Department Heads (L3)</option>
-            <option value="FACULTY">Faculty (L4)</option>
-            <option value="STUDENT">Student (L5)</option>
+            {departmentScoped ? (
+              <>
+                <option value="STUDENT">Student</option>
+                <option value="FACULTY">Faculty</option>
+              </>
+            ) : (
+              <>
+                <option value="PRINCIPAL">Principal (L1)</option>
+                <option value="DEAN">Dean (L2)</option>
+                <option value="HOD">HOD / Department Heads (L3)</option>
+                <option value="FACULTY">Faculty (L4)</option>
+                <option value="STUDENT">Student (L5)</option>
+              </>
+            )}
           </select>
         </Field>
       )}
       {target === "USER" && (
         <Field label="User email" htmlFor="audience-user-email" className="mt-3">
-          <input id="audience-user-email" required type="email" className={inputBase} value={value.userEmail} onChange={(e) => onChange({ userEmail: e.target.value })} placeholder="person@campus.edu" />
+          <input id="audience-user-email" required type="email" className={inputBase} value={value.userEmail} onChange={(e) => onChange({ userEmail: e.target.value })} placeholder="student@campus.edu or faculty@campus.edu" />
         </Field>
       )}
-      {target === "HOSTEL" && (
+      {target === "DEPARTMENT_HOD" && <p className="mt-3 text-[11px] text-muted">This targets the HOD of your department only.</p>}
+      {!departmentScoped && target === "HOSTEL" && (
         <Field label="Hostel" htmlFor="audience-hostel" className="mt-3">
           <select id="audience-hostel" required className={inputBase} value={value.hostelId} onChange={(e) => onChange({ hostelId: e.target.value })}>
             <option value="">Choose hostel</option>
@@ -1021,7 +1151,7 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {target !== "GLOBAL" && target !== "ROLE" && (
+      {!departmentScoped && target !== "GLOBAL" && target !== "ROLE" && target !== "DEPARTMENT_HOD" && (
         <Field label="Department" htmlFor="audience-department" className="mt-3">
           <select
             id="audience-department"
@@ -1039,7 +1169,7 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {(target === "BRANCH" || target === "SECTION") && (
+      {!departmentScoped && target === "BRANCH" && (
         <Field label="Branch" htmlFor="audience-branch" className="mt-3">
           <select
             id="audience-branch"
@@ -1058,9 +1188,17 @@ function AudienceFields({
           </select>
         </Field>
       )}
+
+      {departmentScoped && target === "SECTION" && (
+        <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm">
+          <span className="font-semibold text-muted">Branch</span>
+          <div className="mt-1 font-bold text-ink">{cseBranch?.name ?? "CSE"}</div>
+          {!cseBranch && <p className="mt-1 text-xs text-danger">CSE branch is not configured for your department.</p>}
+        </div>
+      )}
       {target === "SECTION" && (
         <Field label="Section" htmlFor="audience-section" className="mt-3">
-          <select id="audience-section" required className={inputBase} disabled={!value.branchId} value={value.sectionId} onChange={(e) => onChange({ sectionId: e.target.value })}>
+          <select id="audience-section" required className={inputBase} disabled={departmentScoped ? !cseBranch : !value.branchId} value={value.sectionId} onChange={(e) => onChange({ sectionId: e.target.value })}>
             <option value="">Choose section</option>
             {filteredSections.map((x) => (
               <option key={x.id} value={x.id}>

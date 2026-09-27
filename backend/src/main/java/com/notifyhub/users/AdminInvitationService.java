@@ -111,6 +111,17 @@ public class AdminInvitationService {
             userDept = department(request.profile().departmentId());
         }
 
+        if (caller.getRole() == com.notifyhub.auth.Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())) {
+            Long callerDeptId = caller.getDepartmentEntity() == null ? null : caller.getDepartmentEntity().getId();
+            if (callerDeptId == null || userDept == null || !callerDeptId.equals(userDept.getId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins may invite users only into their own department.");
+            }
+            if (targetRole == null || (targetRole.getLevel() != 3 && targetRole.getLevel() != 4 && targetRole.getLevel() != 5)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins may invite only department users.");
+            }
+        }
+
         Branch userBranch = null;
         if (request.branchId() != null) {
             userBranch = branch(request.branchId());
@@ -179,7 +190,10 @@ public class AdminInvitationService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<InvitationView> list() {
+    public java.util.List<InvitationView> list(String username) {
+        User caller = admin(username);
+        Long departmentId = (caller.getRole() == Role.DEPARTMENT_ADMIN || "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName()))
+                && caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
         Instant now = Instant.now();
         return invitations.findAllByOrderByCreatedAtDesc().stream().map(invitation -> {
             InvitationStatus status = invitation.getUsedAt() != null ? InvitationStatus.USED
@@ -197,7 +211,10 @@ public class AdminInvitationService {
                     invitation.getUsedAt(),
                     u != null && u.getPublicId() != null ? u.getPublicId().toString() : null
             );
-        }).toList();
+        }).filter(view -> departmentId == null || java.util.Objects.equals(
+            users.findByPublicId(view.userPublicId() == null ? null : java.util.UUID.fromString(view.userPublicId()))
+                .map(u -> u.getDepartmentEntity() == null ? null : u.getDepartmentEntity().getId()).orElse(null), departmentId))
+            .toList();
     }
 
     private void createStudent(User user, ProfileRequest request) {

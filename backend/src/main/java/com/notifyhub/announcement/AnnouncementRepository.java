@@ -18,4 +18,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     Page<Announcement> urgent(Pageable pageable);
 
     Page<Announcement> findByCreatedById(Long createdById, Pageable pageable);
+
+    @Query("select a from Announcement a where a.targetDepartment.id = :deptId or (a.targetDepartment is null and a.createdBy.departmentEntity.id = :deptId) order by a.createdAt desc")
+    Page<Announcement> findByDepartment(Long deptId, Pageable pageable);
 }

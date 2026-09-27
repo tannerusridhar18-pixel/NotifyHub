@@ -10,10 +10,20 @@ function csrf() {
   return value ? decodeURIComponent(value.split("=").slice(1).join("=")) : null;
 }
 
+export function safeUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+  return undefined;
+}
+
 function friendlyMessage(status: number, body: ApiResponse<unknown> | null, path: string) {
   if (body?.message) return body.message;
   if (status === 400) return "The information could not be saved. Check the highlighted fields and try again.";
-  if (status === 401 || status === 403) return "Your session has changed — please log in again.";
+  if (status === 401) return "Your session has expired — please log in again.";
+  if (status === 403) return "You do not have permission to perform this action.";
   if (status === 404) return "That NotifyHub resource could not be found.";
   if (status >= 500)
     return path.includes("/announcements") || path.includes("/events")
@@ -38,7 +48,10 @@ async function refresh() {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const r = await fetch(`${API_URL}/auth/refresh`, { method: "POST", credentials: "include", cache: "no-store" });
+        const headers = new Headers({ Accept: "application/json" });
+        const token = csrf();
+        if (token) headers.set("X-XSRF-TOKEN", token);
+        const r = await fetch(`${API_URL}/auth/refresh`, { method: "POST", headers, credentials: "include", cache: "no-store" });
         return r.ok;
       } catch {
         return false;
@@ -50,13 +63,33 @@ async function refresh() {
   return refreshPromise;
 }
 
-async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+function safeRedirectToLogin(reason = "session-expired") {
+  if (typeof window === "undefined") return;
+  const path = window.location.pathname || "";
+  if (path.startsWith("/auth/") || path === "/admin" || path === "/admin/") {
+    return;
+  }
+  try {
+    const last = Number(sessionStorage.getItem("last_auth_redirect") || "0");
+    const now = Date.now();
+    if (now - last < 5000) {
+      return;
+    }
+    sessionStorage.setItem("last_auth_redirect", String(now));
+  } catch {}
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.assign(`/auth/login?reason=${encodeURIComponent(reason)}`);
+}
+
+async function request<T>(
+  path: string,
+  init: RequestInit & { redirectOn401?: boolean } = {},
+  retry = true
+): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
   const method = (init.method || "GET").toUpperCase();
-  const publicRequest = isPublicRead(path, method);
-  const silentAuthCheck = method === "GET" && path.split("?")[0] === "/users/me";
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
     const token = csrf();
     if (token) headers.set("X-XSRF-TOKEN", token);
@@ -67,13 +100,19 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   } catch {
     throw new Error("NotifyHub cannot reach the server right now. Check that the backend is running, then try again.");
   }
-  if (response.status === 401 && retry && !path.startsWith("/auth/") && !publicRequest) {
+  if (response.status === 401 && retry && !path.startsWith("/auth/")) {
     if (await refresh()) return request<T>(path, init, false);
   }
+  if (response.status === 204) return undefined as T;
   const body = (await response.json().catch(() => null)) as ApiResponse<T> | null;
   if (!response.ok || !body?.success) {
-    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined" && !path.startsWith("/auth/") && !publicRequest && !silentAuthCheck) {
-      window.location.assign(`/auth/login?reason=session-changed`);
+    if (
+      response.status === 401 &&
+      init.redirectOn401 !== false &&
+      !path.startsWith("/auth/") &&
+      !isPublicRead(path, method)
+    ) {
+      safeRedirectToLogin("session-expired");
     }
     throw new Error(friendlyMessage(response.status, body, path));
   }
@@ -119,7 +158,13 @@ export const login = (email: string, password: string) =>
 export const registerUser = (payload: { invitationToken: string; password: string; confirmPassword: string }) =>
   request<{ email: string }>("/auth/register", { method: "POST", body: JSON.stringify(payload) });
 export const refreshSession = () => request<AuthResponse>("/auth/refresh", { method: "POST" });
-export const currentUser = () => request<CurrentUser>("/users/me");
+export const currentUser = async (): Promise<CurrentUser | null> => {
+  try {
+    return await request<CurrentUser>("/users/me", { redirectOn401: false });
+  } catch {
+    return null;
+  }
+};
 export const logout = () => request<void>("/auth/logout", { method: "POST" });
 export const forgotPassword = (email: string) =>
   request<void>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
@@ -279,6 +324,7 @@ export type EventPayload = {
   registrationDeadline?: string;
 };
 
+export const departmentManagedAnnouncements = (page = 0, size = 50) => myAnnouncements({ page, size });
 export const managedAnnouncements = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<Announcement>>(`/announcements/management?${q}`);
@@ -289,9 +335,11 @@ export const updateAnnouncement = (id: number, p: AnnouncementPayload) =>
   request<Announcement>(`/announcements/${id}`, { method: "PUT", body: JSON.stringify(p) });
 export const publishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/publish`, { method: "POST" });
 export const archiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/archive`, { method: "POST" });
+export const unarchiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unarchive`, { method: "POST" });
 export const unpublishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unpublish`, { method: "POST" });
 export const deleteAnnouncement = (id: number) => request<void>(`/announcements/${id}`, { method: "DELETE" });
 
+export const departmentManagedEvents = (page = 0, size = 50) => myEvents({ page, size });
 export const managedEvents = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<EventItem>>(`/events/management?${q}`);
@@ -301,6 +349,8 @@ export const updateEvent = (id: number, p: EventPayload) => request<EventItem>(`
 export const publishEvent = (id: number) => request<EventItem>(`/events/${id}/publish`, { method: "POST" });
 export const unpublishEvent = (id: number) => request<EventItem>(`/events/${id}/unpublish`, { method: "POST" });
 export const cancelEvent = (id: number) => request<EventItem>(`/events/${id}/cancel`, { method: "POST" });
+export const archiveEvent = (id: number) => request<EventItem>(`/events/${id}/archive`, { method: "POST" });
+export const unarchiveEvent = (id: number) => request<EventItem>(`/events/${id}/unarchive`, { method: "POST" });
 export const deleteEvent = (id: number) => request<void>(`/events/${id}`, { method: "DELETE" });
 export type EventRegistration = { id: number; studentId: number; studentEmail: string; studentName: string; department: string | null; year: number | null; section: string | null; registeredAt: string };
 export const registerForEvent = (id: number) => request<EventRegistration>(`/events/${id}/register`, { method: "POST" });
@@ -323,10 +373,21 @@ export type DepartmentFacultyItem = {
 export const departmentFacultyList = (departmentId: number) =>
   request<DepartmentFacultyItem[]>(`/departments/${departmentId}/faculty`);
 
+export const departmentStudentList = (departmentId: number) =>
+  request<import("@/types").DepartmentStudentItem[]>(`/departments/${departmentId}/students`);
+
+export const updateDepartmentStudent = (departmentId: number, studentId: number, payload: { name?: string; year?: number; semester?: number }) =>
+  request<import("@/types").DepartmentStudentItem>(`/departments/${departmentId}/students/${studentId}`, { method: "PATCH", body: JSON.stringify(payload) });
+
+export const deactivateDepartmentStudent = (departmentId: number, studentId: number) =>
+  request<void>(`/departments/${departmentId}/students/${studentId}/status`, { method: "PATCH" });
+export const deleteDepartmentStudent = (departmentId: number, studentId: number) =>
+  request<void>(`/departments/${departmentId}/students/${studentId}`, { method: "DELETE" });
+
 export const batchPromoteStudents = (departmentId: number, fromYear: number, toYear: number) =>
-  request<import("@/types").BatchPromoteResult>(`/departments/${departmentId}/promote-batch`, {
+  request<import("@/types").BatchPromoteResult>("/admin/students/batch-promote", {
     method: "POST",
-    body: JSON.stringify({ fromYear, toYear }),
+    body: JSON.stringify({ departmentId, fromYear, toYear }),
   });
 
 export const assignDepartmentHod = (departmentId: number, userId: number) =>
@@ -357,6 +418,7 @@ export const createRole = (p: { name: string; level: number; parentRoleId?: numb
   request<RoleItem>("/admin/roles", { method: "POST", body: JSON.stringify(p) });
 export const updateRole = (id: number, p: { name?: string; level?: number; parentRoleId?: number; canPostTo?: number[] }) =>
   request<RoleItem>(`/admin/roles/${id}`, { method: "PUT", body: JSON.stringify(p) });
+export const deleteRole = (id: number) => request<void>(`/admin/roles/${id}`, { method: "DELETE" });
 export const RBAC_PERMISSIONS = ["USER_INVITE", "USER_EDIT", "USER_DELETE", "ANNOUNCEMENT_CREATE", "ANNOUNCEMENT_DELETE", "EVENT_CREATE", "EVENT_DELETE", "ROLE_CREATE", "ROLE_ASSIGN", "ROLE_EDIT", "ROLE_REVOKE"] as const;
 export type RbacPermission = typeof RBAC_PERMISSIONS[number];
 export type ScopedRole = { id: number; name: string; systemRole: boolean; superadmin: boolean; permissions: RbacPermission[] };

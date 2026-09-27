@@ -76,7 +76,7 @@ export default function StructurePage() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && u.roleLevel !== 0) router.replace("/");
+        if (alive && (!u || u.roleLevel !== 0)) router.replace("/");
         else if (alive) await load();
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : "Unable to verify admin access.");

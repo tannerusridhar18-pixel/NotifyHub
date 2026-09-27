@@ -2,28 +2,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { currentUser, logout } from "@/lib/api";
+import { currentUser, logout, type CurrentUser } from "@/lib/api";
 import { buttonClasses } from "@/components/ui/Button";
 import { cx } from "@/components/ui/classes";
+import { getRoleRoute } from "@/config/roles";
 
 export default function AuthenticatedContentShell({ children, role }: { children: React.ReactNode; role: "STUDENT" | "FACULTY" | "MEMBER" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [resolvedRole, setResolvedRole] = useState<"STUDENT" | "FACULTY" | null>(null);
+  const [resolvedUser, setResolvedUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     currentUser().then((u) => {
-      if (u?.roleLevel === 4) {
-        setResolvedRole("FACULTY");
-      } else if (u?.roleLevel === 5) {
-        setResolvedRole("STUDENT");
-      }
+      if (u) setResolvedUser(u);
     }).catch(() => {});
   }, []);
 
-  const effectiveRole = resolvedRole || (searchParams.get("from") === "faculty" || role === "FACULTY" ? "FACULTY" : "STUDENT");
-  const from = effectiveRole.toLowerCase();
-  const dashboardHref = effectiveRole === "FACULTY" ? "/dashboard/faculty" : "/dashboard/student";
+  const from = (resolvedUser?.role || searchParams.get("from") || role).toLowerCase();
+  const dashboardHref = resolvedUser ? getRoleRoute(resolvedUser.role, resolvedUser.roleLevel) : (role === "FACULTY" ? "/dashboard/faculty" : "/dashboard/student");
 
   async function signOut() {
     try {

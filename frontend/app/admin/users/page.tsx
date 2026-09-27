@@ -29,10 +29,9 @@ import Field from "@/components/ui/Field";
 import Counter from "@/components/ui/Counter";
 import { inputBase } from "@/components/ui/classes";
 
-type ScopedFilterKey = "department" | "year" | "section" | "hostel" | "block";
+type ScopedFilterKey = "year" | "section" | "hostel" | "block";
 type FilterOption = { id: number | string; label: string };
 const USER_FILTER_CONFIG: Array<{ key: ScopedFilterKey; label: string; allLabel: string }> = [
-  { key: "department", label: "Department", allLabel: "All departments" },
   { key: "year", label: "Year", allLabel: "All years" },
   { key: "section", label: "Section", allLabel: "All sections" },
   { key: "hostel", label: "Hostel", allLabel: "All hostels" },
@@ -59,6 +58,9 @@ export default function ManageUsersPage() {
   const [deptFilter, setDeptFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [scopedFilters, setScopedFilters] = useState<Partial<Record<ScopedFilterKey, string>>>({});
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState("");
+  const [currentUserDepartmentId, setCurrentUserDepartmentId] = useState<number | null>(null);
 
   // Create Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -81,20 +83,25 @@ export default function ManageUsersPage() {
     setLoading(true);
     setError("");
     try {
-      const hasScopedFilters = Object.values(scopedFilters).some(Boolean);
+      const isDepartmentAdmin = currentUserRole === "DEPARTMENT_ADMIN";
+      const directoryFilters: Record<string, string> = { ...scopedFilters };
+      if (searchQuery) directoryFilters.search = searchQuery;
+      if (roleFilter) directoryFilters.role = roleFilter;
+      if (statusFilter) directoryFilters.status = statusFilter;
+      if (isDepartmentAdmin && currentUserDepartmentId != null) {
+        directoryFilters.department = String(currentUserDepartmentId);
+      } else if (deptFilter) {
+        directoryFilters.department = deptFilter;
+      }
+      const hasDirectoryFilters = Object.values(directoryFilters).some(Boolean);
       const [uList, rList, dList, sList, hList, bList, eList] = await Promise.all([
-        hasScopedFilters ? queryUsersByFilters(scopedFilters as Record<string, string>) : listAdminUsers({
-          role: roleFilter || undefined,
-          departmentId: deptFilter ? Number(deptFilter) : undefined,
-          search: searchQuery || undefined,
-          status: statusFilter || undefined,
-        }),
+        hasDirectoryFilters ? queryUsersByFilters(directoryFilters) : listAdminUsers(),
         listRoles(),
         structureDepartments(),
         structureSections(),
         structureHostels(),
         structureBlocks(),
-        adminEnrollments(),
+        isDepartmentAdmin ? Promise.resolve([] as EnrollmentItem[]) : adminEnrollments(),
       ]);
       setUsers(uList.content);
       setRoles(rList);
@@ -108,11 +115,10 @@ export default function ManageUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, deptFilter, searchQuery, statusFilter, scopedFilters]);
+  }, [roleFilter, deptFilter, searchQuery, statusFilter, scopedFilters, currentUserRole, currentUserDepartmentId]);
 
   const scopedFilterOptions = (key: ScopedFilterKey): FilterOption[] => {
     switch (key) {
-      case "department": return departments.map(x => ({ id: x.id, label: x.name }));
       case "year": return [1, 2, 3, 4, 5, 6].map(x => ({ id: x, label: `Year ${x}` }));
       case "section": return sections.map(x => ({ id: x.id, label: x.name }));
       case "hostel": return hostels.map(x => ({ id: x.id, label: x.name }));
@@ -120,18 +126,27 @@ export default function ManageUsersPage() {
     }
   };
   const setScopedFilter = (key: ScopedFilterKey, value: string) => setScopedFilters(previous => ({ ...previous, [key]: value }));
-  const clearScopedFilters = () => setScopedFilters({});
+  const clearScopedFilters = () => {
+    setScopedFilters({});
+    setSearchQuery("");
+    setRoleFilter("");
+    if (currentUserRole !== "DEPARTMENT_ADMIN") setDeptFilter("");
+    setStatusFilter("");
+  };
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && u.roleLevel !== 0) {
+        if (!alive) return;
+        if (!u || ![0, 3].includes(u.roleLevel)) {
           router.replace("/");
-        } else if (alive) {
-          await load();
+          return;
         }
+        setCurrentUserRole(u.role);
+        setCurrentUserDepartmentId(u.departmentId ?? null);
+        await load();
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : "Unable to verify admin credentials.");
       }
@@ -226,8 +241,9 @@ export default function ManageUsersPage() {
     }
     try {
       await removeAdminUser(u.publicId);
-      setToast({ message: `User ${u.email} deleted successfully.`, type: "success" });
+      setUsers((current) => current.filter((item) => item.publicId !== u.publicId));
       await load();
+      setToast({ message: `User ${u.email} deleted successfully.`, type: "success" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to delete user.";
       setToast({ message: msg, type: "error" });
@@ -255,20 +271,22 @@ export default function ManageUsersPage() {
 
       <header className="mb-7 flex flex-col items-start justify-between gap-6 sm:flex-row">
         <div>
-          <span className="text-[11px] font-extrabold text-brand">Identity & Directory</span>
+          <span className="text-xs font-extrabold text-brand">Identity & Directory</span>
           <h1 className="mt-1.5 text-[32px] leading-tight sm:text-4xl lg:text-[46px]">Manage Users</h1>
           <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted">
             Directory of campus accounts across all authority tiers. Provision leadership accounts, assign department affiliations, and audit enrollments.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-start gap-3">
           <div className="grid min-w-[110px] gap-1 rounded-2xl border border-border bg-surface p-4">
             <strong className="font-display text-2xl">
               <Counter value={users.length} />
             </strong>
-            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-muted">Total Accounts</span>
+            <span className="text-xs font-bold tracking-wide text-muted">Total Accounts</span>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)}>+ Provision User</Button>
+          {currentUserRole !== "DEPARTMENT_ADMIN" && (
+            <Button onClick={() => setIsCreateOpen(true)}>+ Provision User</Button>
+          )}
         </div>
       </header>
 
@@ -284,6 +302,7 @@ export default function ManageUsersPage() {
         >
           All Users ({users.length})
         </button>
+        {currentUserRole !== "DEPARTMENT_ADMIN" && (
         <button
           onClick={() => setActiveTab("enrollments")}
           className={`rounded-xl px-4 py-2 text-xs font-extrabold transition-colors ${
@@ -294,6 +313,7 @@ export default function ManageUsersPage() {
         >
           Student Enrollments ({enrollments.length})
         </button>
+        )}
       </div>
 
       {error && <ErrorState message={error} onRetry={() => void load()} />}
@@ -301,24 +321,24 @@ export default function ManageUsersPage() {
       {activeTab === "users" ? (
         <div className="space-y-4">
           <section className="rounded-2xl border border-brand/25 bg-brand-50/30 p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
               <div>
                 <h2 className="text-sm font-extrabold text-ink">Directory filters</h2>
-                <p className="text-xs text-muted">Combine any dimensions to narrow results.</p>
+                <p className="text-xs text-muted">Filter users by search, role, department, status, year, section, hostel, and block.</p>
               </div>
               <button
                 type="button"
                 onClick={clearScopedFilters}
                 disabled={!Object.values(scopedFilters).some(Boolean)}
-                className="text-xs font-bold text-brand-light disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-brand-light transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Clear all filters
               </button>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div id="advanced-user-filters" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {USER_FILTER_CONFIG.map((filter) => (
                 <div key={filter.key}>
-                  <label className="mb-1 block text-[10px] font-bold uppercase text-muted">{filter.label}</label>
+                  <label className="mb-1 block text-xs font-bold text-muted">{filter.label}</label>
                   <select
                     className={inputBase}
                     value={scopedFilters[filter.key] ?? ""}
@@ -336,7 +356,7 @@ export default function ManageUsersPage() {
           {/* Filter Bar */}
           <div className="grid gap-3 rounded-2xl border border-white/10 bg-surface/90 p-4 sm:grid-cols-4">
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Search Query</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Search Query</label>
               <input
                 className={inputBase}
                 placeholder="Search email, username..."
@@ -345,7 +365,7 @@ export default function ManageUsersPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Role</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Role</label>
               <select
                 className={inputBase}
                 value={roleFilter}
@@ -360,10 +380,11 @@ export default function ManageUsersPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Department</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Department</label>
               <select
                 className={inputBase}
-                value={deptFilter}
+                value={currentUserRole === "DEPARTMENT_ADMIN" && currentUserDepartmentId != null ? String(currentUserDepartmentId) : deptFilter}
+                disabled={currentUserRole === "DEPARTMENT_ADMIN"}
                 onChange={(e) => setDeptFilter(e.target.value)}
               >
                 <option value="">All Departments</option>
@@ -375,7 +396,7 @@ export default function ManageUsersPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-bold uppercase text-muted">Status</label>
+              <label className="mb-1 block text-xs font-bold text-muted">Status</label>
               <select
                 className={inputBase}
                 value={statusFilter}
@@ -419,7 +440,7 @@ export default function ManageUsersPage() {
                         </td>
                         <td className="py-3.5 px-3">
                           <span className="inline-flex items-center gap-1.5 rounded-lg border border-brand/30 bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-light">
-                            <span>{u.role}</span>
+                            <span>{u.role.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase())}</span>
                             <span className="font-mono text-[9px] text-muted">L{u.level}</span>
                           </span>
                         </td>
@@ -449,29 +470,41 @@ export default function ManageUsersPage() {
                           </span>
                         </td>
                         <td className="py-3.5 px-3 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => openEdit(u)}
-                              className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1 text-[10px] font-bold text-brand-light hover:bg-brand-50/80"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => void handleToggleStatus(u)}
-                              className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold ${
-                                u.active
-                                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
-                                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-                              }`}
-                            >
-                              {u.active ? "Deactivate" : "Activate"}
-                            </button>
-                            <button
-                              onClick={() => void handleDeleteUser(u)}
-                              className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[10px] font-bold text-red-400 hover:bg-red-500/20 hover:border-red-500/50"
-                            >
-                              Delete
-                            </button>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {currentUserRole === "DEPARTMENT_ADMIN" ? (
+                              <button
+                                onClick={() => void handleDeleteUser(u)}
+                                className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-xs font-bold text-danger-light transition-colors hover:border-danger/60 hover:bg-danger-soft/80"
+                              >
+                                Delete
+                              </button>
+                            ) : (
+                              <>
+                                                            <button
+                                                              onClick={() => openEdit(u)}
+                                                              className="rounded-xl border border-brand/40 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-light transition-colors hover:bg-brand-50/80"
+                                                            >
+                                                              Edit
+                                                            </button>
+                                                            <button
+                                                              onClick={() => void handleToggleStatus(u)}
+                                                              className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                                                                u.active
+                                                                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                                                                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                                              }`}
+                                                            >
+                                                              {u.active ? "Deactivate" : "Activate"}
+                                                            </button>
+                                                            <button
+                                                              onClick={() => void handleDeleteUser(u)}
+                                                              className="rounded-xl border border-danger/40 bg-danger-soft px-3 py-2 text-xs font-bold text-danger-light transition-colors hover:border-danger/60 hover:bg-danger-soft/80"
+                                                            >
+                                                              Delete
+                                                            </button>
+                                
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -36,6 +36,12 @@ public class RoleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(roleService.createRole(authentication.getName(), cmd)));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        roleService.deleteRole(id);
+        return ResponseEntity.ok(ApiResponse.message("Custom role deleted."));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<RoleService.RoleDto>> update(
             @PathVariable Long id,

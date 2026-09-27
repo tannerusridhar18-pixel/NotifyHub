@@ -44,6 +44,7 @@ public class User {
     private User reportsTo;
 
     @Column(nullable=false) private boolean active=true;
+    @Column(nullable=false) private boolean deleted=false;
     @Enumerated(EnumType.STRING) @Column(name="account_status", nullable=false, length=20) private AccountStatus accountStatus=AccountStatus.ACTIVE;
     @Column(name="failedLoginAttempts", nullable=false) private int failedLoginAttempts;
     @Column(name="locked_until") private Instant lockedUntil;
@@ -78,6 +79,7 @@ public class User {
     public Instant getUpdatedAt(){return updatedAt;}
 
     public boolean isActive(){return accountStatus==AccountStatus.ACTIVE && active;}
+    public boolean isDeleted(){return deleted;}
     public boolean isLocked(Instant now){return lockedUntil!=null && lockedUntil.isAfter(now);}
 
     public int getEffectiveLevel() {
@@ -85,7 +87,7 @@ public class User {
         if (role == Role.SUPER_ADMIN || role == Role.ADMIN) return 0;
         if (role == Role.PRINCIPAL) return 1;
         if (role == Role.DEAN) return 2;
-        if (role == Role.HOD) return 3;
+        if (role == Role.HOD || role == Role.DEPARTMENT_ADMIN) return 3;
         if (role == Role.FACULTY) return 4;
         return 5;
     }
@@ -121,6 +123,7 @@ public class User {
     public void setReportsTo(User v){reportsTo=v;}
     public void setActive(boolean v){active=v; if(accountStatus==AccountStatus.ACTIVE || accountStatus==AccountStatus.INACTIVE) accountStatus=v?AccountStatus.ACTIVE:AccountStatus.INACTIVE;}
     public void setPublicId(UUID v){publicId=v;}
+    public void setDeleted(boolean v){deleted=v;}
     public void setAccountStatus(AccountStatus v){accountStatus=v; active=v==AccountStatus.ACTIVE;}
     public void setFailedLoginAttempts(int v){failedLoginAttempts=v;}
     public void setLockedUntil(Instant v){lockedUntil=v;}

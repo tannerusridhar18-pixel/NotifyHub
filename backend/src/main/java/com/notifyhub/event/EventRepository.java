@@ -18,4 +18,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Page<Event> upcoming(Pageable pageable);
 
     Page<Event> findByCreatedById(Long createdById, Pageable pageable);
+
+    @Query("select e from Event e where e.targetDepartment.id = :deptId or (e.targetDepartment is null and e.createdBy.departmentEntity.id = :deptId) order by e.createdAt desc")
+    Page<Event> findByDepartment(Long deptId, Pageable pageable);
 }

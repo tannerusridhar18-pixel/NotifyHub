@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -82,8 +83,32 @@ public class AnnouncementService {
     @Transactional(readOnly = true)
     public PageResponse<AnnouncementDto> myPosts(String username, int page, int size) {
         User u = user(username);
+        boolean isSuperAdmin = u.getRole() == Role.SUPER_ADMIN
+                || "SUPER_ADMIN".equalsIgnoreCase(u.getEffectiveRoleName())
+                || (u.getRoleEntity() != null && u.getRoleEntity().isSuperadmin());
+        if (isSuperAdmin) {
+            Page<Announcement> paged = repo.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+            return PageResponse.from(paged.map(AnnouncementDto::from));
+        }
+
+        boolean isDeptAdmin = u.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(u.getEffectiveRoleName());
+        if (isDeptAdmin && u.getDepartmentEntity() != null) {
+            Page<Announcement> paged = repo.findByDepartment(u.getDepartmentEntity().getId(), PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+            return PageResponse.from(paged.map(AnnouncementDto::from));
+        }
+
         Page<Announcement> paged = repo.findByCreatedById(u.getId(), PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
         return PageResponse.from(paged.map(AnnouncementDto::from));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AnnouncementDto> departmentManage(String username, int page, int size) {
+        User actor = user(username);
+        if (!"DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin access required.");
+        Long deptId = actor.getDepartmentEntity() == null ? null : actor.getDepartmentEntity().getId();
+        if (deptId == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        return PageResponse.from(repo.findByDepartment(deptId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AnnouncementDto::from));
     }
 
     @Transactional(readOnly = true)
@@ -94,7 +119,7 @@ public class AnnouncementService {
     public AnnouncementDto create(Request r, String username) {
         User sender = user(username);
         List<String> targetList = parseTargets(r.recipientTargets());
-        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId(), r.targetType(), r.branchId(), r.sectionId());
+        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId(), r.targetType(), r.branchId(), r.sectionId(), r.userEmail(), r.role());
 
         Announcement a = new Announcement();
         apply(a, r);
@@ -122,14 +147,12 @@ public class AnnouncementService {
     }
 
     public AnnouncementDto update(Long id, Request r, String username) {
+        assertCanManage(id, username);
         Announcement a = get(id);
         if (a.getStatus() != AnnouncementStatus.DRAFT) throw conflict("Only draft announcements may be edited.");
         User sender = user(username);
-        if (sender.getEffectiveLevel() > 0 && !sender.getId().equals(a.getCreatedBy().getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only edit announcements you authored.");
-        }
         List<String> targetList = parseTargets(r.recipientTargets());
-        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId(), r.targetType(), r.branchId(), r.sectionId());
+        targeting.validateSenderPermissions(sender, r.recipientType(), targetList, r.departmentId(), r.targetType(), r.branchId(), r.sectionId(), r.userEmail(), r.role());
 
         apply(a, r);
         audit.save(new AuditLog(sender, "ANNOUNCEMENT_EDIT", "ANNOUNCEMENT", String.valueOf(a.getId()), AuditJson.title(a.getTitle())));
@@ -164,9 +187,18 @@ public class AnnouncementService {
 
     public AnnouncementDto archive(Long id) {
         Announcement a = get(id);
-        if (a.getStatus() == AnnouncementStatus.ARCHIVED) throw conflict("Announcement is already archived.");
         a.setStatus(AnnouncementStatus.ARCHIVED);
         audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_ARCHIVE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
+        return AnnouncementDto.from(a);
+    }
+
+    public AnnouncementDto unarchive(Long id) {
+        Announcement a = get(id);
+        if (a.getStatus() != AnnouncementStatus.ARCHIVED) throw conflict("Only archived announcements can be unarchived.");
+        a.setStatus(AnnouncementStatus.DRAFT);
+        a.setPublishedAt(null);
+        repo.save(a);
+        audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_UNARCHIVE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
         return AnnouncementDto.from(a);
     }
 
@@ -207,18 +239,39 @@ public class AnnouncementService {
         }
     }
 
-    /** Same rule as update(): level-0 admins manage anything; everyone else only what they authored. */
+    /** Server-side ownership enforcement: author only; Dept Admin only within own department; SuperAdmin any. */
     private void assertCanManage(Long id, String username) {
         Announcement a = get(id);
         User actor = user(username);
         Long ownerId = a.getCreatedBy() != null ? a.getCreatedBy().getId() : null;
-        if (!actor.hasAdminAccess() && !actor.getId().equals(ownerId)) {
+
+        boolean isSuperAdmin = actor.getRole() == Role.SUPER_ADMIN
+                || "SUPER_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())
+                || (actor.getRoleEntity() != null && actor.getRoleEntity().isSuperadmin());
+        if (isSuperAdmin) {
+            return;
+        }
+
+        boolean isDeptAdmin = actor.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName());
+        if (isDeptAdmin) {
+            Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
+            Long postDeptId = a.getTargetDepartment() != null ? a.getTargetDepartment().getId() :
+                    (a.getCreatedBy() != null && a.getCreatedBy().getDepartmentEntity() != null ? a.getCreatedBy().getDepartmentEntity().getId() : null);
+            if (actorDeptId != null && Objects.equals(actorDeptId, postDeptId)) {
+                return;
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins can only manage announcements within their department.");
+        }
+
+        if (ownerId == null || !actor.getId().equals(ownerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage announcements you authored.");
         }
     }
     public AnnouncementDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }
     public AnnouncementDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
     public AnnouncementDto archive(Long id, String username) { assertCanManage(id, username); return archive(id); }
+    public AnnouncementDto unarchive(Long id, String username) { assertCanManage(id, username); return unarchive(id); }
     public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Announcement get(Long id) { return repo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Announcement not found.")); }

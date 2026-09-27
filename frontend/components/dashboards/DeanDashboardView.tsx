@@ -27,7 +27,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
   const [error, setError] = useState("");
 
   // Broadcaster state
-  const [broadcastAudience, setBroadcastAudience] = useState<"HOD" | "FACULTY" | "STUDENT">("HOD");
+  const [broadcastAudience, setBroadcastAudience] = useState<"HOD" | "FACULTY">("HOD");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [urgent, setUrgent] = useState(false);
@@ -54,6 +54,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
     void loadData();
   }, [loadData]);
 
@@ -113,6 +114,7 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
           <span>Executive Level 2 · {user.email}</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/dashboard/my-posts" className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all">My Posts</Link>
           <Link
             href="/dashboard/feed?from=dean"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"
@@ -248,17 +250,6 @@ export default function DeanDashboardView({ user }: { user: CurrentUser }) {
                       }`}
                     >
                       👨‍🏫 All Faculty Staff
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBroadcastAudience("STUDENT")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
-                        broadcastAudience === "STUDENT"
-                          ? "border-cyan-500 bg-cyan-500/20 text-cyan-300 shadow-sm"
-                          : "border-white/10 bg-surface-2/60 text-muted"
-                      }`}
-                    >
-                      🎓 All Students
                     </button>
                   </div>
                 </div>
