@@ -1931,3 +1931,48 @@
 .nh-home .nh-public-content-card .rounded-xl {
   border-radius: var(--nh-radius-lg);
 }
+
+
+/* Shared secondary-page surface normalization: reuse the home visual language. */
+.nh-public-page {
+  color: var(--nh-text);
+}
+.nh-public-page h1,
+.nh-public-page h2,
+.nh-public-page h3,
+.nh-public-page h4 {
+  color: var(--nh-text);
+  font-family: var(--nh-font-display);
+}
+.nh-public-page > .max-w-\[760px\] > span,
+.nh-public-page .nh-public-kicker {
+  border-color: var(--nh-line);
+  background: rgba(255,255,255,.035);
+  color: var(--nh-text);
+  box-shadow: var(--nh-shadow-inset);
+}
+.nh-public-page .bg-surface,
+.nh-public-page .bg-surface\/85,
+.nh-public-page .bg-surface\/90,
+.nh-public-page .bg-surface\/95 {
+  background-color: var(--nh-surface);
+}
+.nh-public-page .bg-surface-2,
+.nh-public-page .bg-surface-2\/90,
+.nh-public-page .bg-surface-2\/95 {
+  background-color: var(--nh-surface-2);
+}
+.nh-public-page input,
+.nh-public-page textarea,
+.nh-public-page select {
+  font-family: var(--nh-font-body);
+}
+.nh-public-page .shadow-lift,
+.nh-public-page .shadow-2xl {
+  box-shadow: var(--nh-shadow-float);
+}
+.nh-public-page .rounded-\[26px\],
+.nh-public-page .rounded-\[24px\],
+.nh-public-page .rounded-\[22px\] {
+  border-radius: var(--nh-radius-lg);
+}
