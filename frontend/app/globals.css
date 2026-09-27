@@ -2322,3 +2322,176 @@
   .nh-home .nh-vortex { opacity: .72; }
   .nh-home .nh-feature-panel { transition: none !important; }
 }
+
+
+/* REKKI-inspired public communication system — shared by home, announcements, events and ask/query. */
+:root {
+  --rekki-blue: #0063e1;
+  --rekki-black: #000000;
+  --rekki-carbon: #040910;
+  --rekki-graphite: #0d0d0d;
+  --rekki-iron: #1f1f1f;
+  --rekki-steel: #2b2c2e;
+  --rekki-ash: #858585;
+  --rekki-paper: #ffffff;
+}
+
+body {
+  background: var(--rekki-black) !important;
+  color: var(--rekki-paper);
+}
+
+.nh-qronos-shell-background {
+  opacity: .55;
+}
+.nh-qronos-shell-frame {
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* Shared public shell */
+.nh-rekki-page {
+  min-height: calc(100svh - 82px);
+  padding-top: clamp(72px, 10vh, 120px) !important;
+  padding-bottom: 100px !important;
+  color: var(--rekki-paper);
+}
+.nh-rekki-page::before {
+  content: "";
+  position: fixed;
+  inset: 82px 0 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(0,99,225,.075), transparent 30%),
+    linear-gradient(180deg, #000 0%, #020407 58%, #000 100%);
+}
+.nh-rekki-page h1 {
+  font-size: clamp(3.25rem, 6.8vw, 6.5rem) !important;
+  line-height: .94 !important;
+  letter-spacing: -.06em !important;
+  font-weight: 400 !important;
+  color: #fff !important;
+}
+.nh-rekki-page h2,
+.nh-rekki-page h3,
+.nh-rekki-page h4 {
+  letter-spacing: -.035em;
+}
+.nh-rekki-page p {
+  color: var(--rekki-ash) !important;
+}
+.nh-rekki-page > div > div:first-child {
+  position: relative;
+}
+
+/* Replace multicolor status treatments with the single signal-blue accent. */
+.nh-rekki-page [class*="border-brand"],
+.nh-rekki-page [class*="border-brand-2"],
+.nh-rekki-page [class*="border-danger"],
+.nh-rekki-page [class*="border-success"],
+.nh-rekki-page [class*="border-amber"] {
+  border-color: rgba(255,255,255,.12) !important;
+}
+.nh-rekki-page [class*="bg-brand-50"],
+.nh-rekki-page [class*="bg-brand-2"],
+.nh-rekki-page [class*="bg-danger-soft"],
+.nh-rekki-page [class*="bg-success-soft"],
+.nh-rekki-page [class*="bg-warning-soft"] {
+  background: rgba(255,255,255,.035) !important;
+}
+.nh-rekki-page [class*="text-brand"],
+.nh-rekki-page [class*="text-brand-2"],
+.nh-rekki-page [class*="text-danger"],
+.nh-rekki-page [class*="text-success"],
+.nh-rekki-page [class*="text-amber"] {
+  color: rgba(255,255,255,.78) !important;
+}
+.nh-rekki-page [class*="shadow-"] {
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset !important;
+}
+
+/* Content surfaces: inset-border elevation, no floating neon shadows. */
+.nh-rekki-page .nh-public-content-card,
+.nh-rekki-page [class*="rounded-[26px]"],
+.nh-rekki-page [class*="rounded-2xl"],
+.nh-rekki-page form {
+  background: rgba(13,13,13,.88) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.035) inset !important;
+  backdrop-filter: blur(18px);
+}
+.nh-rekki-page input,
+.nh-rekki-page textarea,
+.nh-rekki-page select {
+  background: #1f1f1f !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 1px rgba(255,255,255,.2) !important;
+}
+.nh-rekki-page input:focus,
+.nh-rekki-page textarea:focus,
+.nh-rekki-page select:focus {
+  border-color: rgba(0,99,225,.8) !important;
+  box-shadow: 0 0 0 3px rgba(0,99,225,.12) !important;
+}
+.nh-rekki-page button:not([aria-label]),
+.nh-rekki-page a[class*="bg-brand"] {
+  border-radius: 59px;
+}
+
+/* Home — preserve the existing Three.js vortex, but align its UI with REKKI. */
+.nh-home .nh-kicker {
+  border-color: rgba(255,255,255,.12) !important;
+  background: rgba(255,255,255,.025) !important;
+}
+.nh-home .nh-kicker span:first-child { background: var(--rekki-blue) !important; box-shadow: 0 0 14px rgba(0,99,225,.65) !important; }
+.nh-home .nh-title-accent { color: rgba(255,255,255,.48) !important; }
+.nh-home .btn-shine,
+.nh-home a[href="/announcements"] {
+  background: var(--rekki-blue) !important;
+  color: #fff !important;
+}
+.nh-home .nh-feature-panel {
+  background: #0d0d0d !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.035) inset !important;
+}
+.nh-home .nh-feature-panel:hover { border-color: rgba(255,255,255,.22) !important; transform: none; }
+.nh-home .nh-feature-number,
+.nh-home .nh-feature-label,
+.nh-home .nh-heading-green,
+.nh-home .nh-heading-blue,
+.nh-home .nh-heading-red { color: #858585 !important; }
+.nh-home .nh-card-grid > * { min-width: 0; }
+.nh-home .nh-cta-panel {
+  background: #0d0d0d !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 30px !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.035) inset !important;
+}
+
+/* Header / footer use the same control-room language. */
+header.sticky {
+  background: rgba(0,0,0,.82) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+header.sticky nav a span {
+  background: var(--rekki-blue) !important;
+}
+header.sticky > div > div > a:last-child,
+header.sticky .btn-shine {
+  background: var(--rekki-blue) !important;
+  border-color: var(--rekki-blue) !important;
+  color: #fff !important;
+}
+footer {
+  background: #000 !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+@media (max-width: 767px) {
+  .nh-rekki-page { padding-top: 54px !important; padding-bottom: 64px !important; }
+  .nh-rekki-page h1 { font-size: clamp(2.65rem, 12vw, 4rem) !important; }
+}
