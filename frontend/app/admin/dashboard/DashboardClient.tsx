@@ -368,7 +368,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
 
       {error && <ErrorState message={error} onRetry={() => void load().catch((e) => setError(e instanceof Error ? e.message : "Unable to reload."))} />}
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {!departmentScoped && (      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <button
           className={cx(
             "rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover",
@@ -423,6 +423,8 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
           </div>
         </div>
       </div>
+
+      )}
 
       {!departmentScoped && <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
         {(["announcements", "events", "queries", "people"] as Tab[]).map((x) => (
