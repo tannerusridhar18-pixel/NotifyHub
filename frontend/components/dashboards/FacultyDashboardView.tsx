@@ -199,15 +199,15 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110">
+          <span className="grid h-10 w-10 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-inset)] transition-transform duration-200 group-hover:scale-105">
             ◈
           </span>
-          <span className="tracking-tight text-xl font-extrabold">
+          <span className="tracking-tight text-xl font-medium">
             Notify<span className="text-brand-light">Hub</span>
           </span>
         </Link>
         <div className="hidden items-center gap-2 text-xs font-semibold text-muted md:flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-3 py-0.5 text-[10px] font-extrabold uppercase text-brand-light shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-3 py-0.5 text-[10px] font-medium uppercase text-brand-light shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             FACULTY WORKSPACE
           </span>
@@ -243,7 +243,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[10px] font-extrabold tracking-widest text-amber-400 uppercase">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[10px] font-medium tracking-widest text-amber-400 uppercase">
                   ★ HOME: {user.department || "Engineering"}
                 </span>
                 {mappings.filter((m) => m.relationship !== "HOME").map((m) => (
@@ -255,7 +255,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                   </span>
                 ))}
               </div>
-              <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="mt-2 text-3xl sm:text-4xl font-medium tracking-tight">
                 {faculty?.name || "Faculty Professor"}
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -265,15 +265,15 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             <div className="flex flex-wrap gap-3">
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">My Posts</span>
-                <span className="text-2xl font-extrabold text-white">{myAnns.length + myEvts.length}</span>
+                <span className="text-2xl font-medium text-white">{myAnns.length + myEvts.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Student Inquiries</span>
-                <span className="text-2xl font-extrabold text-brand-light">{studentQueries.length}</span>
+                <span className="text-2xl font-medium text-brand-light">{studentQueries.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Pending Replies</span>
-                <span className="text-2xl font-extrabold text-amber-400">
+                <span className="text-2xl font-medium text-amber-400">
                   {studentQueries.filter((q) => q.status === "OPEN").length}
                 </span>
               </div>
@@ -284,7 +284,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
           <div className="mt-8 flex gap-2 border-t border-white/[0.08] pt-6 overflow-x-auto">
             <button
               onClick={() => setTab("notices")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "notices"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -294,7 +294,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("inbox")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "inbox"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -304,7 +304,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("askAdmin")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "askAdmin"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -322,7 +322,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             {/* Post Composer */}
             <div className="lg:col-span-5">
               <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 shadow-lift">
-                <h2 className="text-xl font-extrabold text-white">Broadcast Class / Dept Notice</h2>
+                <h2 className="text-xl font-medium text-white">Broadcast Class / Dept Notice</h2>
                 <p className="mt-1 text-xs text-muted">
                   Post targeted academic updates or schedule class events with attachments.
                 </p>
@@ -332,7 +332,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                     <button
                       type="button"
                       onClick={() => setPostType("ANNOUNCEMENT")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                      className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                         postType === "ANNOUNCEMENT"
                           ? "border-brand bg-brand-50 text-brand-light shadow-sm"
                           : "border-white/10 bg-surface-2/60 text-muted"
@@ -343,7 +343,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                     <button
                       type="button"
                       onClick={() => setPostType("EVENT")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                      className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                         postType === "EVENT"
                           ? "border-brand bg-brand-50 text-brand-light shadow-sm"
                           : "border-white/10 bg-surface-2/60 text-muted"
@@ -495,7 +495,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             <div className="lg:col-span-7">
               <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 shadow-lift">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xl font-extrabold text-white">Your Broadcasted Posts</h2>
+                  <h2 className="text-xl font-medium text-white">Your Broadcasted Posts</h2>
                   <span className="text-xs font-bold text-muted">{myAnns.length + myEvts.length} Sent</span>
                 </div>
 
@@ -510,9 +510,9 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-extrabold text-white">{a.title}</span>
+                            <span className="text-xs font-medium text-white">{a.title}</span>
                             {a.urgent && (
-                              <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-[9px] font-extrabold text-red-400">
+                              <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-[9px] font-medium text-red-400">
                                 URGENT
                               </span>
                             )}
@@ -548,8 +548,8 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-extrabold text-white">📅 {e.title}</span>
-                            <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[9px] font-extrabold text-brand-light">
+                            <span className="text-xs font-medium text-white">📅 {e.title}</span>
+                            <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[9px] font-medium text-brand-light">
                               EVENT
                             </span>
                           </div>
@@ -579,10 +579,10 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Student Inquiries Desk</h2>
+                <h2 className="text-2xl font-medium text-white">Student Inquiries Desk</h2>
                 <p className="text-xs text-muted">Inquiries sent directly to you from students in your department.</p>
               </div>
-              <span className="rounded-xl border border-brand/30 bg-brand-50 px-3.5 py-1.5 text-xs font-extrabold text-brand-light">
+              <span className="rounded-xl border border-brand/30 bg-brand-50 px-3.5 py-1.5 text-xs font-medium text-brand-light">
                 {studentQueries.filter((q) => q.status === "OPEN").length} Queries Awaiting Answer
               </span>
             </div>
@@ -598,7 +598,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <span className="text-sm font-extrabold text-white">{q.subject || "Student Inquiry"}</span>
+                        <span className="text-sm font-medium text-white">{q.subject || "Student Inquiry"}</span>
                         <p className="text-xs text-muted">
                           From: <strong className="text-ink">{q.name || q.email}</strong> ({q.department})
                         </p>
@@ -612,7 +612,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
 
                     {q.adminResponse ? (
                       <div className="rounded-xl border border-teal-500/30 bg-teal-soft/60 p-3.5 text-xs">
-                        <span className="block text-[10px] font-extrabold uppercase tracking-wider text-teal-light">
+                        <span className="block text-[10px] font-medium uppercase tracking-wider text-teal-light">
                           Your Answer:
                         </span>
                         <p className="mt-1 text-ink">{q.adminResponse}</p>
@@ -671,7 +671,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
         {!error && tab === "askAdmin" && (
           <div className="max-w-2xl mx-auto">
             <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-              <h2 className="text-2xl font-extrabold text-white">Contact Department Administration</h2>
+              <h2 className="text-2xl font-medium text-white">Contact Department Administration</h2>
               <p className="mt-1 text-xs text-muted">
                 Submit academic requests, lab requirements, or administrative inquiries to your Home Department Admin.
               </p>
