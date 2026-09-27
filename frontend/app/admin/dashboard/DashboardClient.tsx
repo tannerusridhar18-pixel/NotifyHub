@@ -578,6 +578,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                           </td>
                         </tr>
                       )}
+                      </Fragment>
                     ))
                   ) : (
                     <tr>
@@ -662,7 +663,8 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                 <tbody>
                   {evs.length ? (
                     evs.map((x) => (
-                      <tr key={x.id}>
+                      <Fragment key={x.id}>
+                        <tr>
                         <td className="border-b border-border p-3 align-top">
                           <b className="block">{x.title}</b>
                           <small className="mt-1 block text-[9px] text-muted">{x.location}</small>
