@@ -328,9 +328,8 @@
 }
 
 .cta:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 10px 30px rgba(102, 58, 243, 0.2);
+  filter: brightness(1.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16), var(--nh-shadow-inset);
 }
 
 .cta:disabled {
