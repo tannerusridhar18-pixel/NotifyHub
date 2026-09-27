@@ -1898,3 +1898,70 @@
     height: 245px;
   }
 }
+
+
+/* Public home usability tokens: keep typography, color, and radii intentionally small. */
+.nh-home {
+  --nh-radius-sm: 0.5rem;
+  --nh-radius-md: 0.75rem;
+  --nh-radius-lg: 1rem;
+  --nh-radius-pill: 9999px;
+}
+
+.nh-home .nh-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+}
+
+.nh-home .nh-card-label {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+}
+
+.nh-home .nh-empty-content {
+  min-height: 0;
+  padding: 2rem 1.5rem;
+  border-radius: var(--nh-radius-lg);
+}
+
+.nh-home .nh-empty-content {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.nh-home .nh-content-heading p {
+  font-size: 0.875rem;
+}
+
+.nh-home .nh-heading-green,
+.nh-home .nh-heading-blue,
+.nh-home .nh-heading-red {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+.nh-home .nh-feature-label {
+  text-transform: none;
+  letter-spacing: 0.05em;
+}
+
+.nh-home .nh-cta-panel > span {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.nh-home .nh-public-content-card {
+  border-radius: var(--nh-radius-lg);
+}
+
+.nh-home .nh-public-content-card .text-muted {
+  color: var(--color-muted);
+}
+
+@media (max-width: 767px) {
+  .nh-home .nh-empty-content {
+    padding: 1.5rem 1rem;
+  }
+}
