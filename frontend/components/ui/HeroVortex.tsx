@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const HALF_HEIGHT = 3.95;
+const HALF_HEIGHT = 3.55;
 const WAIST_RADIUS = 0.18;
 const EDGE_RADIUS = 4.15;
 
@@ -13,129 +13,10 @@ function radiusAt(y: number) {
   return WAIST_RADIUS + (EDGE_RADIUS - WAIST_RADIUS) * eased;
 }
 
-
-const FLOW_VERTEX = `
-  uniform float uTime;
-  uniform float uFlow;
-  varying float vEnergy;
-
-  void main() {
-    vec3 p = position;
-    float radius = max(length(p.xz), 0.001);
-    float angle = atan(p.z, p.x);
-    float neckDistance = abs(p.y);
-
-    // Two opposing waves travel from the wide ends toward the neck.
-    // This creates the reference-like streaming sensation without moving
-    // the whole funnel as a rigid object.
-    float streamA = sin(neckDistance * 5.4 - uTime * uFlow + angle * 3.0);
-    float streamB = sin(neckDistance * 10.0 - uTime * uFlow * 0.58 - angle * 5.0);
-
-    float surface = smoothstep(0.12, 1.0, radius / 4.15);
-    float twist = (streamA * 0.035 + streamB * 0.012) * surface;
-
-    float a = angle
-      + p.y * 0.17
-      + twist
-      + sin(p.y * 0.7 + uTime * 0.18) * 0.009;
-
-    // A very small radial pulse travels inward with the stream phase.
-    float radialFlow = (streamA * 0.012 + streamB * 0.004) * surface;
-    float streamedRadius = radius + radialFlow;
-
-    p.x = cos(a) * streamedRadius;
-    p.z = sin(a) * streamedRadius;
-
-    p.y += sin(angle * 3.0 + p.y * 1.7 + uTime * 0.32) * 0.012;
-
-    vEnergy = 0.52 + 0.48 * (0.5 + 0.5 * streamA);
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-  }
-`;
-
-const FLOW_FRAGMENT = `
-  uniform vec3 uColor;
-  uniform float uOpacity;
-  varying float vEnergy;
-
-  void main() {
-    float brightness = mix(0.72, 1.0, vEnergy);
-    gl_FragColor = vec4(uColor * brightness, uOpacity * brightness);
-  }
-`;
-
-const GROUND_VERTEX = `
-  uniform float uTime;
-  varying float vEnergy;
-  varying float vRadius;
-
-  void main() {
-    vec3 p = position;
-    float radius = length(p.xz);
-    float angle = atan(p.z, p.x);
-    vRadius = radius;
-
-    float wave = sin(radius * 2.25 - uTime * 0.85 + angle * 3.0);
-    float wave2 = sin(radius * 5.2 - uTime * 0.42 + angle * 7.0);
-
-    p.y += wave * 0.035 + wave2 * 0.012;
-    p.xz *= 1.0 + wave * 0.004;
-
-    vEnergy = 0.55 + 0.45 * (0.5 + 0.5 * wave);
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-  }
-`;
-
-const GROUND_FRAGMENT = `
-  uniform vec3 uColor;
-  uniform float uOpacity;
-  varying float vEnergy;
-  varying float vRadius;
-
-  void main() {
-    // Keep the center dense and readable while letting rings disappear softly outward.
-    float edgeFade = 1.0 - smoothstep(2.8, 6.25, vRadius);
-    float centerLift = 0.72 + 0.28 * (1.0 - smoothstep(0.0, 1.4, vRadius));
-    float alpha = uOpacity * edgeFade * centerLift * (0.72 + vEnergy * 0.28);
-    gl_FragColor = vec4(uColor, alpha);
-  }
-`;
-
-function createFlowMaterial(color: number, opacity: number, flow: number) {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uFlow: { value: flow },
-      uColor: { value: new THREE.Color(color) },
-      uOpacity: { value: opacity },
-    },
-    vertexShader: FLOW_VERTEX,
-    fragmentShader: FLOW_FRAGMENT,
-    transparent: true,
-    depthWrite: false,
-  });
-}
-
-function createGroundMaterial(color: number, opacity: number) {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uColor: { value: new THREE.Color(color) },
-      uOpacity: { value: opacity },
-    },
-    vertexShader: GROUND_VERTEX,
-    fragmentShader: GROUND_FRAGMENT,
-    transparent: true,
-    depthWrite: false,
-  });
-}
-
 function buildContourGeometry() {
   const positions: number[] = [];
-  const rings = 150;
-  const segments = 320;
+  const rings = 108;
+  const segments = 260;
 
   for (let ring = 0; ring < rings; ring += 1) {
     const y = -HALF_HEIGHT + (ring / (rings - 1)) * HALF_HEIGHT * 2;
@@ -167,8 +48,8 @@ function buildContourGeometry() {
 
 function buildFlowGeometry() {
   const positions: number[] = [];
-  const lines = 185;
-  const points = 150;
+  const lines = 145;
+  const points = 125;
 
   for (let line = 0; line < lines; line += 1) {
     const base = (line / lines) * Math.PI * 2;
@@ -211,24 +92,22 @@ function buildFlowGeometry() {
 
 function buildGroundFlowGeometry() {
   const positions: number[] = [];
-  const lines = 150;
-  const points = 125;
+  const lines = 125;
+  const points = 115;
 
   for (let line = 0; line < lines; line += 1) {
     const base = (line / lines) * Math.PI * 2;
     const phase = line * 0.61;
 
     for (let i = 0; i < points - 1; i += 1) {
-      const t0 = i / (points - 1);
-      const t1 = (i + 1) / (points - 1);
-      const r0 = 0.16 + t0 * 6.5;
-      const r1 = 0.16 + t1 * 6.5;
+      const r0 = 0.18 + (i / (points - 1)) * 6.0;
+      const r1 = 0.18 + ((i + 1) / (points - 1)) * 6.5;
 
       const a0 = base + r0 * 0.82 + Math.sin(r0 * 1.7 + phase) * 0.055;
       const a1 = base + r1 * 0.82 + Math.sin(r1 * 1.7 + phase) * 0.055;
 
-      const y0 = -0.24 - Math.pow(t0, 0.72) * 3.22 + Math.sin(r0 * 1.6 + phase) * 0.035;
-      const y1 = -0.24 - Math.pow(t1, 0.72) * 3.22 + Math.sin(r1 * 1.6 + phase) * 0.035;
+      const y0 = -3.25 + Math.sin(r0 * 1.6 + phase) * 0.035;
+      const y1 = -3.25 + Math.sin(r1 * 1.6 + phase) * 0.035;
 
       positions.push(
         Math.cos(a0) * r0,
@@ -249,13 +128,11 @@ function buildGroundFlowGeometry() {
 
 function buildGroundContoursGeometry() {
   const positions: number[] = [];
-  const rings = 82;
-  const segments = 300;
+  const rings = 32;
+  const segments = 240;
 
   for (let ring = 0; ring < rings; ring += 1) {
-    const t = ring / (rings - 1);
-    const radius = 0.16 + Math.pow(t, 1.72) * 6.2;
-    const floorY = -0.24 - Math.pow(t, 0.72) * 3.22;
+    const radius = 0.25 + (ring / (rings - 1)) * 6.2;
 
     for (let i = 0; i < segments; i += 1) {
       const a0 = (i / segments) * Math.PI * 2;
@@ -265,10 +142,10 @@ function buildGroundContoursGeometry() {
 
       positions.push(
         Math.cos(a0) * (radius + wave0),
-        floorY + Math.sin(a0 * 3 + radius) * 0.018,
+        -3.27,
         Math.sin(a0) * (radius + wave0),
         Math.cos(a1) * (radius + wave1),
-        floorY + Math.sin(a1 * 3 + radius) * 0.018,
+        -3.27,
         Math.sin(a1) * (radius + wave1),
       );
     }
@@ -313,7 +190,7 @@ export default function HeroVortex() {
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 40);
-    camera.position.set(0, 0.18, 14.2);
+    camera.position.set(0, 0.02, 13.8);
     camera.lookAt(0, -0.15, 0);
 
     let renderer: THREE.WebGLRenderer;
@@ -341,19 +218,39 @@ export default function HeroVortex() {
 
     const vortex = new THREE.Group();
 
-    const contourMaterial = createFlowMaterial(0xf4f6f8, 0.16, 0.34);
+    const contourMaterial = new THREE.LineBasicMaterial({
+      color: 0xf4f6f8,
+      transparent: true,
+      opacity: 0.105,
+      depthWrite: false,
+    });
     const contourGeometry = buildContourGeometry();
     const contours = new THREE.LineSegments(contourGeometry, contourMaterial);
 
-    const flowMaterial = createFlowMaterial(0xffffff, 0.27, 0.78);
+    const flowMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.19,
+      depthWrite: false,
+    });
     const flowGeometry = buildFlowGeometry();
     const flowLines = new THREE.LineSegments(flowGeometry, flowMaterial);
 
-    const groundFlowMaterial = createGroundMaterial(0xf4f6f8, 0.32);
+    const groundFlowMaterial = new THREE.LineBasicMaterial({
+      color: 0xf4f6f8,
+      transparent: true,
+      opacity: 0.24,
+      depthWrite: false,
+    });
     const groundFlowGeometry = buildGroundFlowGeometry();
     const groundFlow = new THREE.LineSegments(groundFlowGeometry, groundFlowMaterial);
 
-    const groundContourMaterial = createGroundMaterial(0xdde3e9, 0.12);
+    const groundContourMaterial = new THREE.LineBasicMaterial({
+      color: 0xdde3e9,
+      transparent: true,
+      opacity: 0.075,
+      depthWrite: false,
+    });
     const groundContourGeometry = buildGroundContoursGeometry();
     const groundContours = new THREE.LineSegments(
       groundContourGeometry,
@@ -364,7 +261,7 @@ export default function HeroVortex() {
       color: 0xffffff,
       size: 0.018,
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.3,
       depthWrite: false,
       sizeAttenuation: true,
     });
@@ -418,19 +315,12 @@ export default function HeroVortex() {
       if (!active) return;
 
       const elapsed = clock.getElapsedTime();
-
       if (!reducedMotion) {
         vortex.rotation.y = elapsed * 0.012;
         vortex.rotation.z = Math.sin(elapsed * 0.09) * 0.008;
         groundFlow.rotation.y = -elapsed * 0.005;
         groundContours.rotation.y = -elapsed * 0.003;
       }
-
-      const animationTime = reducedMotion ? 0 : elapsed;
-      (contourMaterial.uniforms.uTime.value = animationTime);
-      (flowMaterial.uniforms.uTime.value = animationTime);
-      (groundFlowMaterial.uniforms.uTime.value = animationTime);
-      (groundContourMaterial.uniforms.uTime.value = animationTime);
 
       scrollProgress += (targetScroll - scrollProgress) * 0.055;
 
@@ -441,11 +331,11 @@ export default function HeroVortex() {
       groundContours.position.y = -scrollProgress * 0.48;
 
       const fade = 1 - scrollProgress * 0.72;
-      flowMaterial.uniforms.uOpacity.value = 0.27 * fade;
-      contourMaterial.uniforms.uOpacity.value = 0.16 * fade;
-      particleMaterial.opacity = 0.42 * fade;
-      groundFlowMaterial.uniforms.uOpacity.value = 0.32 * fade;
-      groundContourMaterial.uniforms.uOpacity.value = 0.12 * fade;
+      flowMaterial.opacity = 0.19 * fade;
+      contourMaterial.opacity = 0.105 * fade;
+      particleMaterial.opacity = 0.3 * fade;
+      groundFlowMaterial.opacity = 0.24 * fade;
+      groundContourMaterial.opacity = 0.075 * fade;
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(animate);
