@@ -77,7 +77,7 @@ export default function RoleDashboard({ role }: { role?: string }) {
 
   if (loading)
     return (
-      <div className="grid min-h-screen place-content-center place-items-center gap-4 bg-bg text-ink">
+      <div className="nh-rekki-scope grid min-h-screen place-content-center place-items-center gap-4 bg-[var(--color-obsidian)] text-[var(--color-paper)]">
         <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white font-black shadow-glow animate-spin-slow text-xl">
           ◈
         </div>
@@ -87,7 +87,7 @@ export default function RoleDashboard({ role }: { role?: string }) {
 
   if (error) {
     return (
-      <div className="grid min-h-screen place-content-center p-8 bg-bg text-ink">
+      <div className="nh-rekki-scope grid min-h-screen place-content-center p-8 bg-[var(--color-obsidian)] text-[var(--color-paper)]">
         <ErrorState message={error} onRetry={() => void load()} />
       </div>
     );
@@ -110,7 +110,7 @@ export default function RoleDashboard({ role }: { role?: string }) {
   }
 
   return (
-    <div className="grid min-h-screen place-content-center place-items-center gap-4 bg-bg text-ink">
+    <div className="nh-rekki-scope grid min-h-screen place-content-center place-items-center gap-4 bg-[var(--color-obsidian)] text-[var(--color-paper)]">
       <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white font-black shadow-glow animate-spin-slow text-xl">
         ◈
       </div>
