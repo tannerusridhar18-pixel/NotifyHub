@@ -51,7 +51,7 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
   const buttonDisabled = closed || loading || isRegistered;
 
   return (
-    <section className="mt-4 border-t border-border pt-4" onClick={(e) => e.stopPropagation()}>
+    <section className="mt-4 border-t border-border pt-4" aria-label="Event registration" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-wrap gap-2 print-hide">
         {closed ? (
           <span
@@ -64,7 +64,7 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
           <button
             disabled={buttonDisabled}
             onClick={() => void register()}
-            className="rounded-lg bg-brand px-3 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-brand px-3 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50" aria-label={`Register for ${event.title}`}
           >
             {buttonText}
           </button>
@@ -73,7 +73,7 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
           <>
             <button
               onClick={() => void loadRegistrations()}
-              className="rounded-lg border border-brand/40 px-3 py-2 text-sm font-bold text-brand-light hover:bg-brand-50"
+              className="rounded-lg border border-brand/40 px-3 py-2 text-sm font-bold text-brand-light hover:bg-brand-50" aria-label={`View registrations for ${event.title}`}
             >
               View registrations
             </button>
