@@ -69,7 +69,7 @@ export default function Home() {
       announcements({ size: 3 }),
       upcomingEvents(0, 3),
       announcements({ size: 3, urgent: true }),
-      currentUser(),
+      currentUser().catch(() => null),
     ])
       .then(([a, e, u, user]) => {
         setItems(a.content);
