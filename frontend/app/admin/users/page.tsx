@@ -119,7 +119,6 @@ export default function ManageUsersPage() {
 
   const scopedFilterOptions = (key: ScopedFilterKey): FilterOption[] => {
     switch (key) {
-      case "department": return departments.map(x => ({ id: x.id, label: x.name }));
       case "year": return [1, 2, 3, 4, 5, 6].map(x => ({ id: x, label: `Year ${x}` }));
       case "section": return sections.map(x => ({ id: x.id, label: x.name }));
       case "hostel": return hostels.map(x => ({ id: x.id, label: x.name }));
@@ -140,13 +139,14 @@ export default function ManageUsersPage() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && (!u || ![0, 3].includes(u.roleLevel))) {
+        if (!alive) return;
+        if (!u || ![0, 3].includes(u.roleLevel)) {
           router.replace("/");
-        } else if (alive) {
-          setCurrentUserRole(u.role);
-          setCurrentUserDepartmentId(u.departmentId ?? null);
-          await load();
+          return;
         }
+        setCurrentUserRole(u.role);
+        setCurrentUserDepartmentId(u.departmentId ?? null);
+        await load();
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : "Unable to verify admin credentials.");
       }
