@@ -313,12 +313,16 @@ public class DepartmentLeadershipService {
                 sp.getStudentId(),
                 sp.getName() != null ? sp.getName() : (sp.getUser() != null ? sp.getUser().getUsername() : ""),
                 sp.getUser() != null ? sp.getUser().getEmail() : "",
+                sp.getDepartment() != null ? sp.getDepartment().getId() : null,
+                sp.getDepartment() != null ? sp.getDepartment().getName() : "",
                 sp.getYear(),
                 sp.getSemester(),
                 sp.getBranch() != null ? sp.getBranch().getId() : null,
                 sp.getBranch() != null ? sp.getBranch().getName() : "",
                 sp.getSection() != null ? sp.getSection().getId() : null,
-                sp.getSection() != null ? sp.getSection().getName() : ""
+                sp.getSection() != null ? sp.getSection().getName() : "",
+                sp.isHosteller(),
+                sp.getUser() != null && sp.getUser().getAccountStatus() != null ? sp.getUser().getAccountStatus().name() : "UNKNOWN"
         )).toList();
     }
 
@@ -382,5 +386,5 @@ public class DepartmentLeadershipService {
     public record DepartmentAnalyticsDto(Long departmentId, String departmentName, long studentCount, long facultyCount, long openQueries, long answeredQueries) {}
     public record DepartmentOverviewDto(Long departmentId, String departmentName, boolean active, String hodName, String hodEmail, long studentCount, long facultyCount) {}
     public record DepartmentFacultyDto(Long id, String facultyId, String name, String designation, Long departmentId, String departmentName, String relationship, Long userId, String email) {}
-    public record DepartmentStudentDto(Long id, String studentId, String name, String email, int year, int semester, Long branchId, String branchName, Long sectionId, String sectionName) {}
+    public record DepartmentStudentDto(Long id, String studentId, String name, String email, Long departmentId, String departmentName, int year, int semester, Long branchId, String branchName, Long sectionId, String sectionName, boolean hosteller, String status) {}
 }
