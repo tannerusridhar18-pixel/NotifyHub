@@ -143,12 +143,17 @@ public class TargetingService {
 
         // 1. Target by Role
         if ("role".equalsIgnoreCase(rType) || a.getTargetType() == TargetType.ROLE) {
-            if (a.getTargetRole() != null && a.getTargetRole() == viewer.getRole()) return true;
+            Long targetDepartmentId = a.getDepartmentId();
+            Long viewerDepartmentId = getViewerDepartmentId(viewer);
+            boolean departmentMatches = targetDepartmentId == null
+                    || (viewerDepartmentId != null && targetDepartmentId.equals(viewerDepartmentId));
+            if (a.getTargetRole() != null && a.getTargetRole() == viewer.getRole()) return departmentMatches;
             for (String t : targets) {
-                if (t.equalsIgnoreCase(viewerRoleName) || t.equals(String.valueOf(viewerLevel))) return true;
-                if (viewer.getRoleEntity() != null && t.equals(String.valueOf(viewer.getRoleEntity().getId()))) return true;
+                if (t.equalsIgnoreCase(viewerRoleName) || t.equals(String.valueOf(viewerLevel))) return departmentMatches;
+                if (viewer.getRoleEntity() != null && t.equals(String.valueOf(viewer.getRoleEntity().getId()))) return departmentMatches;
             }
             return false;
+        }
         }
 
         // 2. Audience filter: FACULTY_ONLY
