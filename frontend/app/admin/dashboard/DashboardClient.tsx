@@ -33,6 +33,8 @@ import {
   structureHostels,
   structureBlocks,
   structureRooms,
+  eventRegistrations,
+  type EventRegistration,
 } from "@/lib/api";
 import type { StructureDepartment, StructureBranch, StructureSection, StructureHostel, StructureBlock, StructureRoom, InvitableRole } from "@/lib/api";
 import type { Announcement, CampusQuery, EventItem, TargetType } from "@/types";
@@ -84,11 +86,12 @@ const blankInvite = {
 };
 type Tab = "announcements" | "events" | "queries" | "people";
 
-export default function DashboardClient({ departmentScoped = false }: { departmentScoped?: boolean }) {
+export default function DashboardClient({ departmentScoped = false, initialTab = "announcements" }: { departmentScoped?: boolean; initialTab?: Tab }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window === "undefined") return "announcements";
+    if (typeof window === "undefined") return initialTab;
     const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    if (departmentScoped) return initialTab;
     return requestedTab === "events" || requestedTab === "announcements" ? requestedTab : "announcements";
   });
   const [anns, setAnns] = useState<Announcement[]>([]);
@@ -110,19 +113,21 @@ export default function DashboardClient({ departmentScoped = false }: { departme
   const [blocks, setBlocks] = useState<StructureBlock[]>([]);
   const [rooms, setRooms] = useState<StructureRoom[]>([]);
   const [invitableRoleList, setInvitableRoleList] = useState<InvitableRole[]>([]);
+  const [registrationRows, setRegistrationRows] = useState<Record<number, EventRegistration[]>>({});
+  const [registrationLoading, setRegistrationLoading] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const [x, y, z, d, b, s, h, bl, r, rl] = await Promise.all([
-      managedAnnouncements(),
-      managedEvents(),
-      adminQueries(),
+      departmentScoped ? departmentManagedAnnouncements() : managedAnnouncements(),
+      departmentScoped ? departmentManagedEvents() : managedEvents(),
+      departmentScoped ? Promise.resolve({ content: [] as CampusQuery[] }) : adminQueries(),
       structureDepartments(),
       structureBranches(),
       structureSections(),
       structureHostels(),
       structureBlocks(),
       structureRooms(),
-      invitableRoles().catch(() => []),
+      departmentScoped ? Promise.resolve([] as InvitableRole[]) : invitableRoles().catch(() => []),
     ]);
     setAnns(x.content);
     setEvs(y.content);
@@ -160,6 +165,18 @@ export default function DashboardClient({ departmentScoped = false }: { departme
       cancelled = true;
     };
   }, [departmentScoped, load, router]);
+
+  async function loadRegistrations(eventId: number) {
+    setRegistrationLoading(eventId);
+    try {
+      const rows = await eventRegistrations(eventId);
+      setRegistrationRows((current) => ({ ...current, [eventId]: rows }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load event registrations.");
+    } finally {
+      setRegistrationLoading(null);
+    }
+  }
 
   const act = useCallback(
     async (fn: () => Promise<unknown>, success: string) => {
@@ -405,7 +422,7 @@ export default function DashboardClient({ departmentScoped = false }: { departme
         </div>
       </div>
 
-      <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
+      {!departmentScoped && <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
         {(["announcements", "events", "queries", "people"] as Tab[]).map((x) => (
           <button
             key={x}
@@ -420,7 +437,7 @@ export default function DashboardClient({ departmentScoped = false }: { departme
             {x === "people" ? "People & invites" : x[0].toUpperCase() + x.slice(1)}
           </button>
         ))}
-      </div>
+      </div>}
 
 
       {tab === "announcements" && (
@@ -654,6 +671,15 @@ export default function DashboardClient({ departmentScoped = false }: { departme
                               onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}
                             >
                               Delete
+                            </button>
+                          )}
+                          {departmentScoped && x.status === "PUBLISHED" && x.registrationEnabled && (
+                            <button
+                              className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light"
+                              onClick={() => void loadRegistrations(x.id)}
+                              disabled={registrationLoading === x.id}
+                            >
+                              {registrationLoading === x.id ? "Loading…" : "View registrations"}
                             </button>
                           )}
                         </td>
