@@ -26,3 +26,12 @@
 - Neutralized legacy multi-color public utility classes only inside the selected public-page scopes; admin/dashboard pages are not targeted.
 - Restyled the shared public shell only when one of the selected pages is active, without changing routes, API calls, or component behavior.
 - No data, authentication, backend, or role logic changes.
+
+
+## 2026-09-27 — Qronos vortex density and flow refinement
+- Scoped to `frontend/components/ui/HeroVortex.tsx` only for the visual implementation.
+- Increased funnel radial/vertical subdivisions and streamline sampling to remove faceted/angular appearance.
+- Added continuous shader-driven surface flow toward the neck while retaining only subtle overall rotation.
+- Increased ground contour density with tighter center spacing and shader-based outward opacity fade.
+- Preserved existing colors, layout, pointer-events behavior, 60fps requestAnimationFrame loop, scroll response, and prefers-reduced-motion handling.
+- No backend, data, auth, role, route, or content changes.
