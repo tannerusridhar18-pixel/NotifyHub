@@ -49,9 +49,3 @@
 - Increased streamline density and refined the surface deformation so the funnel reads as a continuous thread field.
 - Reworked the lower continuation to begin from the neck and flow into the ground surface more naturally.
 - Preserved the existing page layout, content, colors, pointer behavior, reduced-motion handling, and scroll interaction.
-
-
-## 2026-09-27 — Qronos lower-flow continuity fix
-- Removed the visible lower funnel/hourglass half from the rendered vortex geometry.
-- Kept the upper funnel continuous into the neck and connected that neck directly to the outward-flowing ground surface.
-- Preserved hero layout/content, colors, animation controls, reduced-motion behavior, and scroll interaction.
