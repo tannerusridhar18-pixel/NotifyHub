@@ -5,7 +5,7 @@ export function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase backdrop-blur-md transition-all duration-300",
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium tracking-wider uppercase backdrop-blur-md transition-all duration-200",
         statusClasses(status)
       )}
     >
@@ -49,7 +49,7 @@ export function SoftBadge({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-extrabold tracking-wide uppercase backdrop-blur-md transition-all duration-200",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-medium tracking-wide uppercase backdrop-blur-md transition-all duration-200",
         toneMap[tone]
       )}
     >
