@@ -732,6 +732,40 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                           )}
                         </td>
                       </tr>
+                      {departmentScoped && x.status === "PUBLISHED" && registrationRows[x.id] && (
+                        <tr>
+                          <td colSpan={4} className="border-b border-border bg-surface-2/60 p-4">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                              <strong className="text-sm">{registrationRows[x.id].length} registered student{registrationRows[x.id].length === 1 ? "" : "s"}</strong>
+                              <button type="button" className="rounded-lg border border-border px-3 py-1.5 text-[10px] font-extrabold text-muted hover:text-white" onClick={() => window.print()}>
+                                Print registration list
+                              </button>
+                            </div>
+                            {registrationRows[x.id].length ? (
+                              <div className="overflow-x-auto">
+                                <table className="w-full min-w-[620px] text-left text-[10px]">
+                                  <thead><tr className="border-b border-border text-muted">
+                                    <th className="p-2">Student</th><th className="p-2">Email</th><th className="p-2">Department</th><th className="p-2">Year</th><th className="p-2">Section</th><th className="p-2">Registered At</th>
+                                  </tr></thead>
+                                  <tbody>
+                                    {registrationRows[x.id].map((r) => (
+                                      <tr key={r.id} className="border-b border-border">
+                                        <td className="p-2 font-bold">{r.studentName || "—"}</td>
+                                        <td className="p-2">{r.studentEmail}</td>
+                                        <td className="p-2">{r.department || "—"}</td>
+                                        <td className="p-2">{r.year ? `Year ${r.year}` : "—"}</td>
+                                        <td className="p-2">{r.section || "—"}</td>
+                                        <td className="p-2">{new Date(r.registeredAt).toLocaleString()}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : <p className="text-xs text-muted">No students have registered for this event yet.</p>}
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     ))
                   ) : (
                     <tr>
