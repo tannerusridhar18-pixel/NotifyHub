@@ -663,8 +663,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                 <tbody>
                   {evs.length ? (
                     evs.map((x) => (
-                      <Fragment key={x.id}>
-                        <tr>
+                      <tr key={x.id}>
                         <td className="border-b border-border p-3 align-top">
                           <b className="block">{x.title}</b>
                           <small className="mt-1 block text-[9px] text-muted">{x.location}</small>
@@ -673,101 +672,67 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                         <td className="border-b border-border p-3 align-top">
                           <StatusBadge status={x.status} />
                         </td>
-                        <td className="flex flex-wrap gap-1.5 border-b border-border p-3 align-top">
-                          {x.status === "DRAFT" && (
-                            <button
-                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
-                              onClick={() => void act(() => publishEvent(x.id), "Event published.")}
-                            >
-                              Publish
-                            </button>
-                          )}
-                          {x.status === "PUBLISHED" && (
-                            <button
-                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
-                              onClick={() => void act(() => unpublishEvent(x.id), "Event unpublished.")}
-                            >
-                              Unpublish
-                            </button>
-                          )}
-                          {x.status !== "CANCELLED" && x.status !== "ARCHIVED" && (
-                            <button
-                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
-                              onClick={() => void act(() => cancelEvent(x.id), "Event cancelled.")}
-                            >
-                              Cancel
-                            </button>
-                          )}
-                          {x.status === "ARCHIVED" ? (
-                            <button
-                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
-                              onClick={() => void act(() => unarchiveEvent(x.id), "Event unarchived.")}
-                            >
-                              Unarchive
-                            </button>
-                          ) : (
-                            <button
-                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
-                              onClick={() => void act(() => archiveEvent(x.id), "Event archived.")}
-                            >
-                              Archive
-                            </button>
-                          )}
-                          {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
-                            <button
-                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
-                              onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}
-                            >
-                              Delete
-                            </button>
-                          )}
-                          {departmentScoped && x.status === "PUBLISHED" && x.registrationEnabled && (
-                            <button
-                              className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light"
-                              onClick={() => void loadRegistrations(x.id)}
-                              disabled={registrationLoading === x.id}
-                            >
-                              {registrationLoading === x.id ? "Loading…" : "View registrations"}
-                            </button>
+                        <td className="border-b border-border p-3 align-top">
+                          <div className="flex flex-wrap gap-1.5">
+                            {x.status === "DRAFT" && (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => publishEvent(x.id), "Event published.")}>Publish</button>
+                            )}
+                            {x.status === "PUBLISHED" && (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => unpublishEvent(x.id), "Event unpublished.")}>Unpublish</button>
+                            )}
+                            {x.status !== "CANCELLED" && x.status !== "ARCHIVED" && (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => cancelEvent(x.id), "Event cancelled.")}>Cancel</button>
+                            )}
+                            {x.status === "ARCHIVED" ? (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => unarchiveEvent(x.id), "Event unarchived.")}>Unarchive</button>
+                            ) : (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => archiveEvent(x.id), "Event archived.")}>Archive</button>
+                            )}
+                            {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}>Delete</button>
+                            )}
+                            {departmentScoped && x.status === "PUBLISHED" && x.registrationEnabled && (
+                              <button className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light" onClick={() => void loadRegistrations(x.id)} disabled={registrationLoading === x.id}>
+                                {registrationLoading === x.id ? "Loading…" : "View registrations"}
+                              </button>
+                            )}
+                          </div>
+                          {departmentScoped && x.status === "PUBLISHED" && registrationRows[x.id] && (
+                            <div className="mt-3 rounded-xl border border-border bg-surface-2/60 p-3">
+                              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                <strong className="text-sm">{registrationRows[x.id].length} registered student{registrationRows[x.id].length === 1 ? "" : "s"}</strong>
+                                <button type="button" className="rounded-lg border border-border px-3 py-1.5 text-[10px] font-extrabold text-muted hover:text-white" onClick={() => window.print()}>Print registration list</button>
+                              </div>
+                              {registrationRows[x.id].length ? (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full min-w-[620px] text-left text-[10px]">
+                                    <thead>
+                                      <tr className="border-b border-border text-muted">
+                                        <th className="p-2">Student</th><th className="p-2">Email</th><th className="p-2">Department</th><th className="p-2">Year</th><th className="p-2">Section</th><th className="p-2">Registered At</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {registrationRows[x.id].map((r) => (
+                                        <tr key={r.id} className="border-b border-border">
+                                          <td className="p-2 font-bold">{r.studentName || "—"}</td>
+                                          <td className="p-2">{r.studentEmail}</td>
+                                          <td className="p-2">{r.department || "—"}</td>
+                                          <td className="p-2">{r.year ? `Year ${r.year}` : "—"}</td>
+                                          <td className="p-2">{r.section || "—"}</td>
+                                          <td className="p-2">{new Date(r.registeredAt).toLocaleString()}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted">No students have registered for this event yet.</p>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
-                      {departmentScoped && x.status === "PUBLISHED" && registrationRows[x.id] && (
-                        <tr>
-                          <td colSpan={4} className="border-b border-border bg-surface-2/60 p-4">
-                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                              <strong className="text-sm">{registrationRows[x.id].length} registered student{registrationRows[x.id].length === 1 ? "" : "s"}</strong>
-                              <button type="button" className="rounded-lg border border-border px-3 py-1.5 text-[10px] font-extrabold text-muted hover:text-white" onClick={() => window.print()}>
-                                Print registration list
-                              </button>
-                            </div>
-                            {registrationRows[x.id].length ? (
-                              <div className="overflow-x-auto">
-                                <table className="w-full min-w-[620px] text-left text-[10px]">
-                                  <thead><tr className="border-b border-border text-muted">
-                                    <th className="p-2">Student</th><th className="p-2">Email</th><th className="p-2">Department</th><th className="p-2">Year</th><th className="p-2">Section</th><th className="p-2">Registered At</th>
-                                  </tr></thead>
-                                  <tbody>
-                                    {registrationRows[x.id].map((r) => (
-                                      <tr key={r.id} className="border-b border-border">
-                                        <td className="p-2 font-bold">{r.studentName || "—"}</td>
-                                        <td className="p-2">{r.studentEmail}</td>
-                                        <td className="p-2">{r.department || "—"}</td>
-                                        <td className="p-2">{r.year ? `Year ${r.year}` : "—"}</td>
-                                        <td className="p-2">{r.section || "—"}</td>
-                                        <td className="p-2">{new Date(r.registeredAt).toLocaleString()}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : <p className="text-xs text-muted">No students have registered for this event yet.</p>}
-                          </td>
-                        </tr>
-                      )}
-                      </Fragment>
-                    ))
-                  ) : (
+                    ))                  ) : (
                     <tr>
                       <td colSpan={4}>
                         <Empty label="events" />
