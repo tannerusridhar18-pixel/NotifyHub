@@ -3123,3 +3123,58 @@ footer {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* REKKI public-page normalization for legacy utility classes. */
+@layer components {
+  .nh-public-page [class*="bg-gradient"] { background-image: none !important; }
+  .nh-public-page [class*="text-brand"],
+  .nh-public-page [class*="text-cyan"],
+  .nh-public-page [class*="text-teal"],
+  .nh-public-page [class*="text-success"],
+  .nh-public-page [class*="text-danger"],
+  .nh-public-page [class*="text-warning"],
+  .nh-public-page [class*="text-amber"],
+  .nh-public-page [class*="text-purple"],
+  .nh-public-page [class*="text-violet"] {
+    color: var(--color-signal-blue) !important;
+  }
+  .nh-public-page [class*="bg-brand"],
+  .nh-public-page [class*="bg-cyan"],
+  .nh-public-page [class*="bg-teal"],
+  .nh-public-page [class*="bg-success"],
+  .nh-public-page [class*="bg-danger"],
+  .nh-public-page [class*="bg-warning"],
+  .nh-public-page [class*="bg-amber"],
+  .nh-public-page [class*="bg-purple"],
+  .nh-public-page [class*="bg-violet"] {
+    background-color: var(--color-graphite) !important;
+  }
+  .nh-public-page [class*="border-brand"],
+  .nh-public-page [class*="border-cyan"],
+  .nh-public-page [class*="border-teal"],
+  .nh-public-page [class*="border-success"],
+  .nh-public-page [class*="border-danger"],
+  .nh-public-page [class*="border-warning"],
+  .nh-public-page [class*="border-amber"],
+  .nh-public-page [class*="border-purple"],
+  .nh-public-page [class*="border-violet"] {
+    border-color: rgba(255,255,255,.12) !important;
+  }
+  .nh-public-page [class*="shadow-"] {
+    box-shadow: var(--shadow-subtle) !important;
+  }
+  .nh-public-page input:not([type="checkbox"]):not([type="radio"]),
+  .nh-public-page select,
+  .nh-public-page textarea {
+    background-color: var(--color-iron);
+    border-radius: var(--radius-inputs);
+    border-color: rgba(255,255,255,.12);
+    color: var(--color-paper);
+    box-shadow: var(--shadow-subtle-2);
+  }
+  .nh-public-page button[class*="bg-"],
+  .nh-public-page a[class*="bg-"] {
+    border-radius: var(--radius-buttons);
+  }
+}
