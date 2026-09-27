@@ -536,17 +536,6 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                           )}
                         </td>
                       </tr>
-                                          ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ) : (
-                              <p className="text-xs text-muted">No students have registered for this event yet.</p>
-                            )}
-                          </td>
-                        </tr>
-                      )}
-                      </Fragment>
                     ))
                   ) : (
                     <tr>
@@ -700,7 +689,8 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                           )}
                         </td>
                       </tr>
-                    ))                  ) : (
+                    ))
+                  ) : (
                     <tr>
                       <td colSpan={4}>
                         <Empty label="events" />
