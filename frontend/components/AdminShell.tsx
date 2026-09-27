@@ -56,9 +56,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   if (error)
     return (
       <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_50%_0,#1a1f46,#05060c_65%)] p-6 text-ink">
-        <div className="w-full max-w-[560px] rounded-[26px] border border-white/12 bg-surface/95 p-8 shadow-lift backdrop-blur-2xl">
-          <span className="text-[11px] font-extrabold uppercase tracking-widest text-danger-light">Control room error</span>
-          <h1 className="my-3 text-3xl font-extrabold">Session verification failed</h1>
+        <div className="w-full max-w-[560px] rounded-[26px] border border-white/12 bg-surface/95 p-8 shadow-[var(--shadow-subtle)] backdrop-blur-2xl">
+          <span className="text-[11px] font-normal uppercase tracking-widest text-danger-light">Control room error</span>
+          <h1 className="my-3 text-3xl font-normal">Session verification failed</h1>
           <p className="leading-relaxed text-muted/90">{error}</p>
           <div className="mt-7 flex flex-wrap gap-3.5">
             <button className={buttonClasses("primary")} onClick={() => void check()}>
@@ -73,20 +73,20 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     );
 
   return (
-    <div className="min-h-screen bg-bg text-ink md:grid md:grid-cols-[280px_1fr]">
-      <aside className="z-40 flex flex-col border-b border-white/[0.08] bg-ink-900/98 p-4 text-ink md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r md:p-6 backdrop-blur-2xl">
+    <div className="nh-rekki-scope min-h-screen bg-[var(--color-obsidian)] text-[var(--color-paper)] md:grid md:grid-cols-[280px_1fr]">
+      <aside className="z-40 flex flex-col border-b border-white/[0.08] bg-[var(--color-carbon)] p-4 text-ink md:sticky md:top-0 md:h-screen md:border-b-0 md:border-r md:p-6 backdrop-blur-2xl">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/admin/dashboard" className="group flex items-center gap-3 font-display text-lg font-bold">
-            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow-violet">
+          <Link href="/admin/dashboard" className="group flex items-center gap-3 font-display text-lg font-normal">
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--color-paper)] text-[var(--color-obsidian)] transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow-violet">
               ◈
             </span>
-            <span className="tracking-tight text-xl font-extrabold">
-              Notify<span className="text-brand-2-light">Hub</span>
+            <span className="tracking-tight text-xl font-normal">
+              Notify<span className="text-[var(--color-paper)]">Hub</span>
             </span>
           </Link>
         </div>
 
-        <div className="my-5 flex items-center gap-2.5 rounded-xl border border-teal-light/40 bg-teal-soft/90 px-3.5 py-2.5 text-xs font-bold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
+        <div className="my-5 flex items-center gap-2.5 rounded-xl border border-teal-light/40 bg-teal-soft/90 px-3.5 py-2.5 text-xs font-normal text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
           <span className="relative flex h-2 w-2 items-center justify-center">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
@@ -94,7 +94,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <span>Campus Control Room</span>
         </div>
 
-        <div className="px-2 pb-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-muted/80">
+        <div className="px-2 pb-2 text-[10px] font-normal uppercase tracking-[0.18em] text-muted/80">
           Management
         </div>
 
@@ -106,18 +106,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 key={item.href}
                 href={item.href}
                 className={cx(
-                  "relative flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-extrabold transition-all duration-200",
+                  "relative flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-normal transition-all duration-200",
                   active
-                    ? "bg-brand-50 text-white shadow-soft border border-brand/50"
-                    : "text-muted hover:bg-white/[0.06] hover:text-white hover:translate-x-1"
+                    ? "bg-[var(--color-graphite)] text-[var(--color-paper)] shadow-[var(--shadow-subtle)] border border-white/20"
+                    : "text-[var(--color-ash)] hover:bg-[var(--color-steel)] hover:text-[var(--color-paper)]"
                 )}
               >
-                <span className={cx("w-5 text-center text-sm font-bold", active ? "text-brand-light" : "text-muted")}>
+                <span className={cx("w-5 text-center text-sm font-normal", active ? "text-brand-light" : "text-muted")}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
                 {active && (
-                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-brand to-brand-2 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[var(--color-signal-blue)]" />
                 )}
               </Link>
             );
@@ -126,12 +126,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
         <div className="hidden flex-1 md:block" />
 
-        <div className="mt-4 hidden items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5 backdrop-blur-xl md:flex shadow-soft transition-all hover:border-white/15">
-          <div className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-gradient-to-br from-brand-50 to-surface-2 text-xs font-black text-brand-2-light border border-brand/30 shadow-inner">
+        <div className="mt-4 hidden items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-3.5 backdrop-blur-xl md:flex shadow-[var(--shadow-subtle)] transition-all hover:border-white/15">
+          <div className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-gradient-to-br from-brand-50 to-surface-2 text-xs font-black text-[var(--color-paper)] border border-brand/30 shadow-inner">
             {email.slice(0, 1).toUpperCase() || "A"}
           </div>
           <div className="grid min-w-0 gap-0.5">
-            <strong className="text-xs font-extrabold text-ink">Super Admin</strong>
+            <strong className="text-xs font-normal text-ink">Super Admin</strong>
             <span className="truncate text-xs font-semibold text-muted">{email}</span>
           </div>
         </div>
@@ -141,13 +141,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-bold text-muted hover:bg-white/[0.06] hover:text-white transition-all duration-200 hover:translate-x-0.5"
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-normal text-muted hover:bg-white/[0.06] hover:text-white transition-all duration-200 hover:translate-x-0.5"
           >
             <span className="text-brand-light">↗</span>
             <span>Open Public Site</span>
           </a>
           <button
-            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-xs font-bold text-muted hover:bg-danger-soft/70 hover:text-[#fb7185] transition-all duration-200 hover:translate-x-0.5"
+            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-xs font-normal text-muted hover:bg-danger-soft/70 hover:text-[#fb7185] transition-all duration-200 hover:translate-x-0.5"
             onClick={() => void signOut()}
           >
             <span>↪</span>
