@@ -16,7 +16,7 @@ export default function AccessDeniedPage() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center bg-bg text-ink px-4 py-16">
+    <div className="nh-rekki-scope min-h-screen grid place-items-center bg-[var(--color-obsidian)] text-[var(--color-paper)] px-4 py-16">
       <div className="max-w-md w-full rounded-3xl border border-white/12 bg-surface/95 p-8 text-center shadow-lift backdrop-blur-2xl">
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-red-500/10 text-red-400 text-3xl font-black mb-6">
           ⚠
