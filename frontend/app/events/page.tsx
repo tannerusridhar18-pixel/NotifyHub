@@ -20,7 +20,7 @@ export default function EventsPage() {
 
   return (
     <section
-      className="nh-public-page mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6"
+      className="nh-public-page nh-rekki-page mx-auto w-full max-w-[1240px] px-4 py-14 sm:py-20 sm:px-6"
       onMouseMove={(e) => {
         const x = (e.clientX / window.innerWidth - 0.5) * 2;
         const y = (e.clientY / window.innerHeight - 0.5) * 2;
@@ -29,14 +29,6 @@ export default function EventsPage() {
         e.currentTarget.style.setProperty("--orbit-rx", `${y * -4}deg`);
         e.currentTarget.style.setProperty("--orbit-ry", `${x * 5}deg`);
       }}>
-      <div className="nh-qronos-cyclone" aria-hidden="true"><span className="nh-qronos-cyclone-core" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-1" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-2" /><span className="nh-qronos-cyclone-ring nh-qronos-cyclone-ring-3" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-1" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-2" /><span className="nh-qronos-cyclone-particle nh-qronos-cyclone-particle-3" /></div>
-        <div className="nh-public-orbit" aria-hidden="true">
-          <div className="nh-public-stars" />
-          <div className="nh-public-sun"><span /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
-          <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
-        </div>
 <Reveal className="max-w-[760px]">
         <span className="inline-flex items-center gap-2 rounded-full border border-brand-2/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-2-light uppercase shadow-[0_0_16px_rgba(168,85,247,0.25)] backdrop-blur-xl">
           <span className="relative flex h-2 w-2 items-center justify-center">
