@@ -103,6 +103,15 @@ public class AnnouncementService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<AnnouncementDto> departmentManage(String username, int page, int size) {
+        User actor = user(username);
+        if (!"DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin access required.");
+        Long deptId = actor.getDepartmentEntity() == null ? null : actor.getDepartmentEntity().getId();
+        if (deptId == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        return PageResponse.from(repo.findByDepartment(deptId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AnnouncementDto::from));
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<AnnouncementDto> manage(int page, int size) {
         return PageResponse.from(repo.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AnnouncementDto::from));
     }
@@ -178,9 +187,18 @@ public class AnnouncementService {
 
     public AnnouncementDto archive(Long id) {
         Announcement a = get(id);
-        if (a.getStatus() == AnnouncementStatus.ARCHIVED) throw conflict("Announcement is already archived.");
         a.setStatus(AnnouncementStatus.ARCHIVED);
         audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_ARCHIVE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
+        return AnnouncementDto.from(a);
+    }
+
+    public AnnouncementDto unarchive(Long id) {
+        Announcement a = get(id);
+        if (a.getStatus() != AnnouncementStatus.ARCHIVED) throw conflict("Only archived announcements can be unarchived.");
+        a.setStatus(AnnouncementStatus.DRAFT);
+        a.setPublishedAt(null);
+        repo.save(a);
+        audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_UNARCHIVE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
         return AnnouncementDto.from(a);
     }
 
@@ -253,6 +271,7 @@ public class AnnouncementService {
     public AnnouncementDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }
     public AnnouncementDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
     public AnnouncementDto archive(Long id, String username) { assertCanManage(id, username); return archive(id); }
+    public AnnouncementDto unarchive(Long id, String username) { assertCanManage(id, username); return unarchive(id); }
     public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Announcement get(Long id) { return repo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Announcement not found.")); }
