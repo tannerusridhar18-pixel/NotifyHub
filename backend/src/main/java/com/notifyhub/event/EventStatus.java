@@ -1,2 +1,2 @@
 package com.notifyhub.event;
-public enum EventStatus { DRAFT, PUBLISHED, CANCELLED }
+public enum EventStatus { DRAFT, PUBLISHED, CANCELLED, ARCHIVED }
