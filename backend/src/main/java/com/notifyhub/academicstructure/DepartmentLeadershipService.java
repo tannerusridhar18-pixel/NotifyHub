@@ -37,6 +37,7 @@ public class DepartmentLeadershipService {
     private final EventRepository events;
     private final AuditLogRepository audit;
     private final RbacAuthorizationService rbac;
+    private final com.notifyhub.users.IdentityService identity;
 
     public DepartmentLeadershipService(
             DepartmentRepository departments,
@@ -52,7 +53,7 @@ public class DepartmentLeadershipService {
             AnnouncementRepository announcements,
             EventRepository events,
             AuditLogRepository audit,
-            RbacAuthorizationService rbac) {
+            RbacAuthorizationService rbac, com.notifyhub.users.IdentityService identity) {
         this.departments = departments;
         this.branches = branches;
         this.sections = sections;
@@ -67,6 +68,7 @@ public class DepartmentLeadershipService {
         this.events = events;
         this.audit = audit;
         this.rbac = rbac;
+        this.identity = identity;
     }
 
     public BatchPromoteResult batchPromoteStudents(Long departmentId, int fromYear, int toYear, String actorUsername) {
@@ -82,7 +84,9 @@ public class DepartmentLeadershipService {
 
         List<StudentProfile> eligible = students.findByDepartmentIdAndYear(departmentId, fromYear);
         int promotedCount = 0;
+        int graduatedCount = 0;
         int skippedMaxYearCount = 0;
+        boolean graduating = toYear == 5;
 
         for (StudentProfile sp : eligible) {
             Branch b = sp.getBranch();
@@ -91,7 +95,15 @@ public class DepartmentLeadershipService {
                 continue;
             }
 
-            // Invariant check: Resolve corresponding section for toYear in the same branch to prevent orphaned section assignments
+            if (graduating) {
+                sp.setYear(5);
+                sp.setSemester(8);
+                students.save(sp);
+                graduatedCount++;
+                continue;
+            }
+
+            // Resolve the corresponding section for the target year when available.
             Section currentSection = sp.getSection();
             if (currentSection != null && currentSection.getAcademicYear() != toYear) {
                 Optional<Section> matchingSection = sections.findByDepartmentIdAndBranchIdAndAcademicYearAndNameIgnoreCase(
@@ -113,14 +125,16 @@ public class DepartmentLeadershipService {
             promotedCount++;
         }
 
-        String metadata = "{\"departmentId\":" + departmentId + ",\"fromYear\":" + fromYear + ",\"toYear\":" + toYear + ",\"promotedCount\":" + promotedCount + ",\"skippedMaxYear\":" + skippedMaxYearCount + "}";
+        String metadata = "{\"departmentId\":" + departmentId + ",\"fromYear\":" + fromYear + ",\"toYear\":" + toYear + ",\"promotedCount\":" + promotedCount + ",\"graduatedCount\":" + graduatedCount + ",\"skippedMaxYear\":" + skippedMaxYearCount + "}";
         audit.save(new AuditLog(actor, "USER_BATCH_PROMOTE", "DEPARTMENT", String.valueOf(departmentId), metadata));
 
-        String message = "Successfully promoted " + promotedCount + " students from Year " + fromYear + " to Year " + toYear + " in " + dept.getName() + ".";
+        String message = graduating
+                ? "Successfully graduated " + graduatedCount + " students from Year " + fromYear + " in " + dept.getName() + "."
+                : "Successfully promoted " + promotedCount + " students from Year " + fromYear + " to Year " + toYear + " in " + dept.getName() + ".";
         if (skippedMaxYearCount > 0) {
             message += " (" + skippedMaxYearCount + " students reached branch max year limit and were not promoted).";
         }
-        return new BatchPromoteResult(departmentId, fromYear, toYear, promotedCount, skippedMaxYearCount, message);
+        return new BatchPromoteResult(departmentId, fromYear, toYear, promotedCount, graduatedCount, skippedMaxYearCount, message);
     }
 
     public void assignHod(Long departmentId, Long userId, String actorUsername) {
@@ -299,12 +313,16 @@ public class DepartmentLeadershipService {
                 sp.getStudentId(),
                 sp.getName() != null ? sp.getName() : (sp.getUser() != null ? sp.getUser().getUsername() : ""),
                 sp.getUser() != null ? sp.getUser().getEmail() : "",
+                sp.getDepartment() != null ? sp.getDepartment().getId() : null,
+                sp.getDepartment() != null ? sp.getDepartment().getName() : "",
                 sp.getYear(),
                 sp.getSemester(),
                 sp.getBranch() != null ? sp.getBranch().getId() : null,
                 sp.getBranch() != null ? sp.getBranch().getName() : "",
                 sp.getSection() != null ? sp.getSection().getId() : null,
-                sp.getSection() != null ? sp.getSection().getName() : ""
+                sp.getSection() != null ? sp.getSection().getName() : "",
+                sp.isHosteller(),
+                sp.getUser() != null && sp.getUser().getAccountStatus() != null ? sp.getUser().getAccountStatus().name() : "UNKNOWN"
         )).toList();
     }
 
@@ -333,6 +351,24 @@ public class DepartmentLeadershipService {
         }
     }
 
+    @Transactional
+    public void deleteDepartmentStudent(Long departmentId, Long studentId, String actorUsername) {
+        User actor = user(actorUsername);
+        validateDepartmentAccess(actor, departmentId);
+        StudentProfile profile = students.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found."));
+        if (profile.getDepartment() == null || !departmentId.equals(profile.getDepartment().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Student is outside your department.");
+        }
+        if (profile.getUser() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Student account is not linked to a user.");
+        }
+        UUID publicId = profile.getUser().getPublicId();
+        // Reuse the established permanent account-deletion workflow so dependent records are cleaned up consistently.
+        // IdentityService is not owned by this service, so delete the profile first and then remove the account.
+        identity.removeUser(publicId);
+    }
+
     private void validateDepartmentAccess(User actor, Long departmentId) {
         if (rbac.isSuperAdmin(actor) || actor.getEffectiveLevel() <= 2) return;
         Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
@@ -346,9 +382,9 @@ public class DepartmentLeadershipService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."));
     }
 
-    public record BatchPromoteResult(Long departmentId, int fromYear, int toYear, int promotedCount, int skippedMaxYearCount, String message) {}
+    public record BatchPromoteResult(Long departmentId, int fromYear, int toYear, int promotedCount, int graduatedCount, int skippedMaxYearCount, String message) {}
     public record DepartmentAnalyticsDto(Long departmentId, String departmentName, long studentCount, long facultyCount, long openQueries, long answeredQueries) {}
     public record DepartmentOverviewDto(Long departmentId, String departmentName, boolean active, String hodName, String hodEmail, long studentCount, long facultyCount) {}
     public record DepartmentFacultyDto(Long id, String facultyId, String name, String designation, Long departmentId, String departmentName, String relationship, Long userId, String email) {}
-    public record DepartmentStudentDto(Long id, String studentId, String name, String email, int year, int semester, Long branchId, String branchName, Long sectionId, String sectionName) {}
+    public record DepartmentStudentDto(Long id, String studentId, String name, String email, Long departmentId, String departmentName, int year, int semester, Long branchId, String branchName, Long sectionId, String sectionName, boolean hosteller, String status) {}
 }
