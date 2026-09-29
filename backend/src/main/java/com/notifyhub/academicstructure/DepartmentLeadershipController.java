@@ -89,6 +89,13 @@ public class DepartmentLeadershipController {
         return ResponseEntity.ok(ApiResponse.message("Student deactivated."));
     }
 
+    @DeleteMapping("/departments/{id}/students/{studentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteStudent(
+            @PathVariable Long id, @PathVariable Long studentId, Authentication authentication) {
+        leadershipService.deleteDepartmentStudent(id, studentId, authentication.getName());
+        return ResponseEntity.ok(ApiResponse.message("Student account deleted."));
+    }
+
     @GetMapping({"/campus/overview", "/departments/campus-overview"})
     public ResponseEntity<ApiResponse<List<DepartmentLeadershipService.DepartmentOverviewDto>>> campusOverview(
             Authentication authentication
