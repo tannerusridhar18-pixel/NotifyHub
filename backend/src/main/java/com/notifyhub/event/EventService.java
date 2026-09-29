@@ -112,6 +112,15 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<EventDto> departmentManage(String username, int page, int size) {
+        User actor = user(username);
+        if (!"DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin access required.");
+        Long deptId = actor.getDepartmentEntity() == null ? null : actor.getDepartmentEntity().getId();
+        if (deptId == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        return PageResponse.from(repo.findByDepartment(deptId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(EventDto::from));
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<EventDto> manage(int page, int size) {
         return PageResponse.from(repo.findAll(PageRequest.of(page, size, Sort.by("startAt").ascending())).map(EventDto::from));
     }
@@ -188,6 +197,23 @@ public class EventService {
         if (event.getStatus() == EventStatus.CANCELLED) throw conflict("Event is already cancelled.");
         event.setStatus(EventStatus.CANCELLED);
         audit.save(new AuditLog(event.getCreatedBy(), "EVENT_CANCEL", "EVENT", String.valueOf(event.getId()), "{}"));
+        return EventDto.from(event);
+    }
+
+    public EventDto archive(Long id) {
+        Event event = get(id);
+        event.setStatus(EventStatus.ARCHIVED);
+        audit.save(new AuditLog(event.getCreatedBy(), "EVENT_ARCHIVE", "EVENT", String.valueOf(event.getId()), "{}"));
+        return EventDto.from(event);
+    }
+
+    public EventDto unarchive(Long id) {
+        Event event = get(id);
+        if (event.getStatus() != EventStatus.ARCHIVED) throw conflict("Only archived events can be unarchived.");
+        event.setStatus(EventStatus.DRAFT);
+        event.setPublishedAt(null);
+        repo.save(event);
+        audit.save(new AuditLog(event.getCreatedBy(), "EVENT_UNARCHIVE", "EVENT", String.valueOf(event.getId()), "{}"));
         return EventDto.from(event);
     }
 
@@ -339,6 +365,8 @@ public class EventService {
     public EventDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }
     public EventDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
     public EventDto cancel(Long id, String username) { assertCanManage(id, username); return cancel(id); }
+    public EventDto archive(Long id, String username) { assertCanManage(id, username); return archive(id); }
+    public EventDto unarchive(Long id, String username) { assertCanManage(id, username); return unarchive(id); }
     public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Event get(Long id) { return repo.findById(id).orElseThrow(this::notFound); }
