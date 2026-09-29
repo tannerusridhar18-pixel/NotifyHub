@@ -324,6 +324,7 @@ export type EventPayload = {
   registrationDeadline?: string;
 };
 
+export const departmentManagedAnnouncements = (page = 0, size = 50) => myAnnouncements({ page, size });
 export const managedAnnouncements = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<Announcement>>(`/announcements/management?${q}`);
@@ -334,9 +335,11 @@ export const updateAnnouncement = (id: number, p: AnnouncementPayload) =>
   request<Announcement>(`/announcements/${id}`, { method: "PUT", body: JSON.stringify(p) });
 export const publishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/publish`, { method: "POST" });
 export const archiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/archive`, { method: "POST" });
+export const unarchiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unarchive`, { method: "POST" });
 export const unpublishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unpublish`, { method: "POST" });
 export const deleteAnnouncement = (id: number) => request<void>(`/announcements/${id}`, { method: "DELETE" });
 
+export const departmentManagedEvents = (page = 0, size = 50) => myEvents({ page, size });
 export const managedEvents = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<EventItem>>(`/events/management?${q}`);
@@ -346,6 +349,8 @@ export const updateEvent = (id: number, p: EventPayload) => request<EventItem>(`
 export const publishEvent = (id: number) => request<EventItem>(`/events/${id}/publish`, { method: "POST" });
 export const unpublishEvent = (id: number) => request<EventItem>(`/events/${id}/unpublish`, { method: "POST" });
 export const cancelEvent = (id: number) => request<EventItem>(`/events/${id}/cancel`, { method: "POST" });
+export const archiveEvent = (id: number) => request<EventItem>(`/events/${id}/archive`, { method: "POST" });
+export const unarchiveEvent = (id: number) => request<EventItem>(`/events/${id}/unarchive`, { method: "POST" });
 export const deleteEvent = (id: number) => request<void>(`/events/${id}`, { method: "DELETE" });
 export type EventRegistration = { id: number; studentId: number; studentEmail: string; studentName: string; department: string | null; year: number | null; section: string | null; registeredAt: string };
 export const registerForEvent = (id: number) => request<EventRegistration>(`/events/${id}/register`, { method: "POST" });
@@ -376,11 +381,13 @@ export const updateDepartmentStudent = (departmentId: number, studentId: number,
 
 export const deactivateDepartmentStudent = (departmentId: number, studentId: number) =>
   request<void>(`/departments/${departmentId}/students/${studentId}/status`, { method: "PATCH" });
+export const deleteDepartmentStudent = (departmentId: number, studentId: number) =>
+  request<void>(`/departments/${departmentId}/students/${studentId}`, { method: "DELETE" });
 
 export const batchPromoteStudents = (departmentId: number, fromYear: number, toYear: number) =>
-  request<import("@/types").BatchPromoteResult>(`/departments/${departmentId}/promote-batch`, {
+  request<import("@/types").BatchPromoteResult>("/admin/students/batch-promote", {
     method: "POST",
-    body: JSON.stringify({ fromYear, toYear }),
+    body: JSON.stringify({ departmentId, fromYear, toYear }),
   });
 
 export const assignDepartmentHod = (departmentId: number, userId: number) =>
@@ -411,6 +418,7 @@ export const createRole = (p: { name: string; level: number; parentRoleId?: numb
   request<RoleItem>("/admin/roles", { method: "POST", body: JSON.stringify(p) });
 export const updateRole = (id: number, p: { name?: string; level?: number; parentRoleId?: number; canPostTo?: number[] }) =>
   request<RoleItem>(`/admin/roles/${id}`, { method: "PUT", body: JSON.stringify(p) });
+export const deleteRole = (id: number) => request<void>(`/admin/roles/${id}`, { method: "DELETE" });
 export const RBAC_PERMISSIONS = ["USER_INVITE", "USER_EDIT", "USER_DELETE", "ANNOUNCEMENT_CREATE", "ANNOUNCEMENT_DELETE", "EVENT_CREATE", "EVENT_DELETE", "ROLE_CREATE", "ROLE_ASSIGN", "ROLE_EDIT", "ROLE_REVOKE"] as const;
 export type RbacPermission = typeof RBAC_PERMISSIONS[number];
 export type ScopedRole = { id: number; name: string; systemRole: boolean; superadmin: boolean; permissions: RbacPermission[] };
