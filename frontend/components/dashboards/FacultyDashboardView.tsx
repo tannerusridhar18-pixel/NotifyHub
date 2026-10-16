@@ -12,7 +12,18 @@ import {
   submitFacultyQuery,
   createAnnouncement,
   createEvent,
+  updateAnnouncement,
+  publishAnnouncement,
+  unpublishAnnouncement,
+  archiveAnnouncement,
+  unarchiveAnnouncement,
   deleteAnnouncement,
+  updateEvent,
+  publishEvent,
+  unpublishEvent,
+  cancelEvent,
+  archiveEvent,
+  unarchiveEvent,
   deleteEvent,
   structureSections,
   logout,
@@ -20,7 +31,7 @@ import {
   type CurrentUser,
   type StructureSection,
 } from "@/lib/api";
-import type { Announcement, CampusQuery, EventItem, FacultyDepartmentMappingItem } from "@/types";
+import type { Announcement, CampusQuery, EventItem, FacultyDepartmentMappingItem, TargetType } from "@/types";
 import { Empty, ErrorState, Loading } from "@/components/States";
 import { StatusBadge } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -34,6 +45,9 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
   const [myAnns, setMyAnns] = useState<Announcement[]>([]);
   const [myEvts, setMyEvts] = useState<EventItem[]>([]);
   const [studentQueries, setStudentQueries] = useState<CampusQuery[]>([]);
+  const [inboxStatus, setInboxStatus] = useState<"" | "OPEN" | "ANSWERED" | "CLOSED">("");
+  const [inboxPage, setInboxPage] = useState(0);
+  const [inboxTotalPages, setInboxTotalPages] = useState(0);
   const [sections, setSections] = useState<StructureSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,6 +66,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
   const [eventEnd, setEventEnd] = useState("");
   const [composerBusy, setComposerBusy] = useState(false);
   const [composerMsg, setComposerMsg] = useState("");
+  const [editingPost, setEditingPost] = useState<{ id: number; type: "announcement" | "event" } | null>(null);
 
   // Answer query modal / inline state
   const [replyingQueryId, setReplyingQueryId] = useState<number | null>(null);
@@ -74,19 +89,20 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
       const [a, e, q, s] = await Promise.all([
         myAnnouncements({ size: 30 }),
         myEvents({ size: 30 }),
-        facultyQueryInbox(0, 50),
+        facultyQueryInbox(inboxPage, 10, inboxStatus || undefined),
         structureSections().catch(() => []),
       ]);
       setMyAnns(a.content || []);
       setMyEvts(e.content || []);
       setStudentQueries(q.content || []);
+      setInboxTotalPages(q.totalPages || 0);
       setSections(s || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load faculty workspace.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [inboxPage, inboxStatus]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
@@ -99,30 +115,35 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
     setComposerMsg("");
     try {
       if (postType === "ANNOUNCEMENT") {
-        await createAnnouncement({
+        const payload = {
           title,
           content,
           urgent,
-          targetType: selectedSectionId ? "SECTION" : "DEPARTMENT",
+          targetType: (selectedSectionId ? "SECTION" : "DEPARTMENT") as TargetType,
           departmentId: selectedDeptId,
           sectionId: selectedSectionId ? Number(selectedSectionId) : undefined,
           attachmentUrl: attachmentUrl.trim() || undefined,
           attachmentName: attachmentName.trim() || undefined,
-        });
+        };
+        if (editingPost?.type === "announcement") await updateAnnouncement(editingPost.id, payload);
+        else await createAnnouncement(payload);
       } else {
-        await createEvent({
+        const payload = {
           title,
           description: content,
           location: eventLocation || "Campus Seminar Hall",
           startAt: eventStart ? new Date(eventStart).toISOString() : new Date().toISOString(),
           endAt: eventEnd ? new Date(eventEnd).toISOString() : new Date(Date.now() + 3600000).toISOString(),
-          targetType: selectedSectionId ? "SECTION" : "DEPARTMENT",
+          targetType: (selectedSectionId ? "SECTION" : "DEPARTMENT") as TargetType,
           departmentId: selectedDeptId,
           sectionId: selectedSectionId ? Number(selectedSectionId) : undefined,
           registrationEnabled: true,
-        });
+        };
+        if (editingPost?.type === "event") await updateEvent(editingPost.id, payload);
+        else await createEvent(payload);
       }
-      setComposerMsg("✓ Notice broadcasted successfully!");
+      setComposerMsg(editingPost ? "✓ Notice updated successfully!" : "✓ Notice broadcasted successfully!");
+      setEditingPost(null);
       setTitle("");
       setContent("");
       setAttachmentUrl("");
@@ -135,6 +156,68 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
       setComposerMsg(`⚠ ${err instanceof Error ? err.message : "Could not publish notice."}`);
     } finally {
       setComposerBusy(false);
+    }
+
+  }
+
+  function beginEdit(post: Announcement | EventItem, type: "announcement" | "event") {
+      setEditingPost({ id: post.id, type });
+      setPostType(type === "announcement" ? "ANNOUNCEMENT" : "EVENT");
+      setTitle(post.title);
+      setContent(type === "announcement" ? (post as Announcement).content : (post as EventItem).description);
+      setSelectedDeptId(post.departmentId || user.departmentId || 1);
+      setSelectedSectionId(post.sectionId ? String(post.sectionId) : "");
+      if (type === "announcement") {
+        const announcement = post as Announcement;
+        setUrgent(announcement.urgent);
+        setAttachmentUrl(announcement.attachmentUrl || "");
+        setAttachmentName(announcement.attachmentName || "");
+      } else {
+        const event = post as EventItem;
+        setEventLocation(event.location);
+        setEventStart(event.startAt.slice(0, 16));
+        setEventEnd(event.endAt.slice(0, 16));
+  }
+      setComposerMsg("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+  function resetComposer() {
+      setEditingPost(null);
+      setTitle("");
+      setContent("");
+      setUrgent(false);
+      setAttachmentUrl("");
+      setAttachmentName("");
+      setEventLocation("");
+      setEventStart("");
+      setEventEnd("");
+      setComposerMsg("");
+  }
+
+  async function handlePostAction(
+      id: number,
+      type: "announcement" | "event",
+      action: "publish" | "unpublish" | "archive" | "unarchive" | "cancel",
+    ) {
+      const destructive = action === "archive" || action === "cancel";
+      if (destructive && !confirm(`Are you sure you want to ${action} this ${type}?`)) return;
+      try {
+        if (type === "announcement") {
+          if (action === "publish") await publishAnnouncement(id);
+          if (action === "unpublish") await unpublishAnnouncement(id);
+          if (action === "archive") await archiveAnnouncement(id);
+          if (action === "unarchive") await unarchiveAnnouncement(id);
+        } else {
+          if (action === "publish") await publishEvent(id);
+          if (action === "unpublish") await unpublishEvent(id);
+          if (action === "archive") await archiveEvent(id);
+          if (action === "unarchive") await unarchiveEvent(id);
+          if (action === "cancel") await cancelEvent(id);
+        }
+        await loadData();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : `Failed to ${action} ${type}.`);
     }
   }
 
@@ -328,6 +411,12 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                 </p>
 
                 <form onSubmit={handleCreatePost} className="mt-6 space-y-4">
+                  {editingPost && (
+                    <div className="flex items-center justify-between rounded-xl border border-brand/30 bg-brand-50 p-3 text-xs text-brand-light">
+                      <span>Editing {editingPost.type} #{editingPost.id}</span>
+                      <button type="button" onClick={resetComposer} className="font-bold hover:underline">Cancel edit</button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -485,7 +574,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                   )}
 
                   <Button type="submit" variant="primary" disabled={composerBusy} className="w-full">
-                    {composerBusy ? "Broadcasting…" : "Broadcast Notice →"}
+                    {composerBusy ? (editingPost ? "Saving…" : "Broadcasting…") : (editingPost ? "Save Changes →" : "Broadcast Notice →")}
                   </Button>
                 </form>
               </Spotlight>
@@ -517,12 +606,23 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                               </span>
                             )}
                           </div>
-                          <button
-                            onClick={() => void handleDeletePost(a.id, "announcement")}
-                            className="text-xs font-bold text-red-400 hover:underline"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {a.status === "DRAFT" && (
+                              <>
+                                <button onClick={() => beginEdit(a, "announcement")} className="text-xs font-bold text-brand-light hover:underline">Edit</button>
+                                <button onClick={() => void handlePostAction(a.id, "announcement", "publish")} className="text-xs font-bold text-teal-300 hover:underline">Publish</button>
+                              </>
+                            )}
+                            {a.status === "PUBLISHED" && (
+                              <button onClick={() => void handlePostAction(a.id, "announcement", "unpublish")} className="text-xs font-bold text-amber-300 hover:underline">Unpublish</button>
+                            )}
+                            {a.status === "ARCHIVED" ? (
+                              <button onClick={() => void handlePostAction(a.id, "announcement", "unarchive")} className="text-xs font-bold text-teal-300 hover:underline">Unarchive</button>
+                            ) : (
+                              <button onClick={() => void handlePostAction(a.id, "announcement", "archive")} className="text-xs font-bold text-amber-300 hover:underline">Archive</button>
+                            )}
+                            <button onClick={() => void handleDeletePost(a.id, "announcement")} className="text-xs font-bold text-red-400 hover:underline">Delete</button>
+                          </div>
                         </div>
                         <p className="mt-1 text-xs text-muted line-clamp-2">{a.content}</p>
                         {safeUrl(a.attachmentUrl) && (
@@ -553,12 +653,26 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                               EVENT
                             </span>
                           </div>
-                          <button
-                            onClick={() => void handleDeletePost(e.id, "event")}
-                            className="text-xs font-bold text-red-400 hover:underline"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {e.status === "DRAFT" && (
+                              <>
+                                <button onClick={() => beginEdit(e, "event")} className="text-xs font-bold text-brand-light hover:underline">Edit</button>
+                                <button onClick={() => void handlePostAction(e.id, "event", "publish")} className="text-xs font-bold text-teal-300 hover:underline">Publish</button>
+                              </>
+                            )}
+                            {e.status === "PUBLISHED" && (
+                              <>
+                                <button onClick={() => void handlePostAction(e.id, "event", "unpublish")} className="text-xs font-bold text-amber-300 hover:underline">Unpublish</button>
+                                <button onClick={() => void handlePostAction(e.id, "event", "cancel")} className="text-xs font-bold text-red-400 hover:underline">Cancel event</button>
+                              </>
+                            )}
+                            {e.status === "ARCHIVED" ? (
+                              <button onClick={() => void handlePostAction(e.id, "event", "unarchive")} className="text-xs font-bold text-teal-300 hover:underline">Unarchive</button>
+                            ) : (
+                              <button onClick={() => void handlePostAction(e.id, "event", "archive")} className="text-xs font-bold text-amber-300 hover:underline">Archive</button>
+                            )}
+                            <button onClick={() => void handleDeletePost(e.id, "event")} className="text-xs font-bold text-red-400 hover:underline">Delete</button>
+                          </div>
                         </div>
                         <p className="mt-1 text-xs text-muted line-clamp-2">{e.description}</p>
                         <div className="mt-2 flex items-center gap-2 text-[10px] text-muted">
@@ -585,6 +699,28 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
               <span className="rounded-xl border border-brand/30 bg-brand-50 px-3.5 py-1.5 text-xs font-medium text-brand-light">
                 {studentQueries.filter((q) => q.status === "OPEN").length} Queries Awaiting Answer
               </span>
+            </div>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-xs text-muted">
+                Status
+                <select
+                  value={inboxStatus}
+                  onChange={(e) => { setInboxStatus(e.target.value as typeof inboxStatus); setInboxPage(0); }}
+                  className={`${inputBase} w-auto`}
+                >
+                  <option value="">All statuses</option>
+                  <option value="OPEN">Open</option>
+                  <option value="ANSWERED">Answered</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+              </label>
+              {inboxTotalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button type="button" disabled={inboxPage === 0} onClick={() => setInboxPage((p) => p - 1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-muted disabled:opacity-40">Previous</button>
+                  <span className="text-xs text-muted">Page {inboxPage + 1} of {inboxTotalPages}</span>
+                  <button type="button" disabled={inboxPage + 1 >= inboxTotalPages} onClick={() => setInboxPage((p) => p + 1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-muted disabled:opacity-40">Next</button>
+                </div>
+              )}
             </div>
 
             {studentQueries.length === 0 ? (

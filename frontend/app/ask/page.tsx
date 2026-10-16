@@ -85,7 +85,7 @@ export default function AskPage() {
     setError("");
     try {
       if (user?.role === "STUDENT") {
-        await submitStudentQuery({ subject: form.subject, message: form.message });
+        await submitStudentQuery({ subject: form.subject, question: form.message });
       } else {
         await submitQuery(form);
       }
@@ -342,5 +342,4 @@ export default function AskPage() {
     </section>
   );
 }
-
 

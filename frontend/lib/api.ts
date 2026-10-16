@@ -253,9 +253,50 @@ export const upcomingEvents = (page = 0, size = 12) => {
   return request<PageResponse<EventItem>>(`/events/upcoming?${q}`);
 };
 
+type StudentRegistrationView = {
+  registrationId: number;
+  eventId: number;
+  title: string;
+  description: string;
+  location: string;
+  startAt: string;
+  endAt: string;
+  status: EventItem["status"];
+  registeredAt: string;
+};
+
 export const myEventRegistrations = (page = 0, size = 20) => {
-  const q = new URLSearchParams({ page: String(page), size: String(size) });
-  return request<PageResponse<EventItem>>(`/events/my-registrations?${q}`);
+  void page;
+  void size;
+  return request<StudentRegistrationView[]>("/events/my-registrations").then((registrations): PageResponse<EventItem> => ({
+    content: registrations.map((registration) => ({
+      id: registration.eventId,
+      title: registration.title,
+      description: registration.description,
+      location: registration.location,
+      startAt: registration.startAt,
+      endAt: registration.endAt,
+      status: registration.status,
+      targetType: "GLOBAL",
+      departmentId: null,
+      branchId: null,
+      sectionId: null,
+      hostelId: null,
+      userEmail: null,
+      role: null,
+      publishedAt: null,
+      createdAt: registration.registeredAt,
+      updatedAt: registration.registeredAt,
+      authorId: 0,
+      registrationEnabled: false,
+      registrationDeadline: null,
+    })),
+    page: 0,
+    size: registrations.length,
+    totalElements: registrations.length,
+    totalPages: registrations.length ? 1 : 0,
+    last: true,
+  }));
 };
 
 export const submitQuery = (payload: { name: string; email: string; department: string; subject: string; message: string }) =>
@@ -264,7 +305,7 @@ export const myQueries = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<CampusQuery>>(`/queries/my?${q}`);
 };
-export const submitStudentQuery = (payload: { question?: string; subject?: string; message?: string; targetType?: "DEPARTMENT_ADMIN" | "FACULTY"; targetFacultyId?: number }) =>
+export const submitStudentQuery = (payload: { question: string; subject?: string; targetType?: "DEPARTMENT_ADMIN" | "FACULTY"; targetFacultyId?: number }) =>
   request<CampusQuery>("/queries/student", { method: "POST", body: JSON.stringify(payload) });
 export const submitFacultyQuery = (payload: { subject: string; message: string }) =>
   request<CampusQuery>("/queries/faculty", { method: "POST", body: JSON.stringify(payload) });

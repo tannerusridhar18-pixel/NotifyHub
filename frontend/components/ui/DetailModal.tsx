@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Announcement, CampusQuery, EventItem } from "@/types";
 import { StatusBadge, UrgentBadge } from "@/components/ui/Badge";
@@ -22,6 +22,9 @@ export default function DetailModal({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -31,18 +34,36 @@ export default function DetailModal({
   useEffect(() => {
     if (!item) return;
 
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    requestAnimationFrame(() => closeButtonRef.current?.focus());
+
     // Lock body scroll while modal is open
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
+      if (e.key !== "Tab" || !modalRef.current) return;
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener("keydown", handleKey);
 
     return () => {
       document.body.style.overflow = originalOverflow;
       document.removeEventListener("keydown", handleKey);
+      previouslyFocusedRef.current?.focus();
     };
   }, [item, onClose]);
 
@@ -65,6 +86,8 @@ export default function DetailModal({
       <div
         className="relative z-10 w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-[24px] border border-white/15 bg-gradient-to-b from-surface via-surface-2 to-surface p-6 sm:p-8 shadow-2xl text-ink animate-toast-in scroll-thin"
         onClick={(e) => e.stopPropagation()}
+        ref={modalRef}
+        tabIndex={-1}
       >
         {/* Header with Close Button */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
@@ -81,6 +104,8 @@ export default function DetailModal({
             </span>
           </div>
           <button
+            ref={closeButtonRef}
+            autoFocus
             onClick={onClose}
             className="grid h-8 w-8 place-items-center rounded-xl border border-white/10 bg-surface-2 text-muted hover:text-white hover:border-white/20 transition-all active:scale-95"
             aria-label="Close dialog"

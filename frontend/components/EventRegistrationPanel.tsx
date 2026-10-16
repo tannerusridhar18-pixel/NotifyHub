@@ -1,10 +1,25 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { currentUser, eventRegistrationExportUrl, eventRegistrations, registerForEvent, type EventRegistration } from "@/lib/api";
+import {
+  currentUser,
+  eventRegistrationExportUrl,
+  eventRegistrations,
+  myEventRegistrations,
+  registerForEvent,
+  type EventRegistration,
+} from "@/lib/api";
 import type { EventItem } from "@/types";
 
-export default function EventRegistrationPanel({ event, canManageRegistrations }: { event: EventItem; canManageRegistrations: boolean }) {
+export default function EventRegistrationPanel({
+  event,
+  canManageRegistrations = false,
+  onRegistered,
+}: {
+  event: EventItem;
+  canManageRegistrations?: boolean;
+  onRegistered?: () => void | Promise<void>;
+}) {
   const [message, setMessage] = useState("");
   const [registrations, setRegistrations] = useState<EventRegistration[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -15,19 +30,28 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
   useEffect(() => {
     let alive = true;
     currentUser()
-      .then(() => {
-        if (alive) setAuthenticated(true);
+      .then((user) => {
+        if (!alive) return;
+        setAuthenticated(Boolean(user));
+        setAuthChecked(true);
+        if (user) {
+          void myEventRegistrations()
+            .then((registrations) => {
+              if (alive && registrations.content.some((registration) => registration.id === event.id)) {
+                setIsRegistered(true);
+              }
+            })
+            .catch(() => undefined);
+        }
       })
       .catch(() => {
         if (alive) setAuthenticated(false);
-      })
-      .finally(() => {
         if (alive) setAuthChecked(true);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [event.id]);
 
   const closed = !event.registrationEnabled || (event.registrationDeadline != null && new Date(event.registrationDeadline) <= new Date());
   const reason = !event.registrationEnabled
@@ -43,6 +67,7 @@ export default function EventRegistrationPanel({ event, canManageRegistrations }
       await registerForEvent(event.id);
       setIsRegistered(true);
       setMessage("You’re registered for this event.");
+      await onRegistered?.();
     } catch (e) {
       const err = e instanceof Error ? e.message : "Unable to register.";
       if (err.toLowerCase().includes("already registered")) {

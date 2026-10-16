@@ -94,6 +94,39 @@ class AccessControlRegressionTest {
 
     @Test
     @Transactional
+    void studentCannotUseDepartmentLeadershipAliases() throws Exception {
+        User student = newUser("student-leadership", Role.STUDENT);
+
+        mvc.perform(get("/api/v1/departments/1/students").cookie(cookieFor(student)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/departments/1/faculty").cookie(cookieFor(student)))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/students/batch-promote")
+                        .with(csrf()).cookie(cookieFor(student))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"departmentId\":1,\"fromYear\":1,\"toYear\":2}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    void studentCanReadFacultyDirectoryOnlyForOwnDepartment() throws Exception {
+        Department department = new Department();
+        department.setName("Student Faculty Directory " + System.nanoTime());
+        department = departmentRepo.saveAndFlush(department);
+
+        User student = newUser("student-faculty", Role.STUDENT);
+        student.setDepartmentEntity(department);
+        users.saveAndFlush(student);
+
+        mvc.perform(get("/api/v1/departments/" + department.getId() + "/faculty").cookie(cookieFor(student)))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/departments/" + (department.getId() + 1) + "/faculty").cookie(cookieFor(student)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
     void studentCannotPublishOrDeleteSomeoneElsesAnnouncement() throws Exception {
         User admin = newUser("admin", Role.ADMIN);
         User student = newUser("student", Role.STUDENT);

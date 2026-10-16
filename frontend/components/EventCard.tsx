@@ -7,7 +7,15 @@ import Spotlight from "@/components/ui/Spotlight";
 import DetailModal from "@/components/ui/DetailModal";
 import EventRegistrationPanel from "@/components/EventRegistrationPanel";
 
-export default function EventCard({ item, canManageRegistrations = false }: { item: EventItem; canManageRegistrations?: boolean }) {
+export default function EventCard({
+  item,
+  canManageRegistrations = false,
+  onRegistered,
+}: {
+  item: EventItem;
+  canManageRegistrations?: boolean;
+  onRegistered?: () => void | Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   const startDate = new Date(item.startAt);
   const dayStr = startDate.toLocaleDateString(undefined, { day: "2-digit" });
@@ -63,7 +71,13 @@ export default function EventCard({ item, canManageRegistrations = false }: { it
               </span>
             </div>
             {item.status === "PUBLISHED" && <Countdown target={item.startAt} />}
-            {item.status === "PUBLISHED" && <EventRegistrationPanel event={item} canManageRegistrations={canManageRegistrations} />}
+            {item.status === "PUBLISHED" && (
+              <EventRegistrationPanel
+                event={item}
+                canManageRegistrations={canManageRegistrations}
+                onRegistered={onRegistered}
+              />
+            )}
           </div>
         </div>
 
@@ -75,4 +89,3 @@ export default function EventCard({ item, canManageRegistrations = false }: { it
     </>
   );
 }
-

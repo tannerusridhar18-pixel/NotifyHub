@@ -101,7 +101,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
     try {
       await submitStudentQuery({
         subject: querySubject || "Student Inquiry",
-        message: queryMessage,
+        question: queryMessage,
         targetType,
         targetFacultyId: targetType === "FACULTY" && selectedFacultyId ? Number(selectedFacultyId) : undefined,
       });
@@ -266,7 +266,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {eventsList.map((e) => (
-                    <EventCard key={e.id} item={e} />
+                    <EventCard key={e.id} item={e} onRegistered={loadData} />
                   ))}
                 </div>
               )}
@@ -287,7 +287,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {myRegs.map((e) => (
-                  <EventCard key={e.id} item={e} />
+                  <EventCard key={e.id} item={e} onRegistered={loadData} />
                 ))}
               </div>
             )}

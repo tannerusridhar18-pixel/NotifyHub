@@ -259,7 +259,7 @@ public class DepartmentLeadershipService {
     @Transactional(readOnly = true)
     public List<DepartmentFacultyDto> getDepartmentFaculty(Long departmentId, String actorUsername) {
         User actor = user(actorUsername);
-        validateDepartmentAccess(actor, departmentId);
+        validateFacultyLookupAccess(actor, departmentId);
 
         Department dept = departments.findById(departmentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found."));
@@ -371,9 +371,27 @@ public class DepartmentLeadershipService {
 
     private void validateDepartmentAccess(User actor, Long departmentId) {
         if (rbac.isSuperAdmin(actor) || actor.getEffectiveLevel() <= 2) return;
+        String role = actor.getEffectiveRoleName();
+        if (!"HOD".equalsIgnoreCase(role) && !"DEPARTMENT_ADMIN".equalsIgnoreCase(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have department leadership authority.");
+        }
         Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
         if (actorDeptId == null || !actorDeptId.equals(departmentId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have administrative authority over department ID " + departmentId + ".");
+        }
+    }
+
+    private void validateFacultyLookupAccess(User actor, Long departmentId) {
+        if (rbac.isSuperAdmin(actor) || actor.getEffectiveLevel() <= 2) return;
+        String role = actor.getEffectiveRoleName();
+        if (!"HOD".equalsIgnoreCase(role)
+                && !"DEPARTMENT_ADMIN".equalsIgnoreCase(role)
+                && !"STUDENT".equalsIgnoreCase(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to department faculty.");
+        }
+        Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
+        if (actorDeptId == null || !actorDeptId.equals(departmentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this department's faculty.");
         }
     }
 

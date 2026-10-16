@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { login, logout, registerUser, safeUrl } from "@/lib/api";
+import { login, logout, myEventRegistrations, registerUser, safeUrl, submitStudentQuery } from "@/lib/api";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -29,6 +29,25 @@ describe("Phase 1 authentication API contract", () => {
     expect(safeUrl("data:text/html,<script>alert(1)</script>")).toBeUndefined();
     expect(safeUrl("")).toBeUndefined();
     expect(safeUrl(null)).toBeUndefined();
+  });
+
+  it("uses the backend student query field and maps registrations returned as a list", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+      if (String(url).includes("/queries/student")) {
+        expect(init?.body).toBe(JSON.stringify({ question: "Where is the lab?", subject: "Lab access" }));
+        return new Response(JSON.stringify({ success: true, data: { id: 1 }, message: null }), { status: 201 });
+      }
+      return new Response(JSON.stringify({
+        success: true,
+        data: [{ registrationId: 4, eventId: 8, title: "Workshop", description: "Details", location: "Hall", startAt: "2026-10-20T10:00:00Z", endAt: "2026-10-20T11:00:00Z", status: "PUBLISHED", registeredAt: "2026-10-16T10:00:00Z" }],
+        message: null,
+      }), { status: 200 });
+    });
+
+    await submitStudentQuery({ question: "Where is the lab?", subject: "Lab access" });
+    const registrations = await myEventRegistrations();
+    expect(registrations.content[0]).toMatchObject({ id: 8, title: "Workshop" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("replays request successfully when access token is expired but refresh token is valid", async () => {
