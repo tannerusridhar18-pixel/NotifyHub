@@ -2,12 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import type { Announcement, CampusQuery, EventItem } from "@/types";
 import { StatusBadge, UrgentBadge } from "@/components/ui/Badge";
 import Countdown from "@/components/Countdown";
-import EventRegistrationPanel from "@/components/EventRegistrationPanel";
 import { buttonClasses } from "@/components/ui/Button";
 import { safeUrl } from "@/lib/api";
+
+const EventRegistrationPanel = dynamic(() => import("@/components/EventRegistrationPanel"), {
+  loading: () => (
+    <div className="mt-4 h-10 animate-pulse rounded-lg border border-border bg-surface-2" aria-hidden="true" />
+  ),
+});
 
 export type ModalItem =
   | { type: "announcement"; data: Announcement }
@@ -181,7 +188,17 @@ export default function DetailModal({
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
                 {item.data.title}
               </h2>
-              {safeUrl(item.data.photoUrl) && <img src={safeUrl(item.data.photoUrl)} alt="" className="mb-5 h-48 w-full rounded-2xl object-cover" />}
+              {safeUrl(item.data.photoUrl) && (
+                <Image
+                  src={safeUrl(item.data.photoUrl) ?? ""}
+                  alt=""
+                  width={1200}
+                  height={192}
+                  loader={({ src }) => src}
+                  unoptimized
+                  className="mb-5 h-48 w-full rounded-2xl object-cover"
+                />
+              )}
 
               <div className="mb-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-3.5">

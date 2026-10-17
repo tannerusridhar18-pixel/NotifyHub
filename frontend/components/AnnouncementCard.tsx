@@ -1,10 +1,15 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { Announcement } from "@/types";
 import { cx } from "@/components/ui/classes";
 import { StatusBadge, UrgentBadge } from "@/components/ui/Badge";
 import Spotlight from "@/components/ui/Spotlight";
-import DetailModal from "@/components/ui/DetailModal";
+import { Loading } from "@/components/States";
+
+const DetailModal = dynamic(() => import("@/components/ui/DetailModal"), {
+  loading: () => <Loading label="Opening announcement details…" />,
+});
 
 const targetLabel = (x: Announcement) => (x.targetType === "GLOBAL" ? "Everyone" : x.targetType.toLowerCase());
 
@@ -72,5 +77,4 @@ export default function AnnouncementCard({ item }: { item: Announcement }) {
     </>
   );
 }
-
 

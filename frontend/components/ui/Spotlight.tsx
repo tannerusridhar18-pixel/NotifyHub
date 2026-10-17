@@ -5,12 +5,14 @@ import { cx } from "./classes";
 export default function Spotlight({
   children,
   className,
+  id,
   tone = "brand",
   as: Tag = "div",
   enable3d = true,
 }: {
   children: React.ReactNode;
   className?: string;
+  id?: string;
   tone?: "brand" | "violet" | "cyan" | "danger" | "amber" | "white";
   as?: "div" | "article" | "section";
   enable3d?: boolean;
@@ -91,6 +93,7 @@ export default function Spotlight({
   return (
     <div className="spotlight-wrap">
       <Comp
+        id={id}
         ref={ref}
         onMouseMove={onMouseMove}
         onMouseEnter={onMouseEnter}

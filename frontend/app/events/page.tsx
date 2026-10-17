@@ -13,7 +13,18 @@ export default function EventsPage() {
 
   useEffect(() => {
     upcomingEvents(0, 24)
-      .then((x) => setItems(x.content))
+      .then((x) => {
+        setItems(x.content);
+        if (typeof window !== "undefined") {
+          const eventId = new URLSearchParams(window.location.search).get("event");
+          if (eventId) {
+            setTimeout(() => {
+              const el = document.getElementById(`event-${eventId}`);
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 100);
+          }
+        }
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Unable to load events."))
       .finally(() => setLoading(false));
   }, []);

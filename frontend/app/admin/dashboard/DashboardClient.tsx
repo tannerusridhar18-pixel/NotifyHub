@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   adminQueries,
   answerQuery,
@@ -18,6 +19,7 @@ import {
   unarchiveAnnouncement,
   deleteAnnouncement,
   createEvent,
+  updateEvent,
   publishEvent,
   unpublishEvent,
   cancelEvent,
@@ -37,18 +39,27 @@ import {
   type EventRegistration,
 } from "@/lib/api";
 import type { StructureDepartment, StructureBranch, StructureSection, StructureHostel, StructureBlock, StructureRoom, InvitableRole } from "@/lib/api";
-import type { Announcement, CampusQuery, EventItem, TargetType } from "@/types";
-import { ErrorState, Empty } from "@/components/States";
+import type { Announcement, CampusQuery, EventItem, Role, TargetType } from "@/types";
+import { ErrorState, Empty, Loading } from "@/components/States";
 import { Toast } from "@/components/Toast";
 import { StatusBadge, SoftBadge } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Counter from "@/components/ui/Counter";
 import Field from "@/components/ui/Field";
-import DetailModal from "@/components/ui/DetailModal";
 import { inputBase, textareaBase, cx } from "@/components/ui/classes";
-import EventRegistrationFields from "@/components/EventRegistrationFields";
+import { isGlobalAdminRole } from "@/components/adminAccess";
+import EventRegistrationManager from "@/components/EventRegistrationManager";
 
 type ComposerTargetType = TargetType | "DEPARTMENT_HOD";
+
+const DetailModal = dynamic(() => import("@/components/ui/DetailModal"), {
+  loading: () => <Loading label="Opening details…" />,
+});
+const EventRegistrationFields = dynamic(() => import("@/components/EventRegistrationFields"), {
+  loading: () => (
+    <div className="mb-4 h-28 animate-pulse rounded-lg border border-border bg-surface-2" aria-hidden="true" />
+  ),
+});
 
 const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as ComposerTargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
 const blankE = {
@@ -69,6 +80,19 @@ const blankE = {
   registrationEnabled: false,
   registrationDeadline: "",
 };
+
+function toDateTimeLocal(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 const blankInvite = {
   email: "",
   role: "STUDENT",
@@ -86,14 +110,19 @@ const blankInvite = {
   blockId: "",
   roomId: "",
 };
-type Tab = "announcements" | "events" | "queries" | "people";
+type Tab = "announcements" | "events" | "registrations" | "queries" | "people";
 export default function DashboardClient({ departmentScoped = false, initialTab = "announcements" }: { departmentScoped?: boolean; initialTab?: Tab }) {
   const router = useRouter();
+  const [selectedRegistrationEventId, setSelectedRegistrationEventId] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === "undefined") return initialTab;
     const requestedTab = new URLSearchParams(window.location.search).get("tab");
-    if (departmentScoped) return initialTab;
-    return requestedTab === "events" || requestedTab === "announcements" ? requestedTab : "announcements";
+    if (departmentScoped) {
+      return requestedTab === "registrations" ? "registrations" : initialTab;
+    }
+    return requestedTab === "events" || requestedTab === "announcements" || requestedTab === "registrations" || requestedTab === "queries" || requestedTab === "people"
+      ? (requestedTab as Tab)
+      : "announcements";
   });
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [evs, setEvs] = useState<EventItem[]>([]);
@@ -106,6 +135,8 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [a, setA] = useState(() => ({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankA.targetType }));
   const [ev, setEv] = useState(() => ({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankE.targetType }));
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [eventFormError, setEventFormError] = useState("");
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [invite, setInvite] = useState(blankInvite);
   const [departments, setDepartments] = useState<StructureDepartment[]>([]);
@@ -141,7 +172,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
     setBlocks(bl);
     setRooms(r);
     setInvitableRoleList(rl);
-  }, []);
+  }, [departmentScoped]);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,7 +180,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
       try {
         const u = await currentUser();
         if (cancelled) return;
-        if (!u || (departmentScoped ? u.role !== "DEPARTMENT_ADMIN" : u.roleLevel !== 0)) {
+        if (!u || (departmentScoped ? u.role !== "DEPARTMENT_ADMIN" : !isGlobalAdminRole(u.role))) {
           router.replace("/");
           return;
         }
@@ -182,17 +213,19 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   }
 
   const act = useCallback(
-    async (fn: () => Promise<unknown>, success: string) => {
+    async <T,>(fn: () => Promise<T>, success: string): Promise<T | undefined> => {
       setBusy(true);
       setError("");
       try {
-        await fn();
+        const result = await fn();
         await load();
         setToast({ message: success, type: "success" });
+        return result;
       } catch (e) {
         const message = e instanceof Error ? e.message : "Operation failed.";
         setError(message);
         setToast({ message, type: "error" });
+        return undefined;
       } finally {
         setBusy(false);
       }
@@ -239,49 +272,90 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
 
   async function submitE(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
+    setEventFormError("");
+
     if (ev.targetType === "ROLE" && !ev.role) {
-      setError("Choose a role for this audience.");
+      const msg = "Choose a role for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
     if (ev.targetType === "DEPARTMENT" && !ev.departmentId) {
-      setError("Choose a department for this audience.");
+      const msg = "Choose a department for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
     if (ev.targetType === "BRANCH" && (!ev.departmentId || !ev.branchId)) {
-      setError("Choose a department and branch for this audience.");
+      const msg = "Choose a department and branch for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
     if (ev.targetType === "SECTION" && (!ev.departmentId || !ev.branchId || !ev.sectionId)) {
-      setError("Choose a department, branch and section for this audience.");
+      const msg = "Choose a department, branch and section for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
-    if (ev.targetType === "HOSTEL" && !ev.hostelId) { setError("Choose a hostel for this audience."); return; }
-    if (ev.targetType === "USER" && !ev.userEmail) { setError("Enter a user email for this audience."); return; }
+    if (ev.targetType === "HOSTEL" && !ev.hostelId) {
+      const msg = "Choose a hostel for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
+      return;
+    }
+    if (ev.targetType === "USER" && !ev.userEmail) {
+      const msg = "Enter a user email for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
+      return;
+    }
     if (!ev.startAt || !ev.endAt || new Date(ev.endAt) <= new Date(ev.startAt)) {
-      setError("End time must be after start time.");
+      const msg = "End time must be after start time.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
-    await act(async () => {
-      await createEvent({
-        title: ev.title,
-        description: ev.description,
-        location: ev.location,
-        startAt: new Date(ev.startAt).toISOString(),
-        endAt: new Date(ev.endAt).toISOString(),
-        targetType: ev.targetType === "DEPARTMENT_HOD" ? "ROLE" : ev.targetType,
-        departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (ev.departmentId ? Number(ev.departmentId) : undefined),
-        branchId: ev.branchId ? Number(ev.branchId) : undefined,
-        sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
-        hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
-        userEmail: ev.userEmail || undefined,
-        role: ev.targetType === "DEPARTMENT_HOD" ? "HOD" : (ev.role || undefined),
-        photoUrl: ev.photoUrl || undefined,
-        externalLink: ev.externalLink || undefined,
-        registrationEnabled: ev.registrationEnabled,
-        registrationDeadline: ev.registrationDeadline ? new Date(ev.registrationDeadline).toISOString() : undefined,
-      });
-      setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
-    }, "Event draft saved.");
+
+    const payload = {
+      title: ev.title.trim(),
+      description: ev.description.trim(),
+      location: ev.location.trim(),
+      startAt: new Date(ev.startAt).toISOString(),
+      endAt: new Date(ev.endAt).toISOString(),
+      targetType: ev.targetType === "DEPARTMENT_HOD" ? ("ROLE" as TargetType) : (ev.targetType as TargetType),
+      departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (ev.departmentId ? Number(ev.departmentId) : undefined),
+      branchId: ev.branchId ? Number(ev.branchId) : undefined,
+      sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
+      hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
+      userEmail: ev.userEmail?.trim() || undefined,
+      role: ev.targetType === "DEPARTMENT_HOD" ? ("HOD" as Role) : (ev.role ? (ev.role as Role) : undefined),
+      recipientType: ev.targetType === "DEPARTMENT_HOD" ? "role" : ev.targetType ? ev.targetType.toLowerCase() : "all",
+      photoUrl: ev.photoUrl?.trim() || undefined,
+      externalLink: ev.externalLink?.trim() || undefined,
+      registrationEnabled: ev.registrationEnabled,
+      registrationDeadline: ev.registrationDeadline ? new Date(ev.registrationDeadline).toISOString() : undefined,
+    };
+
+    const saved = await act(async () => {
+      if (editingEventId) {
+        return await updateEvent(editingEventId, payload);
+      } else {
+        return await createEvent(payload);
+      }
+    }, editingEventId ? "Event draft updated." : "Event draft saved.");
+
+    if (saved) {
+      setEditingEventId(saved.id);
+    }
   }
 
   async function answer(id: number) {
@@ -439,8 +513,11 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
 
       )}
 
-      {!departmentScoped && <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
-        {(["announcements", "events", "queries", "people"] as Tab[]).map((x) => (
+      <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl print-hide">
+        {(departmentScoped
+          ? (["events", "registrations"] as Tab[])
+          : (["announcements", "events", "registrations", "queries", "people"] as Tab[])
+        ).map((x) => (
           <button
             key={x}
             role="tab"
@@ -451,10 +528,14 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
             )}
             onClick={() => setTab(x)}
           >
-            {x === "people" ? "People & invites" : x[0].toUpperCase() + x.slice(1)}
+            {x === "people"
+              ? "People & invites"
+              : x === "registrations"
+              ? "Manage Event Registrations"
+              : x[0].toUpperCase() + x.slice(1)}
           </button>
         ))}
-      </div>}
+      </div>
 
 
       {tab === "announcements" && (
@@ -570,9 +651,24 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <span className="text-[11px] font-extrabold text-brand">Scheduler</span>
-                <h2 className="mt-1.5 text-lg">Save an event draft</h2>
+                <h2 className="mt-1.5 text-lg">{editingEventId ? "Edit event draft" : "Save an event draft"}</h2>
               </div>
-              <SoftBadge>DRAFT</SoftBadge>
+              <div className="flex items-center gap-2">
+                {editingEventId && (
+                  <button
+                    type="button"
+                    className="rounded-full border border-white/10 bg-surface-2 px-2.5 py-1 text-[10px] font-bold text-muted hover:text-white transition-colors"
+                    onClick={() => {
+                      setEditingEventId(null);
+                      setEventFormError("");
+                      setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                    }}
+                  >
+                    New draft
+                  </button>
+                )}
+                <SoftBadge>{editingEventId ? `DRAFT #${editingEventId}` : "DRAFT"}</SoftBadge>
+              </div>
             </div>
             <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} scopeDepartmentId={scopeDepartmentId} />
             <EventRegistrationFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} />
@@ -616,7 +712,29 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                 onChange={(e) => setEv((v) => ({ ...v, description: e.target.value }))}
               />
             </Field>
-            <Button disabled={busy}>{busy ? "Saving…" : "Save draft"}</Button>
+            {eventFormError && (
+              <div className="mb-4 rounded-xl border border-danger/40 bg-danger-soft/30 px-3.5 py-2.5 text-xs font-semibold text-danger">
+                {eventFormError}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={busy}>
+                {busy ? "Saving…" : editingEventId ? "Save draft changes" : "Save draft"}
+              </Button>
+              {editingEventId && (
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-muted hover:text-white transition-colors"
+                  onClick={() => {
+                    setEditingEventId(null);
+                    setEventFormError("");
+                    setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                  }}
+                >
+                  Cancel editing
+                </button>
+              )}
+            </div>
           </form>
           <section className="min-w-0 rounded-[18px] border border-border bg-surface p-5 shadow-soft">
             <QueueHeader label="Event queue" count={evs.length} />
@@ -645,7 +763,49 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                         <td className="border-b border-border p-3 align-top">
                           <div className="flex flex-wrap gap-1.5">
                             {x.status === "DRAFT" && (
-                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => publishEvent(x.id), "Event published.")}>Publish</button>
+                              <>
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light hover:bg-brand/20 transition-all"
+                                  onClick={() => {
+                                    setEditingEventId(x.id);
+                                    setEventFormError("");
+                                    setEv({
+                                      title: x.title,
+                                      description: x.description,
+                                      location: x.location,
+                                      startAt: toDateTimeLocal(x.startAt),
+                                      endAt: toDateTimeLocal(x.endAt),
+                                      targetType: (x.targetType || (departmentScoped ? "DEPARTMENT" : "GLOBAL")) as ComposerTargetType,
+                                      departmentId: x.departmentId ? String(x.departmentId) : "",
+                                      branchId: x.branchId ? String(x.branchId) : "",
+                                      sectionId: x.sectionId ? String(x.sectionId) : "",
+                                      hostelId: x.hostelId ? String(x.hostelId) : "",
+                                      userEmail: x.userEmail || "",
+                                      role: x.role || "",
+                                      photoUrl: x.photoUrl || "",
+                                      externalLink: x.externalLink || "",
+                                      registrationEnabled: Boolean(x.registrationEnabled),
+                                      registrationDeadline: toDateTimeLocal(x.registrationDeadline),
+                                    });
+                                  }}
+                                >
+                                  Edit draft
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
+                                  onClick={() => void act(async () => {
+                                    await publishEvent(x.id);
+                                    if (editingEventId === x.id) {
+                                      setEditingEventId(null);
+                                      setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                                    }
+                                  }, "Event published.")}
+                                >
+                                  Publish
+                                </button>
+                              </>
                             )}
                             {x.status === "PUBLISHED" && (
                               <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => unpublishEvent(x.id), "Event unpublished.")}>Unpublish</button>
@@ -659,22 +819,50 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
                               <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => archiveEvent(x.id), "Event archived.")}>Archive</button>
                             )}
                             {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
-                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}>Delete</button>
+                              <button
+                                type="button"
+                                className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
+                                onClick={() => void act(async () => {
+                                  await deleteEvent(x.id);
+                                  if (editingEventId === x.id) {
+                                    setEditingEventId(null);
+                                    setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                                  }
+                                }, "Event deleted.")}
+                              >
+                                Delete
+                              </button>
                             )}
-                            {departmentScoped && x.status === "PUBLISHED" && x.registrationEnabled && (
-                              <button className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light" onClick={() => void loadRegistrations(x.id)} disabled={registrationLoading === x.id}>
-                                {registrationLoading === x.id ? "Loading…" : "View registrations"}
+                            {x.registrationEnabled && (
+                              <button
+                                className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light hover:bg-brand/20 transition-all"
+                                onClick={() => {
+                                  setSelectedRegistrationEventId(x.id);
+                                  setTab("registrations");
+                                }}
+                              >
+                                Manage registrations
                               </button>
                             )}
                           </div>
-                          {departmentScoped && x.status === "PUBLISHED" && registrationRows[x.id] && (
-                            <div className="mt-3 rounded-xl border border-border bg-surface-2/60 p-3">
-                              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                          {x.registrationEnabled && registrationRows[x.id] && (
+                            <div className="mt-3 rounded-xl border border-border bg-surface-2/60 p-3 print-area">
+                              <div className="hidden print:block mb-4 pb-2 border-b border-black text-black">
+                                <h1 className="text-xl font-bold">{x.title}</h1>
+                                <p className="text-xs text-gray-700 mt-1">
+                                  {x.location ? `Location: ${x.location} • ` : ""}
+                                  {x.startAt ? `Date: ${new Date(x.startAt).toLocaleString()}` : ""}
+                                </p>
+                                <p className="text-xs font-semibold text-gray-800 mt-1">
+                                  Registered Attendees ({registrationRows[x.id].length})
+                                </p>
+                              </div>
+                              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 print-hide">
                                 <strong className="text-sm">{registrationRows[x.id].length} registered student{registrationRows[x.id].length === 1 ? "" : "s"}</strong>
                                 <button type="button" className="rounded-lg border border-border px-3 py-1.5 text-[10px] font-extrabold text-muted hover:text-white" onClick={() => window.print()}>Print registration list</button>
                               </div>
                               {registrationRows[x.id].length ? (
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto print:overflow-visible">
                                   <table className="w-full min-w-[620px] text-left text-[10px]">
                                     <thead>
                                       <tr className="border-b border-border text-muted">
@@ -715,6 +903,15 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
             </div>
           </section>
         </div>
+      )}
+
+      {tab === "registrations" && (
+        <EventRegistrationManager
+          departmentScoped={departmentScoped}
+          events={evs}
+          initialEventId={selectedRegistrationEventId}
+          onEventSelect={(id) => setSelectedRegistrationEventId(id)}
+        />
       )}
 
       {tab === "queries" && (

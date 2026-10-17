@@ -22,12 +22,13 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    if (isAdmin || isDashboard || isDepartmentAdmin) return;
     let alive = true;
     currentUser()
       .then(() => { if (alive) setIsLoggedIn(true); })
       .catch(() => { if (alive) setIsLoggedIn(false); });
     return () => { alive = false; };
-  }, [path]);
+  }, [isAdmin, isDashboard, isDepartmentAdmin, path]);
 
   if (isAdmin || isDashboard || isDepartmentAdmin) return <>{children}</>;
 
@@ -156,5 +157,4 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-
 

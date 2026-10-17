@@ -6,6 +6,7 @@ import { currentUser, logout } from "@/lib/api";
 import { Loading } from "@/components/States";
 import { buttonClasses } from "@/components/ui/Button";
 import { cx } from "@/components/ui/classes";
+import { adminRouteAccess } from "@/components/adminAccess";
 
 const nav = [
   { href: "/admin/dashboard", label: "Operations", icon: "⌘" },
@@ -26,8 +27,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     setError("");
     try {
       const user = await currentUser();
-      if (!user || (user.roleLevel !== 0 && user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && user.role !== "DEPARTMENT_ADMIN")) {
-        router.replace("/");
+      const access = adminRouteAccess(user);
+      if (!user || access !== "allowed") {
+        router.replace(access);
         return;
       }
       setEmail(user.email);

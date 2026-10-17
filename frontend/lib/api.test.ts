@@ -109,4 +109,159 @@ describe("Phase 1 authentication API contract", () => {
     await expect(myAnnouncements()).rejects.toThrow();
     expect(assignMock).toHaveBeenCalledWith(expect.stringContaining("/auth/login?reason=session-expired"));
   });
+
+  it("deduplicates concurrent in-flight currentUser requests", async () => {
+    let callCount = 0;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/users/me")) {
+        callCount++;
+        await new Promise((r) => setTimeout(r, 20));
+        return new Response(
+          JSON.stringify({ success: true, data: { email: "user@notifyhub.local", role: "STUDENT", roleLevel: 5 }, message: null }),
+          { status: 200 }
+        );
+      }
+      return new Response("{}", { status: 404 });
+    });
+
+    const { currentUser } = await import("@/lib/api");
+    const [u1, u2, u3] = await Promise.all([currentUser(), currentUser(), currentUser()]);
+    expect(callCount).toBe(1);
+    expect(u1?.email).toBe("user@notifyhub.local");
+    expect(u2?.email).toBe("user@notifyhub.local");
+    expect(u3?.email).toBe("user@notifyhub.local");
+  });
+
+  it("requests department-scoped events for Department Admin", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: { content: [], totalElements: 0, totalPages: 0, size: 50, number: 0 }, message: null }), { status: 200 })
+    );
+
+    const { departmentManagedEvents } = await import("@/lib/api");
+    await departmentManagedEvents(0, 50);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/events/department-management?page=0&size=50"),
+      expect.objectContaining({ credentials: "include" })
+    );
+  });
+
+  it("requests global managed events for Super Admin", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: { content: [], totalElements: 0, totalPages: 0, size: 20, number: 0 }, message: null }), { status: 200 })
+    );
+
+    const { managedEvents } = await import("@/lib/api");
+    await managedEvents(0, 20);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/events/management?page=0&size=20"),
+      expect.objectContaining({ credentials: "include" })
+    );
+  });
+
+  it("requests event attendee registrations by event ID", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: 1,
+              studentId: "STU-101",
+              studentEmail: "student@example.edu",
+              studentName: "John Doe",
+              department: "Computer Science",
+              year: 3,
+              section: "A",
+              registeredAt: "2026-10-17T12:00:00Z",
+            },
+          ],
+          message: null,
+        }),
+        { status: 200 }
+      )
+    );
+
+    const { eventRegistrations } = await import("@/lib/api");
+    const list = await eventRegistrations(42);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/events/42/registrations"),
+      expect.objectContaining({ credentials: "include" })
+    );
+    expect(list).toHaveLength(1);
+    expect(list[0].studentName).toBe("John Doe");
+    expect(list[0].studentId).toBe("STU-101");
+  });
+
+  it("createEvent sends draft payload and returns draft event", async () => {
+    const draftResponse = {
+      id: 55,
+      title: "Draft Hackathon",
+      description: "Description",
+      location: "Hall 1",
+      startAt: "2026-11-01T10:00:00Z",
+      endAt: "2026-11-01T12:00:00Z",
+      status: "DRAFT",
+      targetType: "GLOBAL",
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: draftResponse, message: null }), { status: 201 })
+    );
+
+    const { createEvent } = await import("@/lib/api");
+    const result = await createEvent({
+      title: "Draft Hackathon",
+      description: "Description",
+      location: "Hall 1",
+      startAt: "2026-11-01T10:00:00Z",
+      endAt: "2026-11-01T12:00:00Z",
+      targetType: "GLOBAL",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/events"),
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining("Draft Hackathon"),
+      })
+    );
+    expect(result.status).toBe("DRAFT");
+    expect(result.id).toBe(55);
+  });
+
+  it("updateEvent sends updated draft payload to /events/{id}", async () => {
+    const updatedResponse = {
+      id: 55,
+      title: "Updated Hackathon",
+      description: "Updated description",
+      location: "Hall 1",
+      startAt: "2026-11-01T10:00:00Z",
+      endAt: "2026-11-01T12:00:00Z",
+      status: "DRAFT",
+      targetType: "GLOBAL",
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: updatedResponse, message: null }), { status: 200 })
+    );
+
+    const { updateEvent } = await import("@/lib/api");
+    const result = await updateEvent(55, {
+      title: "Updated Hackathon",
+      description: "Updated description",
+      location: "Hall 1",
+      startAt: "2026-11-01T10:00:00Z",
+      endAt: "2026-11-01T12:00:00Z",
+      targetType: "GLOBAL",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/events/55"),
+      expect.objectContaining({
+        method: "PUT",
+        body: expect.stringContaining("Updated Hackathon"),
+      })
+    );
+    expect(result.title).toBe("Updated Hackathon");
+    expect(result.status).toBe("DRAFT");
+  });
 });

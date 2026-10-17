@@ -153,19 +153,32 @@ export type CurrentUser = {
   faculty: FacultyProfile | null;
 };
 
-export const login = (email: string, password: string) =>
-  request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+let pendingCurrentUser: Promise<CurrentUser | null> | null = null;
+
+export const login = (email: string, password: string) => {
+  pendingCurrentUser = null;
+  return request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+};
 export const registerUser = (payload: { invitationToken: string; password: string; confirmPassword: string }) =>
   request<{ email: string }>("/auth/register", { method: "POST", body: JSON.stringify(payload) });
 export const refreshSession = () => request<AuthResponse>("/auth/refresh", { method: "POST" });
 export const currentUser = async (): Promise<CurrentUser | null> => {
-  try {
-    return await request<CurrentUser>("/users/me", { redirectOn401: false });
-  } catch {
-    return null;
-  }
+  if (pendingCurrentUser) return pendingCurrentUser;
+  pendingCurrentUser = (async () => {
+    try {
+      return await request<CurrentUser>("/users/me", { redirectOn401: false });
+    } catch {
+      return null;
+    } finally {
+      pendingCurrentUser = null;
+    }
+  })();
+  return pendingCurrentUser;
 };
-export const logout = () => request<void>("/auth/logout", { method: "POST" });
+export const logout = () => {
+  pendingCurrentUser = null;
+  return request<void>("/auth/logout", { method: "POST" });
+};
 export const forgotPassword = (email: string) =>
   request<void>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
 
@@ -380,7 +393,10 @@ export const unarchiveAnnouncement = (id: number) => request<Announcement>(`/ann
 export const unpublishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unpublish`, { method: "POST" });
 export const deleteAnnouncement = (id: number) => request<void>(`/announcements/${id}`, { method: "DELETE" });
 
-export const departmentManagedEvents = (page = 0, size = 50) => myEvents({ page, size });
+export const departmentManagedEvents = (page = 0, size = 50) => {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  return request<PageResponse<EventItem>>(`/events/department-management?${q}`);
+};
 export const managedEvents = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<EventItem>>(`/events/management?${q}`);
@@ -393,7 +409,7 @@ export const cancelEvent = (id: number) => request<EventItem>(`/events/${id}/can
 export const archiveEvent = (id: number) => request<EventItem>(`/events/${id}/archive`, { method: "POST" });
 export const unarchiveEvent = (id: number) => request<EventItem>(`/events/${id}/unarchive`, { method: "POST" });
 export const deleteEvent = (id: number) => request<void>(`/events/${id}`, { method: "DELETE" });
-export type EventRegistration = { id: number; studentId: number; studentEmail: string; studentName: string; department: string | null; year: number | null; section: string | null; registeredAt: string };
+export type EventRegistration = { id: number; studentId: string | number; studentEmail: string; studentName: string; department: string | null; year: number | null; section: string | null; registeredAt: string };
 export const registerForEvent = (id: number) => request<EventRegistration>(`/events/${id}/register`, { method: "POST" });
 export const eventRegistrations = (id: number) => request<EventRegistration[]>(`/events/${id}/registrations`);
 export const eventRegistrationExportUrl = (id: number) => `${API_URL}/events/${id}/registrations/export`;

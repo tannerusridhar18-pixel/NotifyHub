@@ -6,6 +6,7 @@ import { login as loginUser } from "@/lib/api";
 import Field from "@/components/ui/Field";
 import styles from "../AuthKit.module.css";
 import AuthFloatingCards from "@/components/auth/AuthFloatingCards";
+import { getLoginRoute } from "./redirect";
 
 export default function UserLogin() {
   const router = useRouter();
@@ -19,20 +20,11 @@ export default function UserLogin() {
     setBusy(true);
     setError("");
     try {
+      const redirectParam = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("redirect") || new URLSearchParams(window.location.search).get("returnUrl")
+        : null;
       const x = await loginUser(email, password);
-      if (x.roleLevel === 0) {
-        router.push("/admin/dashboard");
-      } else if (x.roleLevel === 1) {
-        router.push("/dashboard/principal");
-      } else if (x.roleLevel === 2) {
-        router.push("/dashboard/dean");
-      } else if (x.roleLevel === 3) {
-        router.push("/dashboard/hod");
-      } else if (x.roleLevel === 4) {
-        router.push("/dashboard/faculty");
-      } else {
-        router.push("/dashboard/student");
-      }
+      router.push(getLoginRoute(x, redirectParam));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed.");
     } finally {

@@ -33,10 +33,11 @@ import Button from "@/components/ui/Button";
 import Field from "@/components/ui/Field";
 import Spotlight from "@/components/ui/Spotlight";
 import { inputBase, textareaBase } from "@/components/ui/classes";
+import EventRegistrationManager from "@/components/EventRegistrationManager";
 
 export default function DepartmentAdminDashboardView({ user }: { user: CurrentUser }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"inbox" | "faculty" | "students" | "promotion" | "hod">("inbox");
+  const [tab, setTab] = useState<"inbox" | "faculty" | "students" | "promotion" | "hod" | "registrations">("inbox");
   const [queries, setQueries] = useState<CampusQuery[]>([]);
   const [facultyList, setFacultyList] = useState<DepartmentFacultyItem[]>([]);
   const [studentList, setStudentList] = useState<DepartmentStudentItem[]>([]);
@@ -298,6 +299,16 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
           >
             Events Manager
           </Link>
+          <button
+            onClick={() => setTab("registrations")}
+            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+              tab === "registrations"
+                ? "bg-brand text-black shadow-sm"
+                : "text-muted hover:bg-surface-2 hover:text-white"
+            }`}
+          >
+            Registrations
+          </button>
           <Link
             href="/department-admin/announcements"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-all"
@@ -392,6 +403,16 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
               }`}
             >
               👑 HOD Leadership Assignment
+            </button>
+            <button
+              onClick={() => setTab("registrations")}
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
+                tab === "registrations"
+                  ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
+                  : "bg-surface-2/60 text-muted hover:text-white"
+              }`}
+            >
+              🎟️ Event Registrations
             </button>
           </div>
         </section>
@@ -781,6 +802,15 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
                 </Button>
               </form>
             </Spotlight>
+          </div>
+        )}
+
+        {!error && tab === "registrations" && (
+          <div className="mt-2">
+            <EventRegistrationManager
+              departmentScoped={true}
+              departmentName={user.department}
+            />
           </div>
         )}
       </main>

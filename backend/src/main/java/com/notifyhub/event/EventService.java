@@ -227,14 +227,21 @@ public class EventService {
     public RegistrationDto register(Long id, String username) {
         Event event = get(id);
         User student = user(username);
-        if (event.getStatus() != EventStatus.PUBLISHED || !targeting.matchesEvent(event, student))
+        if (student.getRole() != Role.STUDENT && !"STUDENT".equalsIgnoreCase(student.getEffectiveRoleName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only students can register for events.");
+        }
+        if (event.getStatus() != EventStatus.PUBLISHED || !targeting.matchesEvent(event, student)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not eligible for this event.");
-        if (!event.isRegistrationEnabled())
+        }
+        if (!event.isRegistrationEnabled()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Registration is not enabled.");
-        if (event.getRegistrationDeadline() != null && !event.getRegistrationDeadline().isAfter(Instant.now()))
+        }
+        if (event.getRegistrationDeadline() != null && !event.getRegistrationDeadline().isAfter(Instant.now())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Registration deadline has passed.");
-        if (registrations.existsByEventIdAndStudentId(id, student.getId()))
+        }
+        if (registrations.existsByEventIdAndStudentId(event.getId(), student.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already registered.");
+        }
 
         EventRegistration r = new EventRegistration();
         r.setEvent(event);
@@ -270,17 +277,31 @@ public class EventService {
         if ("STUDENT".equalsIgnoreCase(actor.getEffectiveRoleName()) || actor.getRole() == Role.STUDENT) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view these registrations.");
         }
-        if (!actor.hasAdminAccess()) {
+
+        boolean isSuperAdmin = actor.getRole() == Role.SUPER_ADMIN
+                || "SUPER_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())
+                || (actor.getRoleEntity() != null && actor.getRoleEntity().isSuperadmin());
+        if (isSuperAdmin) {
+            return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
+        }
+
+        boolean isDeptAdmin = actor.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName());
+        if (isDeptAdmin) {
             Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
             Long eventDeptId = event.getTargetDepartment() != null ? event.getTargetDepartment().getId()
-                    : (event.getCreatedBy().getDepartmentEntity() != null ? event.getCreatedBy().getDepartmentEntity().getId() : null);
-            boolean isCreator = event.getCreatedBy().getId().equals(actor.getId());
-            boolean isSameDept = actorDeptId != null && actorDeptId.equals(eventDeptId);
-            if (!isCreator && !isSameDept) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view these registrations.");
+                    : (event.getCreatedBy() != null && event.getCreatedBy().getDepartmentEntity() != null ? event.getCreatedBy().getDepartmentEntity().getId() : null);
+            if (actorDeptId == null || !Objects.equals(actorDeptId, eventDeptId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins can only view registrations for events within their department.");
             }
+            return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
         }
-        return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
+
+        if (actor.hasAdminAccess() || (event.getCreatedBy() != null && actor.getId().equals(event.getCreatedBy().getId()))) {
+            return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
+        }
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view these registrations.");
     }
 
     private RegistrationDto toRegistrationDto(EventRegistration r) {

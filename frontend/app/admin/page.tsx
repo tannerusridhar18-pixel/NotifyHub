@@ -5,6 +5,7 @@ import Link from "next/link";
 import { currentUser, login } from "@/lib/api";
 import styles from "../auth/AuthKit.module.css";
 import AuthFloatingCards from "@/components/auth/AuthFloatingCards";
+import { isGlobalAdminRole } from "@/components/adminAccess";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function AdminLogin() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && u && u.roleLevel === 0) {
+        if (alive && u && isGlobalAdminRole(u.role)) {
           router.replace("/admin/dashboard");
         }
       } catch {}
@@ -34,7 +35,7 @@ export default function AdminLogin() {
     setError("");
     try {
       const x = await login(email, password);
-      if (x.roleLevel !== 0) {
+      if (!isGlobalAdminRole(x.role)) {
         throw new Error("Access denied. Administrator privileges required.");
       }
       router.push("/admin/dashboard");

@@ -1,11 +1,21 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import type { EventItem } from "@/types";
 import Countdown from "./Countdown";
 import { StatusBadge } from "@/components/ui/Badge";
 import Spotlight from "@/components/ui/Spotlight";
-import DetailModal from "@/components/ui/DetailModal";
-import EventRegistrationPanel from "@/components/EventRegistrationPanel";
+import { Loading } from "@/components/States";
+
+const DetailModal = dynamic(() => import("@/components/ui/DetailModal"), {
+  loading: () => <Loading label="Opening event details…" />,
+});
+const EventRegistrationPanel = dynamic(() => import("@/components/EventRegistrationPanel"), {
+  loading: () => (
+    <div className="mt-4 h-10 animate-pulse rounded-lg border border-border bg-surface-2" aria-hidden="true" />
+  ),
+});
 
 export default function EventCard({
   item,
@@ -25,6 +35,7 @@ export default function EventCard({
     <>
       <Spotlight
         as="article"
+        id={`event-${item.id}`}
         tone="violet"
         className="nh-public-content-card group relative grid min-w-0 grid-cols-[76px_1fr] sm:grid-cols-[100px_1fr] gap-4 sm:gap-6 overflow-hidden rounded-[var(--nh-radius-lg)] border border-white/10 bg-surface p-5 sm:p-6 cursor-pointer transition-[border-color,background-color] duration-200 ease-out hover:border-brand-2/35"
       >
@@ -40,7 +51,17 @@ export default function EventCard({
 
         <div className="min-w-0 flex flex-col justify-between" onClick={() => setOpen(true)}>
           <div>
-            {item.photoUrl && <img src={item.photoUrl} alt={item.title} loading="lazy" className="mb-3 h-32 w-full rounded-xl object-cover" />}
+            {item.photoUrl && (
+              <Image
+                src={item.photoUrl}
+                alt={item.title}
+                width={1200}
+                height={128}
+                loader={({ src }) => src}
+                unoptimized
+                className="mb-3 h-32 w-full rounded-xl object-cover"
+              />
+            )}
             <div className="mb-2.5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2/95 px-3 py-1 text-xs font-extrabold tracking-wider uppercase text-muted transition-[transform,border-color] duration-200 ease-out group-hover:scale-105 group-hover:border-white/25">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-2 shadow-[0_0_8px_rgba(147,51,234,0.85)]" />

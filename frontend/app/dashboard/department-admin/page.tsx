@@ -2,21 +2,29 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { currentUser, type CurrentUser } from "@/lib/api";
-import { Loading } from "@/components/States";
+import { ErrorState, Loading } from "@/components/States";
 import DepartmentAdminDashboardView from "@/components/dashboards/DepartmentAdminDashboardView";
+import { departmentAdminRoute } from "./guard";
 
 export default function DepartmentAdminDashboard() {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
       const u = await currentUser();
+      const redirect = departmentAdminRoute(u);
+      if (redirect) {
+        router.replace(redirect);
+        return;
+      }
       setUser(u);
-    } catch {
-      router.replace("/auth/login");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load department workspace.");
     } finally {
       setLoading(false);
     }
@@ -27,10 +35,15 @@ export default function DepartmentAdminDashboard() {
     void load();
   }, [load]);
 
-  if (loading || !user) {
+  if (loading) {
     return <Loading label="Loading department workspace…" />;
   }
 
+  if (error) {
+    return <ErrorState message={error} onRetry={() => void load()} />;
+  }
+
+  if (!user) return null;
+
   return <DepartmentAdminDashboardView user={user} />;
 }
-

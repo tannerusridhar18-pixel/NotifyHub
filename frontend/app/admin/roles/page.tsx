@@ -14,6 +14,7 @@ import Button from "@/components/ui/Button";
 import Field from "@/components/ui/Field";
 import Counter from "@/components/ui/Counter";
 import { inputBase } from "@/components/ui/classes";
+import { isGlobalAdminRole } from "@/components/adminAccess";
 
 const FIXED_ROLE_NAMES = new Set([
   "SUPER_ADMIN",
@@ -66,7 +67,7 @@ export default function ManageRolesPage() {
     (async () => {
       try {
         const u = await currentUser();
-        if (alive && (!u || u.roleLevel !== 0)) {
+        if (alive && (!u || !isGlobalAdminRole(u.role))) {
           router.replace("/");
         } else if (alive) {
           await load();

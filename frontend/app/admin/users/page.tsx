@@ -28,6 +28,7 @@ import Button from "@/components/ui/Button";
 import Field from "@/components/ui/Field";
 import Counter from "@/components/ui/Counter";
 import { inputBase } from "@/components/ui/classes";
+import { isGlobalAdminRole } from "@/components/adminAccess";
 
 type ScopedFilterKey = "year" | "section" | "hostel" | "block";
 type FilterOption = { id: number | string; label: string };
@@ -140,7 +141,7 @@ export default function ManageUsersPage() {
       try {
         const u = await currentUser();
         if (!alive) return;
-        if (!u || ![0, 3].includes(u.roleLevel)) {
+        if (!u || (!isGlobalAdminRole(u.role) && u.role !== "DEPARTMENT_ADMIN")) {
           router.replace("/");
           return;
         }
