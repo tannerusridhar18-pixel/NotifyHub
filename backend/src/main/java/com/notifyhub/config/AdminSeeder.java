@@ -70,20 +70,13 @@ public class AdminSeeder implements CommandLineRunner {
             user.setFailedLoginAttempts(0);
             user.setLockedUntil(null);
             users.save(user);
-            log.info("NotifyHub Super Admin account ready for username '{}' and email '{}'.", username, email);
+            log.info("NotifyHub Super Admin account initialization completed successfully.");
         } else if (user.getId() == null) {
             users.save(user);
         }
 
         ensureSuperAdminAssignment(user, superAdminRole);
 
-        if (roles.findByNameIgnoreCase("ADMIN").isEmpty()) {
-            RoleEntity adminRole = new RoleEntity("ADMIN", 1, superAdminRole, user, "[1,2,3,4,5]");
-            adminRole.setSystemRole(true);
-            adminRole.setSuperadmin(false);
-            roles.save(adminRole);
-            log.info("Seeded default role ADMIN.");
-        }
 
         if (roles.findByNameIgnoreCase("DEPARTMENT_ADMIN").isEmpty()) {
             RoleEntity deptAdmin = new RoleEntity("DEPARTMENT_ADMIN", 3, null, user, "[3,4,5]");
@@ -111,7 +104,7 @@ public class AdminSeeder implements CommandLineRunner {
                 log.info("Granted the seeded Super Admin its GLOBAL Super Admin role assignment.");
             }
         } catch (RuntimeException ex) {
-            log.warn("Could not ensure the Super Admin role assignment: {}", ex.getMessage());
+            log.warn("Could not ensure the Super Admin role assignment: {}", ex.getClass().getSimpleName());
         }
     }
 }

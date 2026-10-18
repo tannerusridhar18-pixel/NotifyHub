@@ -30,6 +30,7 @@ export default function DetailModal({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -40,6 +41,8 @@ export default function DetailModal({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setImageError(false);
     if (!item) return;
 
     previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -134,7 +137,7 @@ export default function DetailModal({
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
                 {item.data.title}
               </h2>
-              {safeUrl(item.data.imageUrl || item.data.photoUrl || item.data.attachmentUrl) && (
+              {safeUrl(item.data.imageUrl || item.data.photoUrl || item.data.attachmentUrl) && !imageError && (
                 <Image
                   src={safeUrl(item.data.imageUrl || item.data.photoUrl || item.data.attachmentUrl) ?? ""}
                   alt=""
@@ -142,6 +145,7 @@ export default function DetailModal({
                   height={192}
                   loader={({ src }) => src}
                   unoptimized
+                  onError={() => setImageError(true)}
                   onClick={(e) => e.preventDefault()}
                   className="mb-5 h-48 w-full rounded-2xl object-cover"
                 />
@@ -193,7 +197,7 @@ export default function DetailModal({
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
                 {item.data.title}
               </h2>
-              {safeUrl(item.data.photoUrl) && (
+              {safeUrl(item.data.photoUrl) && !imageError && (
                 <Image
                   src={safeUrl(item.data.photoUrl) ?? ""}
                   alt=""
@@ -201,6 +205,7 @@ export default function DetailModal({
                   height={192}
                   loader={({ src }) => src}
                   unoptimized
+                  onError={() => setImageError(true)}
                   onClick={(e) => e.preventDefault()}
                   className="mb-5 h-48 w-full rounded-2xl object-cover"
                 />

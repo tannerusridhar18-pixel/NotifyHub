@@ -27,6 +27,7 @@ public class PasswordResetEmailService {
 
     public void send(String email, String rawToken, long resetMinutes) {
         if (!enabled) return;
+        if (com.notifyhub.users.InvitationEmailDispatcher.isTemporaryAccount(email)) return;
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(email);

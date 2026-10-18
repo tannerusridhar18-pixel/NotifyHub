@@ -31,6 +31,7 @@ import {
   deleteQuery,
   createInvitation,
   resendInvitation,
+  deleteInvitation,
   adminInvitations,
   type InvitationView,
   invitableRoles,
@@ -156,6 +157,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
 
   const [invitationList, setInvitationList] = useState<InvitationView[]>([]);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [x, y, z, d, b, s, h, bl, r, rl, invs] = await Promise.all([
@@ -467,6 +469,26 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
     }
   }
 
+  async function handleDelete(invitationId: string, email: string) {
+    if (!window.confirm(`Are you sure you want to cancel and delete the pending invitation for ${email}?`)) {
+      return;
+    }
+    setDeletingId(invitationId);
+    try {
+      await deleteInvitation(invitationId);
+      await load();
+      setToast({
+        message: `Pending invitation for ${email} was deleted successfully.`,
+        type: "success",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete invitation.";
+      setToast({ message, type: "error" });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   const pending = queries.filter((q) => q.status === "OPEN").length;
 
   return (
@@ -556,29 +578,31 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
 
       )}
 
-      <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl print-hide">
-        {(departmentScoped
-          ? (["events", "registrations"] as Tab[])
-          : (["announcements", "events", "registrations", "queries", "people"] as Tab[])
-        ).map((x) => (
-          <button
-            key={x}
-            role="tab"
-            aria-selected={tab === x}
-            className={cx(
-              "whitespace-nowrap rounded-xl px-4 py-2.5 text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200",
-              tab === x ? "bg-brand-50 text-white shadow-soft border border-brand/50" : "text-muted hover:bg-surface/60 hover:text-white"
-            )}
-            onClick={() => setTab(x)}
-          >
-            {x === "people"
-              ? "People & invites"
-              : x === "registrations"
-              ? "Manage Event Registrations"
-              : x[0].toUpperCase() + x.slice(1)}
-          </button>
-        ))}
-      </div>
+      {(!departmentScoped || initialTab !== "announcements") && (
+        <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl print-hide">
+          {(departmentScoped
+            ? (["events", "registrations"] as Tab[])
+            : (["announcements", "events", "registrations", "queries", "people"] as Tab[])
+          ).map((x) => (
+            <button
+              key={x}
+              role="tab"
+              aria-selected={tab === x}
+              className={cx(
+                "whitespace-nowrap rounded-xl px-4 py-2.5 text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200",
+                tab === x ? "bg-brand-50 text-white shadow-soft border border-brand/50" : "text-muted hover:bg-surface/60 hover:text-white"
+              )}
+              onClick={() => setTab(x)}
+            >
+              {x === "people"
+                ? "People & invites"
+                : x === "registrations"
+                ? "Manage Event Registrations"
+                : x[0].toUpperCase() + x.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
 
 
       {tab === "announcements" && (
@@ -1271,88 +1295,105 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
           </form>
 
           {/* Active and recent invitations table */}
-          <div className="mt-8 border-t border-border pt-6">
-            <QueueHeader label="Sent & Pending Invitations" count={invitationList.length} />
-            {invitationList.length === 0 ? (
-              <Empty label="No invitations issued yet." />
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-soft">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-border bg-surface-2 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-                    <tr>
-                      <th className="px-4 py-3">Recipient</th>
-                      <th className="px-4 py-3">Role</th>
-                      <th className="px-4 py-3">Account Status</th>
-                      <th className="px-4 py-3">Email Delivery</th>
-                      <th className="px-4 py-3">Expires At</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {invitationList.map((inv) => (
-                      <tr key={inv.invitationId} className="transition hover:bg-surface-2/50">
-                        <td className="px-4 py-3 font-semibold text-ink">
-                          {inv.email}
-                          {inv.department && (
-                            <span className="block text-[10px] font-normal text-muted">{inv.department}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <SoftBadge>{inv.role}</SoftBadge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusBadge status={inv.status} />
-                        </td>
-                        <td className="px-4 py-3">
-                          {inv.emailStatus === "SENT" ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/40 bg-teal-soft/90 px-2.5 py-0.5 text-[10px] font-extrabold text-teal-light">
-                              <span className="h-1.5 w-1.5 rounded-full bg-teal-light" />
-                              Delivered
-                            </span>
-                          ) : inv.emailStatus === "FAILED" ? (
-                            <div className="group relative inline-block">
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-danger/40 bg-danger/10 px-2.5 py-0.5 text-[10px] font-extrabold text-danger cursor-help">
-                                <span className="h-1.5 w-1.5 rounded-full bg-danger" />
-                                Delivery Failed
-                              </span>
-                              {inv.emailError && (
-                                <div className="absolute left-0 top-full z-20 mt-1 hidden w-64 rounded-md border border-border bg-surface-3 p-2 text-[10px] text-muted shadow-lg group-hover:block">
-                                  {inv.emailError}
-                                </div>
+          {(() => {
+            const displayedInvitations = invitationList.filter((inv) => inv.status !== "USED");
+            return (
+              <div className="mt-8 border-t border-border pt-6">
+                <QueueHeader label="Sent & Pending Invitations" count={displayedInvitations.length} />
+                {displayedInvitations.length === 0 ? (
+                  <Empty label="No pending invitations." />
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-soft">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-border bg-surface-2 text-[10px] font-extrabold uppercase tracking-wider text-muted">
+                        <tr>
+                          <th className="px-4 py-3">Recipient</th>
+                          <th className="px-4 py-3">Role</th>
+                          <th className="px-4 py-3">Account Status</th>
+                          <th className="px-4 py-3">Email Delivery</th>
+                          <th className="px-4 py-3">Expires At</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {displayedInvitations.map((inv) => (
+                          <tr key={inv.invitationId} className="transition hover:bg-surface-2/50">
+                            <td className="px-4 py-3 font-semibold text-ink">
+                              {inv.email}
+                              {inv.department && (
+                                <span className="block text-[10px] font-normal text-muted">{inv.department}</span>
                               )}
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-2.5 py-0.5 text-[10px] font-extrabold text-brand">
-                              <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
-                              Pending Dispatch
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-muted">
-                          {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {inv.status === "USED" ? (
-                            <span className="text-[10px] font-bold text-muted">Activated</span>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              className="px-2.5 py-1 text-[11px]"
-                              disabled={resendingId === inv.invitationId || busy}
-                              onClick={() => handleResend(inv.invitationId, inv.email)}
-                            >
-                              {resendingId === inv.invitationId ? "Resending…" : "Resend"}
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className="px-4 py-3">
+                              <SoftBadge>{inv.role}</SoftBadge>
+                            </td>
+                            <td className="px-4 py-3">
+                              <StatusBadge status={inv.status} />
+                            </td>
+                            <td className="px-4 py-3">
+                              {inv.status === "EXPIRED" ? (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2 px-2.5 py-0.5 text-[10px] font-extrabold text-muted">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-muted" />
+                                  Expired
+                                </span>
+                              ) : inv.emailStatus === "SENT" ? (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/40 bg-teal-soft/90 px-2.5 py-0.5 text-[10px] font-extrabold text-teal-light">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-teal-light" />
+                                  Delivered
+                                </span>
+                              ) : inv.emailStatus === "FAILED" ? (
+                                <div className="group relative inline-block">
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-danger/40 bg-danger/10 px-2.5 py-0.5 text-[10px] font-extrabold text-danger cursor-help">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+                                    Delivery Failed
+                                  </span>
+                                  {inv.emailError && (
+                                    <div className="absolute left-0 top-full z-20 mt-1 hidden w-64 rounded-md border border-border bg-surface-3 p-2 text-[10px] text-muted shadow-lg group-hover:block">
+                                      {inv.emailError}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-2.5 py-0.5 text-[10px] font-extrabold text-brand">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+                                  Pending Dispatch
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-muted">
+                              {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className="px-2.5 py-1 text-[11px]"
+                                  disabled={resendingId === inv.invitationId || deletingId === inv.invitationId || busy}
+                                  onClick={() => handleResend(inv.invitationId, inv.email)}
+                                >
+                                  {resendingId === inv.invitationId ? "Resending…" : "Resend"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="px-2.5 py-1 text-[11px] text-danger hover:bg-danger/10 hover:text-danger-light"
+                                  disabled={resendingId === inv.invitationId || deletingId === inv.invitationId || busy}
+                                  onClick={() => handleDelete(inv.invitationId, inv.email)}
+                                >
+                                  {deletingId === inv.invitationId ? "Deleting…" : "Delete"}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
         </section>
       )}
       <DetailModal item={modalItem} onClose={() => setModalItem(null)} />

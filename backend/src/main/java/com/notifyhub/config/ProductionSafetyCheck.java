@@ -17,6 +17,14 @@ import java.util.List;
 @Profile("prod")
 public class ProductionSafetyCheck {
     private static final String KNOWN_DEFAULT_SECRET_FRAGMENT = "NotifyHubProjectSecretKey";
+    private static final List<String> KNOWN_DEFAULTS = List.of(
+            "NotifyHubProjectSecretKey",
+            "REPLACE_WITH_A_RANDOM_SECRET",
+            "password",
+            "changeme",
+            "secret",
+            "admin"
+    );
 
     private final String jwtSecret;
     private final boolean cookieSecure;
@@ -45,10 +53,12 @@ public class ProductionSafetyCheck {
         List<String> problems = new ArrayList<>();
         if (jwtSecret == null || jwtSecret.isBlank()) {
             problems.add("JWT_SECRET is not set.");
-        } else if (jwtSecret.contains(KNOWN_DEFAULT_SECRET_FRAGMENT)) {
-            problems.add("JWT_SECRET is still the publicly known development default.");
+        } else if (isKnownDefault(jwtSecret)) {
+            problems.add("JWT_SECRET is still a known development default or template placeholder.");
         } else if (jwtSecret.length() < 32) {
             problems.add("JWT_SECRET must be at least 32 characters long.");
+        } else if (isWeakSecret(jwtSecret)) {
+            problems.add("JWT_SECRET is too weak or predictable. Use a high-entropy secret of at least 32 characters.");
         }
         if (!cookieSecure) {
             problems.add("AUTH_COOKIE_SECURE must be true so login cookies are only sent over HTTPS.");
@@ -73,5 +83,51 @@ public class ProductionSafetyCheck {
         if (!problems.isEmpty()) {
             throw new IllegalStateException("Refusing to start with insecure production settings:\n - " + String.join("\n - ", problems));
         }
+    }
+
+    public static boolean isKnownDefault(String secret) {
+        if (secret == null) return false;
+        String lower = secret.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("notifyhubprojectsecretkey")
+                || lower.contains("replace_with_a_random_secret")
+                || lower.contains("changeme")) {
+            return true;
+        }
+        if (lower.equals("secret") || lower.equals("password") || lower.equals("admin") || lower.equals("default")) {
+            return true;
+        }
+        if (lower.startsWith("password") && (lower.length() < 32 || lower.matches("^(password)+.*"))) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isWeakSecret(String secret) {
+        if (secret == null || secret.length() < 32) return true;
+        long distinctChars = secret.chars().distinct().count();
+        if (distinctChars < 10) {
+            return true;
+        }
+        boolean hasDigits = secret.chars().anyMatch(Character::isDigit);
+        boolean hasLower = secret.chars().anyMatch(Character::isLowerCase);
+        boolean hasUpper = secret.chars().anyMatch(Character::isUpperCase);
+        boolean hasSpecial = secret.chars().anyMatch(c -> !Character.isLetterOrDigit(c));
+        int classes = (hasDigits ? 1 : 0) + (hasLower ? 1 : 0) + (hasUpper ? 1 : 0) + (hasSpecial ? 1 : 0);
+        if (classes < 2) {
+            return true;
+        }
+        for (int len = 1; len <= 8; len++) {
+            String sub = secret.substring(0, len);
+            int repeats = 0;
+            for (int i = 0; i + len <= secret.length(); i += len) {
+                if (secret.substring(i, i + len).equals(sub)) {
+                    repeats++;
+                }
+            }
+            if (repeats * len >= secret.length() - len) {
+                return true;
+            }
+        }
+        return false;
     }
 }

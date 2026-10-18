@@ -21,9 +21,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -337,10 +340,59 @@ public class EventService {
         event.setTargetRole(target.role());
         event.setRecipientType(request.recipientType() != null ? request.recipientType() : (request.targetType() != null ? request.targetType().name().toLowerCase() : "all"));
         event.setRecipientTargets(request.recipientTargets());
-        event.setPhotoUrl(request.photoUrl());
-        event.setExternalLink(request.externalLink());
+        event.setPhotoUrl(validateMediaUrl(request.photoUrl(), "Photo URL"));
+        event.setExternalLink(validateMediaUrl(request.externalLink(), "External link"));
         event.setRegistrationEnabled(request.registrationEnabled());
         event.setRegistrationDeadline(request.registrationDeadline());
+    }
+
+    public static String validateMediaUrl(String url, String fieldName) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        String trimmed = url.trim();
+        if (trimmed.length() > 2048) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " exceeds maximum length of 2048 characters.");
+        }
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+            if (c <= 31 || c == 127) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " contains invalid control characters.");
+            }
+        }
+        if (trimmed.contains("\\")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must not contain backslashes.");
+        }
+        if (trimmed.startsWith("//")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Protocol-relative " + fieldName + " is not permitted.");
+        }
+        if (trimmed.startsWith("/")) {
+            return trimmed;
+        }
+        int colonIdx = trimmed.indexOf(':');
+        if (colonIdx > 0) {
+            String potentialScheme = trimmed.substring(0, colonIdx).toLowerCase(Locale.ROOT);
+            if (!potentialScheme.equals("http") && !potentialScheme.equals("https")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " scheme '" + potentialScheme + "' is not allowed. Only http and https are permitted.");
+            }
+        }
+        try {
+            URI uri = new URI(trimmed);
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must have a valid scheme (http or https) or be a relative path.");
+            }
+            String lower = scheme.toLowerCase(Locale.ROOT);
+            if (!lower.equals("http") && !lower.equals("https")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " scheme '" + scheme + "' is not allowed. Only http and https are permitted.");
+            }
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must contain a valid host.");
+            }
+            return trimmed;
+        } catch (URISyntaxException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed " + fieldName + ": " + e.getMessage());
+        }
     }
 
     private List<String> parseTargets(String json) {

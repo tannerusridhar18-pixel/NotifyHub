@@ -171,6 +171,7 @@ export default function ManageUsersPage() {
         departmentId: createDeptId ? Number(createDeptId) : undefined,
         reportsToId: createReportsToId ? Number(createReportsToId) : undefined,
         status: "ACTIVE",
+        mustChangePassword: true,
       });
       setToast({ message: `User ${createEmail} created successfully.`, type: "success" });
       setIsCreateOpen(false);

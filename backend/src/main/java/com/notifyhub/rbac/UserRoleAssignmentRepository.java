@@ -5,4 +5,5 @@ public interface UserRoleAssignmentRepository extends JpaRepository<UserRoleAssi
     List<UserRoleAssignment> findByUserIdAndRevokedAtIsNull(Long userId);
     boolean existsByUserIdAndRoleIdAndRevokedAtIsNull(Long userId, Long roleId);
     List<UserRoleAssignment> findByRoleIdAndRevokedAtIsNull(Long roleId);
+    List<UserRoleAssignment> findByUserId(Long userId);
 }

@@ -23,12 +23,45 @@ describe("Phase 1 authentication API contract", () => {
   });
 
   it("sanitizes user URLs safely", () => {
+    // Legitimate absolute URLs
     expect(safeUrl("https://example.com/doc.pdf")).toBe("https://example.com/doc.pdf");
+    expect(safeUrl("http://localhost:3000/campus/feed")).toBe("http://localhost:3000/campus/feed");
+    expect(safeUrl("https://notifyhub.edu/events?id=42#details")).toBe("https://notifyhub.edu/events?id=42#details");
+
+    // Legitimate relative paths
     expect(safeUrl("/uploads/file.png")).toBe("/uploads/file.png");
+    expect(safeUrl("/announcements/123")).toBe("/announcements/123");
+
+    // Protocol-relative URLs (must be rejected)
+    expect(safeUrl("//evil.com")).toBeUndefined();
+    expect(safeUrl("//evil.com/path")).toBeUndefined();
+    expect(safeUrl("///evil.com")).toBeUndefined();
+    expect(safeUrl("////evil.com")).toBeUndefined();
+
+    // Backslash variants (must be rejected)
+    expect(safeUrl("/\\evil.com")).toBeUndefined();
+    expect(safeUrl("\\evil.com")).toBeUndefined();
+    expect(safeUrl("\\\\evil.com")).toBeUndefined();
+    expect(safeUrl("/\\evil.com/test")).toBeUndefined();
+    expect(safeUrl("/uploads\\file.png")).toBeUndefined();
+
+    // Unsafe schemes (must be rejected)
     expect(safeUrl("javascript:alert(1)")).toBeUndefined();
+    expect(safeUrl("javascript:void(0)")).toBeUndefined();
     expect(safeUrl("data:text/html,<script>alert(1)</script>")).toBeUndefined();
+    expect(safeUrl("vbscript:msgbox(1)")).toBeUndefined();
+    expect(safeUrl("file:///etc/passwd")).toBeUndefined();
+    expect(safeUrl("blob:https://example.com/uuid")).toBeUndefined();
+
+    // Empty, whitespace, control characters, malformed
     expect(safeUrl("")).toBeUndefined();
+    expect(safeUrl("   ")).toBeUndefined();
     expect(safeUrl(null)).toBeUndefined();
+    expect(safeUrl(undefined)).toBeUndefined();
+    expect(safeUrl("http://")).toBeUndefined();
+    expect(safeUrl("https://")).toBeUndefined();
+    expect(safeUrl("https://example.com/\u0000bad")).toBeUndefined();
+    expect(safeUrl("https://example.com/has space")).toBeUndefined();
   });
 
   it("uses the backend student query field and maps registrations returned as a list", async () => {
@@ -386,6 +419,26 @@ describe("Phase 1 authentication API contract", () => {
       expect.objectContaining({ method: "POST" })
     );
     expect(result.emailStatus).toBe("SENT");
+  });
+
+  it("deleteInvitation calls DELETE /admin/invitations/{id}", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: null,
+          message: null,
+        }),
+        { status: 200 }
+      )
+    );
+
+    const { deleteInvitation } = await import("@/lib/api");
+    await deleteInvitation("inv-123");
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/admin/invitations/inv-123"),
+      expect.objectContaining({ method: "DELETE" })
+    );
   });
 });
 

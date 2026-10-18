@@ -240,15 +240,23 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
           <div className="space-y-10">
             {/* Announcements Section */}
             <div>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-medium text-white">Targeted Campus Notices</h2>
-                <span className="text-xs font-bold text-muted">{anns.length} Active Notices</span>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-medium text-white">Targeted Campus Notices</h2>
+                  <span className="text-xs font-bold text-muted">{anns.length} Active Notices</span>
+                </div>
+                <Link
+                  href="/announcements"
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-surface-2/60 px-3 py-1.5 text-xs font-bold text-brand-light hover:bg-surface-2 hover:text-white transition-all"
+                >
+                  See all announcements →
+                </Link>
               </div>
               {anns.length === 0 ? (
                 <Empty label="No notices for your section or year at this moment." />
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {anns.map((a) => (
+                  {anns.slice(0, 3).map((a) => (
                     <AnnouncementCard key={a.id} item={a} />
                   ))}
                 </div>
@@ -257,15 +265,23 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
 
             {/* Events Section */}
             <div>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-medium text-white">Upcoming Campus Events</h2>
-                <span className="text-xs font-bold text-muted">{eventsList.length} Scheduled</span>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-medium text-white">Upcoming Campus Events</h2>
+                  <span className="text-xs font-bold text-muted">{eventsList.length} Scheduled</span>
+                </div>
+                <Link
+                  href="/events"
+                  className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-surface-2/60 px-3 py-1.5 text-xs font-bold text-brand-light hover:bg-surface-2 hover:text-white transition-all"
+                >
+                  See all events →
+                </Link>
               </div>
               {eventsList.length === 0 ? (
                 <Empty label="upcoming events" />
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {eventsList.map((e) => (
+                  {eventsList.slice(0, 3).map((e) => (
                     <EventCard key={e.id} item={e} onRegistered={loadData} />
                   ))}
                 </div>

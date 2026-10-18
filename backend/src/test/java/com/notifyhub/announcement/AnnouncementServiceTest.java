@@ -5,5 +5,53 @@ import com.notifyhub.auth.*; import com.notifyhub.targeting.*; import org.junit.
  @Test void draftCanPublishAndThenUnpublish(){Announcement a=new Announcement();a.setCreatedBy(author());when(repo.findById(1L)).thenReturn(Optional.of(a));assertThat(service.publish(1L).status()).isEqualTo(AnnouncementStatus.PUBLISHED);assertThat(service.unpublish(1L).status()).isEqualTo(AnnouncementStatus.DRAFT);}
  @Test void archivedAnnouncementCannotBePublished(){Announcement a=new Announcement();a.setCreatedBy(author());a.setStatus(AnnouncementStatus.ARCHIVED);when(repo.findById(1L)).thenReturn(Optional.of(a));assertThatThrownBy(()->service.publish(1L)).isInstanceOf(ResponseStatusException.class).hasMessageContaining("draft");}
  @Test void createsAsDraftWithServerAuthor(){User u=new User();u.setUsername("admin");u.setRole(Role.ADMIN);when(users.findByUsername("admin")).thenReturn(Optional.of(u));when(targeting.resolve(TargetType.GLOBAL,null,null,null,null,null,null)).thenReturn(new TargetingService.Target(TargetType.GLOBAL,null,null,null,null,null,null));when(repo.save(any())).thenAnswer(x->x.getArgument(0));var result=service.create(new AnnouncementService.Request("T","Body",false,TargetType.GLOBAL,null,null,null,null,null,null),"admin");assertThat(result.status()).isEqualTo(AnnouncementStatus.DRAFT);}
+
+ @Test
+ void attachmentUrlValidationRejectsUnsafeSchemesAndBypasses() {
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("javascript:alert(1)"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("not allowed");
+
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("data:text/html,<script>alert(1)</script>"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("not allowed");
+
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("file:///etc/passwd"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("not allowed");
+
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("//evil.com/payload"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("Protocol-relative");
+
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("///evil.com"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("Protocol-relative");
+
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("/\\evil.com"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("backslashes");
+
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("\\evil.com"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("backslashes");
+
+     assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("https://example.com/\u0000bad"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("control characters");
+ }
+
+ @Test
+ void attachmentUrlValidationAcceptsSafeUrls() {
+     assertThat(AnnouncementService.validateAttachmentUrl(null)).isNull();
+     assertThat(AnnouncementService.validateAttachmentUrl("   ")).isNull();
+     assertThat(AnnouncementService.validateAttachmentUrl("https://example.com/midterms.pdf"))
+             .isEqualTo("https://example.com/midterms.pdf");
+     assertThat(AnnouncementService.validateAttachmentUrl("http://campus.edu/files/notice.png"))
+             .isEqualTo("http://campus.edu/files/notice.png");
+     assertThat(AnnouncementService.validateAttachmentUrl("/uploads/syllabus.pdf"))
+             .isEqualTo("/uploads/syllabus.pdf");
+ }
+
  private User author(){User u=new User();u.setRole(Role.ADMIN);return u;}
 }

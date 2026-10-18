@@ -271,12 +271,20 @@ public class IdentityService {
         if (cmd.status() != null) {
             user.setAccountStatus(cmd.status());
             user.setActive(cmd.status() == AccountStatus.ACTIVE);
+            if (!user.isActive()) {
+                entityManager.createNativeQuery("DELETE FROM refresh_tokens WHERE user_id = ?1")
+                        .setParameter(1, user.getId())
+                        .executeUpdate();
+            }
         }
 
         if (cmd.password() != null && !cmd.password().isBlank()) {
             user.setPasswordHash(encoder.encode(cmd.password()));
             user.setFailedLoginAttempts(0);
             user.setLockedUntil(null);
+            entityManager.createNativeQuery("DELETE FROM refresh_tokens WHERE user_id = ?1")
+                    .setParameter(1, user.getId())
+                    .executeUpdate();
         }
 
         users.save(user);
@@ -340,6 +348,11 @@ public class IdentityService {
         User user = users.findByPublicId(publicId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
         user.setAccountStatus(status);
         user.setActive(status == AccountStatus.ACTIVE);
+        if (!user.isActive()) {
+            entityManager.createNativeQuery("DELETE FROM refresh_tokens WHERE user_id = ?1")
+                    .setParameter(1, user.getId())
+                    .executeUpdate();
+        }
         users.save(user);
     }
 

@@ -13,9 +13,39 @@ function csrf() {
 export function safeUrl(url?: string | null): string | undefined {
   if (!url) return undefined;
   const trimmed = url.trim();
-  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("/")) {
+  if (!trimmed) return undefined;
+
+  // Reject control characters or whitespace within the URL
+  if (/[\x00-\x1F\x7F\s]/.test(trimmed)) {
+    return undefined;
+  }
+
+  // Reject protocol-relative URLs and backslash variations
+  // (e.g. //evil.com, ///evil.com, /\evil.com, /\\evil.com, \\evil.com)
+  if (
+    trimmed.startsWith("//") ||
+    trimmed.startsWith("\\") ||
+    trimmed.startsWith("/\\") ||
+    trimmed.includes("\\")
+  ) {
+    return undefined;
+  }
+
+  // Safe relative paths must begin with a single '/'
+  if (trimmed.startsWith("/")) {
     return trimmed;
   }
+
+  // Safe absolute URLs must be valid http: or https: URLs with a hostname
+  try {
+    const parsed = new URL(trimmed);
+    if ((parsed.protocol === "http:" || parsed.protocol === "https:") && parsed.hostname) {
+      return trimmed;
+    }
+  } catch {
+    return undefined;
+  }
+
   return undefined;
 }
 
@@ -248,6 +278,8 @@ export const createInvitation = (payload: InvitationRequest) =>
   request<InvitationResult>("/admin/invitations", { method: "POST", body: JSON.stringify(payload) });
 export const resendInvitation = (invitationId: string) =>
   request<InvitationResult>(`/admin/invitations/${invitationId}/resend`, { method: "POST" });
+export const deleteInvitation = (invitationId: string) =>
+  request<void>(`/admin/invitations/${invitationId}`, { method: "DELETE" });
 export const adminInvitations = () => request<InvitationView[]>("/admin/invitations");
 export const resetPassword = (token: string, password: string, confirmPassword: string) =>
   request<void>("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password, confirmPassword }) });
@@ -353,7 +385,7 @@ export const submitFacultyQuery = (payload: { subject: string; message: string }
 export const facultyQueryInbox = (page = 0, size = 50, status?: string) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   if (status) q.set("status", status);
-  return request<PageResponse<CampusQuery>>(`/queries/faculty-inbox?${q}`);
+  return request<PageResponse<CampusQuery>>(`/queries/faculty/inbox?${q}`);
 };
 export const scopedQueries = (status?: "OPEN" | "ANSWERED" | "CLOSED") => {
   const q = new URLSearchParams(); if (status) q.set("status", status); return request<PageResponse<CampusQuery>>(`/queries?${q}`);

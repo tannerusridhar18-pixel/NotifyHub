@@ -139,4 +139,22 @@ describe("Image URL Validation and Safety", () => {
     expect(safeUrl(null)).toBeUndefined();
     expect(safeUrl(undefined)).toBeUndefined();
   });
+
+  it("validates announcement attachment URLs safely for Open / Download", () => {
+    expect(safeUrl("https://storage.googleapis.com/campus-bucket/docs/circular.pdf")).toBe(
+      "https://storage.googleapis.com/campus-bucket/docs/circular.pdf"
+    );
+    expect(safeUrl("/attachments/exam-schedule.pdf")).toBe("/attachments/exam-schedule.pdf");
+    expect(safeUrl("javascript:exploit()")).toBeUndefined();
+    expect(safeUrl("data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==")).toBeUndefined();
+  });
+
+  it("validates event photo and external link safety", () => {
+    expect(safeUrl("https://events.campus.edu/poster.jpg")).toBe("https://events.campus.edu/poster.jpg");
+    expect(safeUrl("https://register.campus.edu/hackathon")).toBe("https://register.campus.edu/hackathon");
+    expect(safeUrl("javascript:window.open('evil.com')")).toBeUndefined();
+    expect(safeUrl("file:///etc/hosts")).toBeUndefined();
+    expect(safeUrl("//malicious.com/attack")).toBeUndefined();
+  });
 });
+

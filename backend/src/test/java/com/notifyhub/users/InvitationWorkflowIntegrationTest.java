@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -330,5 +331,116 @@ class InvitationWorkflowIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"hacker@example.edu\",\"role\":\"STUDENT\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deletePendingInvitationSuccessfullyDeletesInvitation() throws Exception {
+        String testEmail = "pending.to.delete." + System.nanoTime() + "@notifyhub.local";
+        String invitePayload = """
+                {
+                    "email": "%s",
+                    "role": "STUDENT"
+                }
+                """.formatted(testEmail);
+
+        MvcResult createResult = mvc.perform(post("/api/v1/admin/invitations")
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invitePayload))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String invitationId = mapper.readTree(createResult.getResponse().getContentAsString()).path("data").path("invitationId").asText();
+
+        mvc.perform(delete("/api/v1/admin/invitations/" + invitationId)
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin)))
+                .andExpect(status().isOk());
+
+        assertThat(invitations.findById(UUID.fromString(invitationId))).isEmpty();
+        assertThat(users.findByEmailIgnoreCase(testEmail)).isEmpty();
+    }
+
+    @Test
+    void deleteActivatedInvitationIsRejectedWithConflict() throws Exception {
+        String testEmail = "activated.protect." + System.nanoTime() + "@notifyhub.local";
+        String invitePayload = """
+                {
+                    "email": "%s",
+                    "role": "STUDENT"
+                }
+                """.formatted(testEmail);
+
+        MvcResult createResult = mvc.perform(post("/api/v1/admin/invitations")
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invitePayload))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String invitationId = mapper.readTree(createResult.getResponse().getContentAsString()).path("data").path("invitationId").asText();
+        Invitation inv = invitations.findById(UUID.fromString(invitationId)).orElseThrow();
+
+        // Simulate activation
+        User u = users.findByEmailIgnoreCase(testEmail).orElseThrow();
+        u.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(u);
+        inv.setStatus(InvitationStatus.USED);
+        inv.setUsedAt(Instant.now());
+        invitations.saveAndFlush(inv);
+
+        // Attempt deletion of activated invitation
+        mvc.perform(delete("/api/v1/admin/invitations/" + invitationId)
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin)))
+                .andExpect(status().isConflict());
+
+        // Account must remain active and preserved
+        User preservedUser = users.findByEmailIgnoreCase(testEmail).orElseThrow();
+        assertThat(preservedUser.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
+    }
+
+    @Test
+    void getInvitationsExcludesActivatedAccounts() throws Exception {
+        String pendingEmail = "pending.listed." + System.nanoTime() + "@notifyhub.local";
+        String activatedEmail = "active.hidden." + System.nanoTime() + "@notifyhub.local";
+
+        // Create pending invitation
+        mvc.perform(post("/api/v1/admin/invitations")
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + pendingEmail + "\",\"role\":\"STUDENT\"}"))
+                .andExpect(status().isCreated());
+
+        // Create and activate second invitation
+        MvcResult activeResult = mvc.perform(post("/api/v1/admin/invitations")
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + activatedEmail + "\",\"role\":\"STUDENT\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String activeInvId = mapper.readTree(activeResult.getResponse().getContentAsString()).path("data").path("invitationId").asText();
+        Invitation activeInv = invitations.findById(UUID.fromString(activeInvId)).orElseThrow();
+        User activeUser = users.findByEmailIgnoreCase(activatedEmail).orElseThrow();
+        activeUser.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(activeUser);
+        activeInv.setStatus(InvitationStatus.USED);
+        activeInv.setUsedAt(Instant.now());
+        invitations.saveAndFlush(activeInv);
+
+        // Fetch invitation list
+        MvcResult listResult = mvc.perform(get("/api/v1/admin/invitations")
+                        .cookie(cookieFor(superAdmin)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseJson = listResult.getResponse().getContentAsString();
+        assertThat(responseJson).contains(pendingEmail);
+        assertThat(responseJson).doesNotContain(activatedEmail);
     }
 }

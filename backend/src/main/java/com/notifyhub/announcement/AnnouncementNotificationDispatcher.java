@@ -102,37 +102,56 @@ public class AnnouncementNotificationDispatcher {
                 event.announcementId(), sent, failed, recipients.size());
     }
 
+    private boolean isEligibleRecipient(User user) {
+        if (user == null || !user.isActive()) return false;
+        if (user.isMustChangePassword()) {
+            return false;
+        }
+        return !com.notifyhub.users.InvitationEmailDispatcher.isTemporaryAccount(user.getEmail());
+    }
+
     /** The e-mail must reach only people who are allowed to see the announcement (recipient type, year, faculty-only, ...). */
     private List<String> filterByAudience(AnnouncementPublishedEvent event, List<String> emails) {
         Announcement announcement = announcements.findById(event.announcementId()).orElse(null);
-        if (announcement == null) return emails;
+        if (announcement == null) {
+            return emails.stream()
+                    .filter(e -> !com.notifyhub.users.InvitationEmailDispatcher.isTemporaryAccount(e))
+                    .toList();
+        }
         return emails.stream()
-                .filter(email -> users.findByEmailIgnoreCase(email).map(user -> targeting.matches(announcement, user)).orElse(false))
+                .filter(email -> users.findByEmailIgnoreCase(email)
+                        .map(user -> isEligibleRecipient(user) && targeting.matches(announcement, user))
+                        .orElse(false))
                 .toList();
     }
 
     private List<String> resolveRecipients(AnnouncementPublishedEvent event) {
         return switch (event.targetType()) {
             case GLOBAL -> users.findByAccountStatus(AccountStatus.ACTIVE).stream()
+                    .filter(this::isEligibleRecipient)
                     .map(User::getEmail).distinct().toList();
             case ROLE -> users.findByAccountStatusAndRole(AccountStatus.ACTIVE, event.role()).stream()
+                    .filter(this::isEligibleRecipient)
                     .map(User::getEmail).distinct().toList();
             case DEPARTMENT -> Stream.concat(
                             students.findByDepartmentId(event.departmentId()).stream().map(StudentProfile::getUser),
                             faculty.findByDepartmentId(event.departmentId()).stream().map(FacultyProfile::getUser))
-                    .filter(User::isActive).map(User::getEmail).distinct().toList();
+                    .filter(this::isEligibleRecipient).map(User::getEmail).distinct().toList();
             case BRANCH -> students.findByBranchId(event.branchId()).stream().map(StudentProfile::getUser)
-                    .filter(User::isActive).map(User::getEmail).distinct().toList();
+                    .filter(this::isEligibleRecipient).map(User::getEmail).distinct().toList();
             case SECTION -> students.findBySectionId(event.sectionId()).stream().map(StudentProfile::getUser)
-                    .filter(User::isActive).map(User::getEmail).distinct().toList();
-                case HOSTEL -> students.findByHostelId(event.hostelId()).stream().map(StudentProfile::getUser)
-                    .filter(User::isActive).map(User::getEmail).distinct().toList();
-                case USER -> users.findById(event.userId()).filter(User::isActive).map(User::getEmail).stream().toList();
+                    .filter(this::isEligibleRecipient).map(User::getEmail).distinct().toList();
+            case HOSTEL -> students.findByHostelId(event.hostelId()).stream().map(StudentProfile::getUser)
+                    .filter(this::isEligibleRecipient).map(User::getEmail).distinct().toList();
+            case USER -> users.findById(event.userId()).filter(this::isEligibleRecipient).map(User::getEmail).stream().toList();
         };
     }
 
     private String safeMessage(RuntimeException ex) {
         String message = ex.getMessage();
-        return message == null || message.isBlank() ? ex.getClass().getSimpleName() : message;
+        if (message == null || message.isBlank()) return ex.getClass().getSimpleName();
+        return message
+                .replaceAll("(?i)(password|secret|token|cred(ential)?s?)[=:][^\\s,;]+", "$1=***")
+                .replaceAll("(?i)(bearer\\s+)[a-zA-Z0-9._~+/-]+", "$1***");
     }
 }

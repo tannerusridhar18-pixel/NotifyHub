@@ -33,6 +33,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -614,5 +616,49 @@ class AccessControlRegressionTest {
         mvc.perform(get("/api/v1/events"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Annual Research Symposium 2026")));
+    }
+
+    @Test
+    @Transactional
+    void adminPasswordChangeRevokesActiveRefreshTokens() throws Exception {
+        User superAdmin = newUser("superadmin", Role.SUPER_ADMIN);
+        User user = newUser("session-victim", Role.FACULTY);
+        user.setPasswordHash(passwordEncoder.encode("InitialPassword123!"));
+        users.saveAndFlush(user);
+
+        // 1. User logs in and receives an active session
+        var session = authService.login(user.getEmail(), "InitialPassword123!");
+        assertThat(session.rawRefreshToken()).isNotBlank();
+
+        // 2. Refresh token works before password change
+        var refreshed = authService.refresh(session.rawRefreshToken());
+        assertThat(refreshed.accessToken()).isNotBlank();
+
+        // 3. Admin changes the user's password
+        String updatePayload = """
+            {
+                "password": "NewAdminAssignedPassword123!"
+            }
+            """;
+        mvc.perform(put("/api/v1/admin/users/" + user.getPublicId())
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload))
+                .andExpect(status().isOk());
+
+        // 4. Old refresh tokens are now revoked / invalidated
+        assertThatThrownBy(() -> authService.refresh(session.rawRefreshToken()))
+                .isInstanceOf(ResponseStatusException.class);
+        assertThatThrownBy(() -> authService.refresh(refreshed.rawRefreshToken()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        // 5. User can no longer log in with old password
+        assertThatThrownBy(() -> authService.login(user.getEmail(), "InitialPassword123!"))
+                .isInstanceOf(ResponseStatusException.class);
+
+        // 6. User can successfully log in with new password
+        var newSession = authService.login(user.getEmail(), "NewAdminAssignedPassword123!");
+        assertThat(newSession.rawRefreshToken()).isNotBlank();
     }
 }

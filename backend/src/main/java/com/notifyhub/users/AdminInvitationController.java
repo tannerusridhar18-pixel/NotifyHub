@@ -56,6 +56,16 @@ public class AdminInvitationController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(Authentication authentication, @PathVariable("id") java.util.UUID id) {
+        invitations.delete(authentication.getName(), id);
+        if (authentication != null) {
+            users.findByUsername(authentication.getName()).or(() -> users.findByEmailIgnoreCase(authentication.getName()))
+                    .ifPresent(actor -> audit.save(new com.notifyhub.rbac.AuditLog(actor, "USER_INVITE_DELETE", "INVITATION", id.toString(), "{}")));
+        }
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     public record Request(
             @NotBlank @Email String email,
             String role,

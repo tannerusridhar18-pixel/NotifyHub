@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { announcements } from "@/lib/api";
 import type { Announcement } from "@/types";
 import AnnouncementCard from "@/components/AnnouncementCard";
@@ -14,12 +14,19 @@ export default function AnnouncementsPage() {
   const [query, setQuery] = useState("");
   const [urgentOnly, setUrgentOnly] = useState(false);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
+    setError("");
     announcements({ size: 24 })
       .then((x) => setItems(x.content))
       .catch((e) => setError(e instanceof Error ? e.message : "Unable to load announcements."))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
+    loadData();
+  }, [loadData]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -81,7 +88,7 @@ export default function AnnouncementsPage() {
         {loading ? (
           <CardSkeletons count={6} />
         ) : error ? (
-          <ErrorState message={error} />
+          <ErrorState message={error} onRetry={loadData} />
         ) : filtered.length ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((x, i) => (

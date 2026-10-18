@@ -8,6 +8,7 @@ import type { EventItem } from "@/types";
 import Countdown from "./Countdown";
 import { AudienceBadge, formatAudienceLabel } from "@/components/ui/Badge";
 import Spotlight from "@/components/ui/Spotlight";
+import { safeUrl } from "@/lib/api";
 
 const EventRegistrationPanel = dynamic(() => import("@/components/EventRegistrationPanel"), {
   loading: () => (
@@ -62,7 +63,7 @@ export default function EventCard({
         }}
       >
         <div>
-          {item.photoUrl && !imageError && (
+          {safeUrl(item.photoUrl) && !imageError && (
             <div
               className="mb-3 overflow-hidden rounded-xl cursor-pointer"
               onClick={(e) => {
@@ -71,7 +72,7 @@ export default function EventCard({
               }}
             >
               <Image
-                src={item.photoUrl}
+                src={safeUrl(item.photoUrl)!}
                 alt={item.title}
                 width={1200}
                 height={128}
@@ -91,9 +92,9 @@ export default function EventCard({
           <p className="text-sm leading-relaxed text-muted/95 [overflow-wrap:anywhere]">
             {item.description}
           </p>
-          {item.externalLink && (
+          {safeUrl(item.externalLink) && (
             <a
-              href={item.externalLink}
+              href={safeUrl(item.externalLink)}
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}

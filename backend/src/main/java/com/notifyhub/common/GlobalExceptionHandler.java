@@ -34,6 +34,10 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> unreadable(HttpMessageNotReadableException ex, HttpServletRequest request) { return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Malformed request.", request, List.of()); }
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     ResponseEntity<ApiError> typeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) { return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid request parameter.", request, List.of()); }
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    ResponseEntity<ApiError> unsupportedMediaType(org.springframework.web.HttpMediaTypeNotSupportedException ex, HttpServletRequest request) { return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "Content type is not supported. Use application/json.", request, List.of()); }
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<ApiError> methodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException ex, HttpServletRequest request) { return error(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "HTTP method not allowed.", request, List.of()); }
 
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<ApiError> status(ResponseStatusException ex, HttpServletRequest request) {
@@ -49,7 +53,20 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> denied(AccessDeniedException ex, HttpServletRequest request) { return error(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied.", request, List.of()); }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    ResponseEntity<ApiError> conflict(DataIntegrityViolationException ex, HttpServletRequest request) { LOG.warn("Data integrity violation on {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMostSpecificCause().getMessage()); return error(HttpStatus.CONFLICT, "CONFLICT", "The request conflicts with existing data.", request, List.of()); }
+    public ResponseEntity<ApiError> conflict(DataIntegrityViolationException ex, HttpServletRequest request) {
+        String cause = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        String sanitized = sanitizeSqlMessage(cause);
+        LOG.warn("Data integrity violation on {} {}: {}", request.getMethod(), request.getRequestURI(), sanitized);
+        return error(HttpStatus.CONFLICT, "CONFLICT", "The request conflicts with existing data.", request, List.of());
+    }
+
+    private String sanitizeSqlMessage(String message) {
+        if (message == null || message.isBlank()) return "Data integrity violation";
+        return message
+                .replaceAll("(?i)(password|secret|token|cred(ential)?s?)[=:][^\\s,;]+", "$1=***")
+                .replaceAll("(?i)(bearer\\s+)[a-zA-Z0-9._~+/-]+", "$1***")
+                .replaceAll("'[^']+'", "'[REDACTED]'");
+    }
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> generic(Exception ex, HttpServletRequest request) { LOG.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex); return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "An unexpected server error occurred.", request, List.of()); }

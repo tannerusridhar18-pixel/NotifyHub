@@ -32,7 +32,7 @@ public class QueryController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(service.submitFaculty(request, authentication.getName())));
     }
 
-    @GetMapping("/faculty/inbox")
+    @GetMapping({"/faculty/inbox", "/faculty-inbox"})
     public ResponseEntity<ApiResponse<PageResponse<QueryService.QueryDto>>> facultyInbox(
             Authentication authentication,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -64,8 +64,9 @@ public class QueryController {
     }
 
     @PostMapping("/{id}/answer")
-    public ResponseEntity<ApiResponse<QueryService.QueryDto>> answer(@PathVariable Long id, @Valid @RequestBody QueryService.AnswerRequest r) {
-        return ResponseEntity.ok(ApiResponse.ok(service.answer(id, r.response())));
+    public ResponseEntity<ApiResponse<QueryService.QueryDto>> answer(Authentication authentication, @PathVariable Long id, @Valid @RequestBody QueryService.AnswerRequest r) {
+        String username = authentication != null ? authentication.getName() : null;
+        return ResponseEntity.ok(ApiResponse.ok(service.answerScoped(id, r.response(), username)));
     }
 
     @PatchMapping("/{id}/answer")

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { getEvent } from "@/lib/api";
+import { getEvent, safeUrl } from "@/lib/api";
 import type { EventItem } from "@/types";
 import { AudienceBadge, formatAudienceLabel } from "@/components/ui/Badge";
 import Countdown from "@/components/Countdown";
@@ -28,6 +28,7 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(!isInvalidId);
   const [error, setError] = useState(isInvalidId ? "Invalid event ID." : "");
   const [reloadKey, setReloadKey] = useState(0);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     if (isInvalidId) return;
@@ -84,7 +85,10 @@ export default function EventDetailPage() {
         <Loading label="Loading event details…" />
       ) : error || !event ? (
         <div className="rounded-2xl border border-white/10 bg-surface p-8 text-center">
-          <ErrorState message={error || "Event not found."} />
+          <ErrorState
+            message={error || "Event not found."}
+            onRetry={!isInvalidId ? () => { setLoading(true); setError(""); setReloadKey((k) => k + 1); } : undefined}
+          />
           <div className="mt-6">
             <Link
               href="/events"
@@ -107,16 +111,17 @@ export default function EventDetailPage() {
           </Reveal>
 
           {/* Event Image Display */}
-          {event.photoUrl && (
+          {safeUrl(event.photoUrl) && !imageError && (
             <div className="mb-8 overflow-hidden rounded-2xl border border-white/10 bg-surface-2 shadow-2xl">
               <Image
-                src={event.photoUrl}
+                src={safeUrl(event.photoUrl)!}
                 alt={event.title}
                 width={1200}
                 height={500}
                 loader={({ src }) => src}
                 unoptimized
                 priority
+                onError={() => setImageError(true)}
                 className="max-h-[460px] w-full object-cover"
                 onClick={(e) => e.preventDefault()}
               />
@@ -151,10 +156,10 @@ export default function EventDetailPage() {
             {event.description}
           </div>
 
-          {event.externalLink && (
+          {safeUrl(event.externalLink) && (
             <div className="mb-8">
               <a
-                href={event.externalLink}
+                href={safeUrl(event.externalLink)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl border border-brand/40 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-light hover:bg-brand-100 hover:text-white transition-colors"

@@ -205,7 +205,7 @@ export default function Home() {
 
                     <div className="nh-product-list">
                       {items.length ? (
-                        items.map((item) => (
+                        items.slice(0, 3).map((item) => (
                           <div className="nh-product-row" key={item.id}>
                             <span className="nh-row-icon">◈</span>
                             <div>
@@ -286,7 +286,7 @@ export default function Home() {
             </Reveal>
             {items.length ? (
               <div className="nh-card-grid">
-                {items.map((item, index) => (
+                {items.slice(0, 3).map((item, index) => (
                   <Reveal key={item.id} delay={index * 70}>
                     <AnnouncementCard item={item} />
                   </Reveal>
@@ -306,7 +306,7 @@ export default function Home() {
             </Reveal>
             {upcoming.length ? (
               <div className="nh-card-grid">
-                {upcoming.map((item, index) => (
+                {upcoming.slice(0, 3).map((item, index) => (
                   <Reveal key={item.id} delay={index * 70}>
                     <EventCard
                       item={item}
@@ -329,7 +329,7 @@ export default function Home() {
             </Reveal>
             {urgent.length ? (
               <div className="nh-card-grid nh-card-grid-two">
-                {urgent.map((item, index) => (
+                {urgent.slice(0, 3).map((item, index) => (
                   <Reveal key={item.id} delay={index * 70}>
                     <AnnouncementCard item={item} />
                   </Reveal>

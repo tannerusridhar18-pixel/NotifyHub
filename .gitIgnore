@@ -62,3 +62,13 @@ desktop.ini
 
 docs/
 *.tsbuildinfo
+
+### ---- Local development & audit artifacts (added 2026-10-18) ----
+VNOTIFY_*_REPORT.md
+VNOTIFY_*_AUDIT.md
+*.hprof
+*.jtl
+*.jks
+*.p12
+test-results/
+playwright-report/

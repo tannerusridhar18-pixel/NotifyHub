@@ -100,22 +100,25 @@ public class UserController {
         String callerRole = users.findByUsername(authentication.getName())
                 .or(() -> users.findByEmailIgnoreCase(authentication.getName()))
                 .map(com.notifyhub.auth.User::getEffectiveRoleName).orElse("STUDENT");
-        if ("STUDENT".equalsIgnoreCase(callerRole))
+        if ("STUDENT".equalsIgnoreCase(callerRole) || "FACULTY".equalsIgnoreCase(callerRole))
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied.");
         com.notifyhub.auth.User caller = users.findByUsername(authentication.getName())
                 .or(() -> users.findByEmailIgnoreCase(authentication.getName()))
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."));
-        boolean departmentAdmin = "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName());
+        boolean departmentScoped = "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())
+                || "HOD".equalsIgnoreCase(caller.getEffectiveRoleName())
+                || caller.getRole() == com.notifyhub.auth.Role.DEPARTMENT_ADMIN
+                || caller.getRole() == com.notifyhub.auth.Role.HOD;
         Long callerDepartmentId = caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
-        if (departmentAdmin && callerDepartmentId == null) {
-            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        if (departmentScoped && callerDepartmentId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Department leadership is not assigned to a department.");
         }
         Map<String, String> filters = new LinkedHashMap<>();
         query.forEach((key, values) -> {
             if (key.startsWith("filter[") && key.endsWith("]") && !values.isEmpty())
                 filters.put(key.substring(7, key.length() - 1), values.get(0));
         });
-        if (departmentAdmin) filters.put("department", String.valueOf(callerDepartmentId));
+        if (departmentScoped) filters.put("department", String.valueOf(callerDepartmentId));
         Page<IdentityService.UserListItem> result = identity.listUsers(filters, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 200), Sort.by(Sort.Direction.DESC, "createdAt")));
         return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(result)));
     }

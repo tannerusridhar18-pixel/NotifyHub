@@ -82,8 +82,8 @@ public class RoleService {
 
     public void deleteRole(Long id) {
         RoleEntity role = getRole(id);
-        if (FIXED_ROLE_NAMES.contains(role.getName().toUpperCase())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fixed system roles cannot be deleted.");
+        if (role.isSystemRole() || role.isSuperadmin() || FIXED_ROLE_NAMES.contains(role.getName().toUpperCase())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "System roles cannot be deleted.");
         }
 
         Number assignedUsers = (Number) entityManager.createNativeQuery(
@@ -104,7 +104,7 @@ public class RoleService {
 
     public RoleDto updateRole(Long id, UpdateRoleRequest request) {
         RoleEntity role = getRole(id);
-        if (role.isSystemRole()) {
+        if (role.isSystemRole() || role.isSuperadmin() || FIXED_ROLE_NAMES.contains(role.getName().toUpperCase())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "System roles cannot be edited.");
         }
         if (request.level() != null && request.level() == 0) {

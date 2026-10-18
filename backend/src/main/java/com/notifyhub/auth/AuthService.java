@@ -112,9 +112,18 @@ public class AuthService {
             try {
                 resetEmail.send(user.getEmail(), rawToken, resetMinutes);
             } catch (RuntimeException ex) {
-                LOG.warn("Password reset email could not be sent: {}", ex.getMessage());
+                LOG.warn("Password reset email could not be sent: {}", safeMessage(ex));
             }
         });
+    }
+
+    static String safeMessage(Exception ex) {
+        String message = ex.getMessage();
+        if (message == null || message.isBlank()) return ex.getClass().getSimpleName();
+        return message
+                .replaceAll("(?i)(password|secret|token|cred(ential)?s?)[=:][^\\s,;]+", "$1=***")
+                .replaceAll("(?i)(token=[a-zA-Z0-9._~+/-]+)", "token=***")
+                .replaceAll("(?i)(bearer\\s+)[a-zA-Z0-9._~+/-]+", "$1***");
     }
 
     @Transactional

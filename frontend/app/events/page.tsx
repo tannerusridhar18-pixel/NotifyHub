@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { upcomingEvents } from "@/lib/api";
 import type { EventItem } from "@/types";
 import EventCard from "@/components/EventCard";
@@ -11,7 +11,9 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
+    setError("");
     upcomingEvents(0, 24)
       .then((x) => {
         setItems(x.content);
@@ -28,6 +30,11 @@ export default function EventsPage() {
       .catch((e) => setError(e instanceof Error ? e.message : "Unable to load events."))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
+    loadData();
+  }, [loadData]);
 
   return (
     <section
@@ -58,7 +65,7 @@ export default function EventsPage() {
         {loading ? (
           <CardSkeletons count={4} />
         ) : error ? (
-          <ErrorState message={error} />
+          <ErrorState message={error} onRetry={loadData} />
         ) : items.length ? (
           <div className="grid gap-5">
             {items.map((x, i) => (

@@ -22,4 +22,5 @@ spring:
 logging:
   level:
     root: INFO
+    org.flywaydb.core.FlywayExecutor: WARN
 

@@ -22,6 +22,26 @@ public class InvitationEmailDispatcher {
         this.invitations = invitations;
     }
 
+    public static boolean isTemporaryAccount(String email) {
+        if (email == null || email.isBlank()) return true;
+        String e = email.trim().toLowerCase();
+        return e.endsWith("@notifyhub.local")
+                || e.endsWith("@localhost")
+                || e.endsWith(".local")
+                || e.endsWith(".test")
+                || e.endsWith(".invalid")
+                || e.endsWith(".temp")
+                || e.contains("@temporary.")
+                || e.contains("@temp.")
+                || e.contains("temporary")
+                || e.startsWith("temp.")
+                || e.startsWith("temp-")
+                || e.startsWith("temp_")
+                || e.startsWith("staging.")
+                || e.contains("staging.student")
+                || e.contains("student.audit");
+    }
+
     @Async("notifyHubTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void dispatch(InvitationCreatedEvent event) {
@@ -33,6 +53,12 @@ public class InvitationEmailDispatcher {
                     log.info("Invitation {} is already accepted/used; skipping email dispatch.", event.invitationId());
                     return;
                 }
+            }
+
+            if (isTemporaryAccount(event.email())) {
+                log.info("Invitation {} is for a temporary account; suppressing outbound email dispatch.", event.invitationId());
+                mark(event.invitationId(), InvitationEmailStatus.SENT, "Outbound email delivery skipped for temporary account");
+                return;
             }
 
             emailService.send(event.email(), event.role(), event.rawToken(), event.expiresAt().toString());
