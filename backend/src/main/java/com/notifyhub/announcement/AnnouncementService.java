@@ -16,9 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -103,6 +106,15 @@ public class AnnouncementService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<AnnouncementDto> departmentManage(String username, int page, int size) {
+        User actor = user(username);
+        if (!"DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin access required.");
+        Long deptId = actor.getDepartmentEntity() == null ? null : actor.getDepartmentEntity().getId();
+        if (deptId == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        return PageResponse.from(repo.findByDepartment(deptId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AnnouncementDto::from));
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<AnnouncementDto> manage(int page, int size) {
         return PageResponse.from(repo.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(AnnouncementDto::from));
     }
@@ -178,9 +190,18 @@ public class AnnouncementService {
 
     public AnnouncementDto archive(Long id) {
         Announcement a = get(id);
-        if (a.getStatus() == AnnouncementStatus.ARCHIVED) throw conflict("Announcement is already archived.");
         a.setStatus(AnnouncementStatus.ARCHIVED);
         audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_ARCHIVE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
+        return AnnouncementDto.from(a);
+    }
+
+    public AnnouncementDto unarchive(Long id) {
+        Announcement a = get(id);
+        if (a.getStatus() != AnnouncementStatus.ARCHIVED) throw conflict("Only archived announcements can be unarchived.");
+        a.setStatus(AnnouncementStatus.DRAFT);
+        a.setPublishedAt(null);
+        repo.save(a);
+        audit.save(new AuditLog(a.getCreatedBy(), "ANNOUNCEMENT_UNARCHIVE", "ANNOUNCEMENT", String.valueOf(a.getId()), "{}"));
         return AnnouncementDto.from(a);
     }
 
@@ -206,8 +227,74 @@ public class AnnouncementService {
         a.setTargetRole(t.role());
         a.setRecipientType(r.recipientType() != null ? r.recipientType() : (r.targetType() != null ? r.targetType().name().toLowerCase() : "all"));
         a.setRecipientTargets(r.recipientTargets());
-        a.setAttachmentUrl(r.attachmentUrl());
-        a.setAttachmentName(r.attachmentName());
+        a.setAttachmentUrl(validateAttachmentUrl(r.attachmentUrl()));
+        a.setAttachmentName(validateAttachmentName(r.attachmentName()));
+    }
+
+    public static String validateAttachmentUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        String trimmed = url.trim();
+        if (trimmed.length() > 2048) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment URL exceeds maximum length of 2048 characters.");
+        }
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+            if (c <= 31 || c == 127) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment URL contains invalid control characters.");
+            }
+        }
+        if (trimmed.contains("\\")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment URL must not contain backslashes.");
+        }
+        if (trimmed.startsWith("//")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Protocol-relative attachment URLs are not permitted.");
+        }
+        if (trimmed.startsWith("/")) {
+            return trimmed;
+        }
+        int colonIdx = trimmed.indexOf(':');
+        if (colonIdx > 0) {
+            String potentialScheme = trimmed.substring(0, colonIdx).toLowerCase(Locale.ROOT);
+            if (!potentialScheme.equals("http") && !potentialScheme.equals("https")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment URL scheme '" + potentialScheme + "' is not allowed. Only http and https are permitted.");
+            }
+        }
+        try {
+            URI uri = new URI(trimmed);
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment URL must have a valid scheme (http or https) or be a relative path.");
+            }
+            String lower = scheme.toLowerCase(Locale.ROOT);
+            if (!lower.equals("http") && !lower.equals("https")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment URL scheme '" + scheme + "' is not allowed. Only http and https are permitted.");
+            }
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment URL must contain a valid host.");
+            }
+            return trimmed;
+        } catch (URISyntaxException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed attachment URL: " + e.getMessage());
+        }
+    }
+
+    public static String validateAttachmentName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        String trimmed = name.trim();
+        if (trimmed.length() > 255) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment name exceeds maximum length of 255 characters.");
+        }
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+            if (c <= 31 || c == 127) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attachment name contains invalid control characters.");
+            }
+        }
+        return trimmed;
     }
 
     private List<String> parseTargets(String json) {
@@ -253,6 +340,7 @@ public class AnnouncementService {
     public AnnouncementDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }
     public AnnouncementDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
     public AnnouncementDto archive(Long id, String username) { assertCanManage(id, username); return archive(id); }
+    public AnnouncementDto unarchive(Long id, String username) { assertCanManage(id, username); return unarchive(id); }
     public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Announcement get(Long id) { return repo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Announcement not found.")); }
@@ -272,8 +360,8 @@ public class AnnouncementService {
             Role role,
             String recipientType,
             String recipientTargets,
-            String attachmentUrl,
-            String attachmentName
+            @Size(max = 2048) String attachmentUrl,
+            @Size(max = 255) String attachmentName
     ) {
         public Request(String title, String content, boolean urgent, TargetType targetType, Long departmentId, Long branchId, Long sectionId, Long hostelId, String userEmail, Role role) {
             this(title, content, urgent, targetType, departmentId, branchId, sectionId, hostelId, userEmail, role, targetType != null ? targetType.name().toLowerCase() : "all", null, null, null);

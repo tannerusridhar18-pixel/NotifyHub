@@ -21,9 +21,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -112,6 +115,15 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<EventDto> departmentManage(String username, int page, int size) {
+        User actor = user(username);
+        if (!"DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin access required.");
+        Long deptId = actor.getDepartmentEntity() == null ? null : actor.getDepartmentEntity().getId();
+        if (deptId == null) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
+        return PageResponse.from(repo.findByDepartment(deptId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(EventDto::from));
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<EventDto> manage(int page, int size) {
         return PageResponse.from(repo.findAll(PageRequest.of(page, size, Sort.by("startAt").ascending())).map(EventDto::from));
     }
@@ -191,6 +203,23 @@ public class EventService {
         return EventDto.from(event);
     }
 
+    public EventDto archive(Long id) {
+        Event event = get(id);
+        event.setStatus(EventStatus.ARCHIVED);
+        audit.save(new AuditLog(event.getCreatedBy(), "EVENT_ARCHIVE", "EVENT", String.valueOf(event.getId()), "{}"));
+        return EventDto.from(event);
+    }
+
+    public EventDto unarchive(Long id) {
+        Event event = get(id);
+        if (event.getStatus() != EventStatus.ARCHIVED) throw conflict("Only archived events can be unarchived.");
+        event.setStatus(EventStatus.DRAFT);
+        event.setPublishedAt(null);
+        repo.save(event);
+        audit.save(new AuditLog(event.getCreatedBy(), "EVENT_UNARCHIVE", "EVENT", String.valueOf(event.getId()), "{}"));
+        return EventDto.from(event);
+    }
+
     public void delete(Long id) {
         Event event = get(id);
         if (event.getStatus() == EventStatus.PUBLISHED) throw conflict("Unpublish or cancel this event before deleting it.");
@@ -201,14 +230,21 @@ public class EventService {
     public RegistrationDto register(Long id, String username) {
         Event event = get(id);
         User student = user(username);
-        if (event.getStatus() != EventStatus.PUBLISHED || !targeting.matchesEvent(event, student))
+        if (student.getRole() != Role.STUDENT && !"STUDENT".equalsIgnoreCase(student.getEffectiveRoleName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only students can register for events.");
+        }
+        if (event.getStatus() != EventStatus.PUBLISHED || !targeting.matchesEvent(event, student)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not eligible for this event.");
-        if (!event.isRegistrationEnabled())
+        }
+        if (!event.isRegistrationEnabled()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Registration is not enabled.");
-        if (event.getRegistrationDeadline() != null && !event.getRegistrationDeadline().isAfter(Instant.now()))
+        }
+        if (event.getRegistrationDeadline() != null && !event.getRegistrationDeadline().isAfter(Instant.now())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Registration deadline has passed.");
-        if (registrations.existsByEventIdAndStudentId(id, student.getId()))
+        }
+        if (registrations.existsByEventIdAndStudentId(event.getId(), student.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already registered.");
+        }
 
         EventRegistration r = new EventRegistration();
         r.setEvent(event);
@@ -244,17 +280,31 @@ public class EventService {
         if ("STUDENT".equalsIgnoreCase(actor.getEffectiveRoleName()) || actor.getRole() == Role.STUDENT) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view these registrations.");
         }
-        if (!actor.hasAdminAccess()) {
+
+        boolean isSuperAdmin = actor.getRole() == Role.SUPER_ADMIN
+                || "SUPER_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName())
+                || (actor.getRoleEntity() != null && actor.getRoleEntity().isSuperadmin());
+        if (isSuperAdmin) {
+            return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
+        }
+
+        boolean isDeptAdmin = actor.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName());
+        if (isDeptAdmin) {
             Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
             Long eventDeptId = event.getTargetDepartment() != null ? event.getTargetDepartment().getId()
-                    : (event.getCreatedBy().getDepartmentEntity() != null ? event.getCreatedBy().getDepartmentEntity().getId() : null);
-            boolean isCreator = event.getCreatedBy().getId().equals(actor.getId());
-            boolean isSameDept = actorDeptId != null && actorDeptId.equals(eventDeptId);
-            if (!isCreator && !isSameDept) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view these registrations.");
+                    : (event.getCreatedBy() != null && event.getCreatedBy().getDepartmentEntity() != null ? event.getCreatedBy().getDepartmentEntity().getId() : null);
+            if (actorDeptId == null || !Objects.equals(actorDeptId, eventDeptId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins can only view registrations for events within their department.");
             }
+            return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
         }
-        return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
+
+        if (actor.hasAdminAccess() || (event.getCreatedBy() != null && actor.getId().equals(event.getCreatedBy().getId()))) {
+            return registrations.findByEventIdOrderByRegisteredAtAsc(id).stream().map(this::toRegistrationDto).toList();
+        }
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot view these registrations.");
     }
 
     private RegistrationDto toRegistrationDto(EventRegistration r) {
@@ -290,10 +340,59 @@ public class EventService {
         event.setTargetRole(target.role());
         event.setRecipientType(request.recipientType() != null ? request.recipientType() : (request.targetType() != null ? request.targetType().name().toLowerCase() : "all"));
         event.setRecipientTargets(request.recipientTargets());
-        event.setPhotoUrl(request.photoUrl());
-        event.setExternalLink(request.externalLink());
+        event.setPhotoUrl(validateMediaUrl(request.photoUrl(), "Photo URL"));
+        event.setExternalLink(validateMediaUrl(request.externalLink(), "External link"));
         event.setRegistrationEnabled(request.registrationEnabled());
         event.setRegistrationDeadline(request.registrationDeadline());
+    }
+
+    public static String validateMediaUrl(String url, String fieldName) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        String trimmed = url.trim();
+        if (trimmed.length() > 2048) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " exceeds maximum length of 2048 characters.");
+        }
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+            if (c <= 31 || c == 127) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " contains invalid control characters.");
+            }
+        }
+        if (trimmed.contains("\\")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must not contain backslashes.");
+        }
+        if (trimmed.startsWith("//")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Protocol-relative " + fieldName + " is not permitted.");
+        }
+        if (trimmed.startsWith("/")) {
+            return trimmed;
+        }
+        int colonIdx = trimmed.indexOf(':');
+        if (colonIdx > 0) {
+            String potentialScheme = trimmed.substring(0, colonIdx).toLowerCase(Locale.ROOT);
+            if (!potentialScheme.equals("http") && !potentialScheme.equals("https")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " scheme '" + potentialScheme + "' is not allowed. Only http and https are permitted.");
+            }
+        }
+        try {
+            URI uri = new URI(trimmed);
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must have a valid scheme (http or https) or be a relative path.");
+            }
+            String lower = scheme.toLowerCase(Locale.ROOT);
+            if (!lower.equals("http") && !lower.equals("https")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " scheme '" + scheme + "' is not allowed. Only http and https are permitted.");
+            }
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must contain a valid host.");
+            }
+            return trimmed;
+        } catch (URISyntaxException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed " + fieldName + ": " + e.getMessage());
+        }
     }
 
     private List<String> parseTargets(String json) {
@@ -339,6 +438,8 @@ public class EventService {
     public EventDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }
     public EventDto unpublish(Long id, String username) { assertCanManage(id, username); return unpublish(id); }
     public EventDto cancel(Long id, String username) { assertCanManage(id, username); return cancel(id); }
+    public EventDto archive(Long id, String username) { assertCanManage(id, username); return archive(id); }
+    public EventDto unarchive(Long id, String username) { assertCanManage(id, username); return unarchive(id); }
     public void delete(Long id, String username) { assertCanManage(id, username); delete(id); }
 
     private Event get(Long id) { return repo.findById(id).orElseThrow(this::notFound); }

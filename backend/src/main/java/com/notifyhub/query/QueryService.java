@@ -1,5 +1,6 @@
 package com.notifyhub.query;
 
+import com.notifyhub.auth.Role;
 import com.notifyhub.auth.User;
 import com.notifyhub.auth.UserRepository;
 import com.notifyhub.common.PageResponse;
@@ -215,6 +216,10 @@ public class QueryService {
     }
 
     public QueryDto answer(Long id, String response) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+            return answerScoped(id, response, auth.getName());
+        }
         CampusQuery q = repo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Query not found."));
         q.setAdminResponse(response);
         q.setAnswer(response);
@@ -230,12 +235,23 @@ public class QueryService {
         if (!isAdmin(actor)) {
             boolean isAssignedFaculty = q.getTargetFaculty() != null && q.getTargetFaculty().getId().equals(actor.getId());
             if (!isAssignedFaculty) {
-                var assignment = rbac.activeAssignment(actor, PermissionKey.QUERY_ANSWER).orElse(null);
-                Long deptId = assignment != null && assignment.getScopeType() == ScopeType.DEPARTMENT
-                        ? assignment.getScopeId()
-                        : (actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null);
+                if (actor.getRole() == Role.STUDENT) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Students are not permitted to answer queries.");
+                }
 
-                if (deptId == null || q.getDepartmentEntity() == null || !deptId.equals(q.getDepartmentEntity().getId())) {
+                var assignment = rbac.activeAssignment(actor, PermissionKey.QUERY_ANSWER).orElse(null);
+                boolean hasGlobalAnswer = assignment != null && assignment.getScopeType() == ScopeType.GLOBAL;
+                Long allowedDeptId = null;
+
+                if (!hasGlobalAnswer) {
+                    if (assignment != null && assignment.getScopeType() == ScopeType.DEPARTMENT) {
+                        allowedDeptId = assignment.getScopeId();
+                    } else if (actor.getRole() == Role.DEPARTMENT_ADMIN || actor.getRole() == Role.HOD) {
+                        allowedDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
+                    }
+                }
+
+                if (!hasGlobalAnswer && (allowedDeptId == null || q.getDepartmentEntity() == null || !allowedDeptId.equals(q.getDepartmentEntity().getId()))) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to answer this query.");
                 }
             }

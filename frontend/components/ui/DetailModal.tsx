@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import Link from "next/link";
 import type { Announcement, CampusQuery, EventItem } from "@/types";
-import { StatusBadge, UrgentBadge } from "@/components/ui/Badge";
+import { AudienceBadge, StatusBadge, UrgentBadge, formatAudienceLabel } from "@/components/ui/Badge";
 import Countdown from "@/components/Countdown";
-import EventRegistrationPanel from "@/components/EventRegistrationPanel";
 import { buttonClasses } from "@/components/ui/Button";
 import { safeUrl } from "@/lib/api";
+
+const EventRegistrationPanel = dynamic(() => import("@/components/EventRegistrationPanel"), {
+  loading: () => (
+    <div className="mt-4 h-10 animate-pulse rounded-lg border border-border bg-surface-2" aria-hidden="true" />
+  ),
+});
 
 export type ModalItem =
   | { type: "announcement"; data: Announcement }
@@ -22,6 +30,10 @@ export default function DetailModal({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -29,7 +41,12 @@ export default function DetailModal({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setImageError(false);
     if (!item) return;
+
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    requestAnimationFrame(() => closeButtonRef.current?.focus());
 
     // Lock body scroll while modal is open
     const originalOverflow = document.body.style.overflow;
@@ -37,12 +54,27 @@ export default function DetailModal({
 
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
+      if (e.key !== "Tab" || !modalRef.current) return;
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener("keydown", handleKey);
 
     return () => {
       document.body.style.overflow = originalOverflow;
       document.removeEventListener("keydown", handleKey);
+      previouslyFocusedRef.current?.focus();
     };
   }, [item, onClose]);
 
@@ -65,6 +97,8 @@ export default function DetailModal({
       <div
         className="relative z-10 w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-[24px] border border-white/15 bg-gradient-to-b from-surface via-surface-2 to-surface p-6 sm:p-8 shadow-2xl text-ink animate-toast-in scroll-thin"
         onClick={(e) => e.stopPropagation()}
+        ref={modalRef}
+        tabIndex={-1}
       >
         {/* Header with Close Button */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
@@ -81,6 +115,8 @@ export default function DetailModal({
             </span>
           </div>
           <button
+            ref={closeButtonRef}
+            autoFocus
             onClick={onClose}
             className="grid h-8 w-8 place-items-center rounded-xl border border-white/10 bg-surface-2 text-muted hover:text-white hover:border-white/20 transition-all active:scale-95"
             aria-label="Close dialog"
@@ -94,17 +130,26 @@ export default function DetailModal({
           {item.type === "announcement" && (
             <div>
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-light shadow-[0_0_8px_rgba(124,58,237,0.85)]" />
-                  Target: {item.data.targetType === "GLOBAL" ? "Everyone" : item.data.targetType}
-                </span>
+                <AudienceBadge audience={formatAudienceLabel(item.data)} urgent={item.data.urgent} tone="brand" />
                 {item.data.urgent && <UrgentBadge />}
-                <StatusBadge status={item.data.status} />
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
                 {item.data.title}
               </h2>
+              {safeUrl(item.data.imageUrl || item.data.photoUrl || item.data.attachmentUrl) && !imageError && (
+                <Image
+                  src={safeUrl(item.data.imageUrl || item.data.photoUrl || item.data.attachmentUrl) ?? ""}
+                  alt=""
+                  width={1200}
+                  height={192}
+                  loader={({ src }) => src}
+                  unoptimized
+                  onError={() => setImageError(true)}
+                  onClick={(e) => e.preventDefault()}
+                  className="mb-5 h-48 w-full rounded-2xl object-cover"
+                />
+              )}
               <p className="text-xs font-semibold text-muted mb-6">
                 Published on{" "}
                 {item.data.publishedAt
@@ -146,17 +191,25 @@ export default function DetailModal({
           {item.type === "event" && (
             <div>
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-2 shadow-[0_0_8px_rgba(147,51,234,0.85)]" />
-                  Target: {item.data.targetType}
-                </span>
-                <StatusBadge status={item.data.status} />
+                <AudienceBadge audience={formatAudienceLabel(item.data)} tone="violet" />
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
                 {item.data.title}
               </h2>
-              {safeUrl(item.data.photoUrl) && <img src={safeUrl(item.data.photoUrl)} alt="" className="mb-5 h-48 w-full rounded-2xl object-cover" />}
+              {safeUrl(item.data.photoUrl) && !imageError && (
+                <Image
+                  src={safeUrl(item.data.photoUrl) ?? ""}
+                  alt=""
+                  width={1200}
+                  height={192}
+                  loader={({ src }) => src}
+                  unoptimized
+                  onError={() => setImageError(true)}
+                  onClick={(e) => e.preventDefault()}
+                  className="mb-5 h-48 w-full rounded-2xl object-cover"
+                />
+              )}
 
               <div className="mb-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-3.5">
@@ -184,7 +237,16 @@ export default function DetailModal({
               <div className="rounded-2xl border border-white/[0.08] bg-surface-2/80 p-5 sm:p-6 text-sm sm:text-base leading-relaxed text-muted/95 whitespace-pre-wrap">
                 {item.data.description}
               </div>
-              {safeUrl(item.data.externalLink) && <a href={safeUrl(item.data.externalLink)} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-brand-light underline">Open event link</a>}
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                {safeUrl(item.data.externalLink) && (
+                  <a href={safeUrl(item.data.externalLink)} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-light underline">
+                    Open event link
+                  </a>
+                )}
+                <Link href={`/events/${item.data.id}`} onClick={onClose} className="text-sm font-bold text-brand-2-light hover:underline">
+                  View full event page →
+                </Link>
+              </div>
               <EventRegistrationPanel event={item.data} />
             </div>
           )}

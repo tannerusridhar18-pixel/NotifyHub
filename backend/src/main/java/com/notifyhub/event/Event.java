@@ -62,7 +62,7 @@ public class Event {
     public Instant getUpdatedAt(){return updatedAt;}
     public User getCreatedBy(){return createdBy;}
     public String getPhotoUrl(){return photoUrl;} public String getExternalLink(){return externalLink;} public boolean isRegistrationEnabled(){return registrationEnabled;} public Instant getRegistrationDeadline(){return registrationDeadline;}
-
+    public void setId(Long v){id=v;}
     public void setTitle(String v){title=v;}
     public void setDescription(String v){description=v;}
     public void setLocation(String v){location=v;}

@@ -12,7 +12,18 @@ import {
   submitFacultyQuery,
   createAnnouncement,
   createEvent,
+  updateAnnouncement,
+  publishAnnouncement,
+  unpublishAnnouncement,
+  archiveAnnouncement,
+  unarchiveAnnouncement,
   deleteAnnouncement,
+  updateEvent,
+  publishEvent,
+  unpublishEvent,
+  cancelEvent,
+  archiveEvent,
+  unarchiveEvent,
   deleteEvent,
   structureSections,
   logout,
@@ -20,7 +31,7 @@ import {
   type CurrentUser,
   type StructureSection,
 } from "@/lib/api";
-import type { Announcement, CampusQuery, EventItem, FacultyDepartmentMappingItem } from "@/types";
+import type { Announcement, CampusQuery, EventItem, FacultyDepartmentMappingItem, TargetType } from "@/types";
 import { Empty, ErrorState, Loading } from "@/components/States";
 import { StatusBadge } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -34,6 +45,9 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
   const [myAnns, setMyAnns] = useState<Announcement[]>([]);
   const [myEvts, setMyEvts] = useState<EventItem[]>([]);
   const [studentQueries, setStudentQueries] = useState<CampusQuery[]>([]);
+  const [inboxStatus, setInboxStatus] = useState<"" | "OPEN" | "ANSWERED" | "CLOSED">("");
+  const [inboxPage, setInboxPage] = useState(0);
+  const [inboxTotalPages, setInboxTotalPages] = useState(0);
   const [sections, setSections] = useState<StructureSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,6 +66,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
   const [eventEnd, setEventEnd] = useState("");
   const [composerBusy, setComposerBusy] = useState(false);
   const [composerMsg, setComposerMsg] = useState("");
+  const [editingPost, setEditingPost] = useState<{ id: number; type: "announcement" | "event" } | null>(null);
 
   // Answer query modal / inline state
   const [replyingQueryId, setReplyingQueryId] = useState<number | null>(null);
@@ -74,19 +89,20 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
       const [a, e, q, s] = await Promise.all([
         myAnnouncements({ size: 30 }),
         myEvents({ size: 30 }),
-        facultyQueryInbox(0, 50),
+        facultyQueryInbox(inboxPage, 10, inboxStatus || undefined),
         structureSections().catch(() => []),
       ]);
       setMyAnns(a.content || []);
       setMyEvts(e.content || []);
       setStudentQueries(q.content || []);
+      setInboxTotalPages(q.totalPages || 0);
       setSections(s || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load faculty workspace.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [inboxPage, inboxStatus]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch on mount
@@ -99,30 +115,35 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
     setComposerMsg("");
     try {
       if (postType === "ANNOUNCEMENT") {
-        await createAnnouncement({
+        const payload = {
           title,
           content,
           urgent,
-          targetType: selectedSectionId ? "SECTION" : "DEPARTMENT",
+          targetType: (selectedSectionId ? "SECTION" : "DEPARTMENT") as TargetType,
           departmentId: selectedDeptId,
           sectionId: selectedSectionId ? Number(selectedSectionId) : undefined,
           attachmentUrl: attachmentUrl.trim() || undefined,
           attachmentName: attachmentName.trim() || undefined,
-        });
+        };
+        if (editingPost?.type === "announcement") await updateAnnouncement(editingPost.id, payload);
+        else await createAnnouncement(payload);
       } else {
-        await createEvent({
+        const payload = {
           title,
           description: content,
           location: eventLocation || "Campus Seminar Hall",
           startAt: eventStart ? new Date(eventStart).toISOString() : new Date().toISOString(),
           endAt: eventEnd ? new Date(eventEnd).toISOString() : new Date(Date.now() + 3600000).toISOString(),
-          targetType: selectedSectionId ? "SECTION" : "DEPARTMENT",
+          targetType: (selectedSectionId ? "SECTION" : "DEPARTMENT") as TargetType,
           departmentId: selectedDeptId,
           sectionId: selectedSectionId ? Number(selectedSectionId) : undefined,
           registrationEnabled: true,
-        });
+        };
+        if (editingPost?.type === "event") await updateEvent(editingPost.id, payload);
+        else await createEvent(payload);
       }
-      setComposerMsg("✓ Notice broadcasted successfully!");
+      setComposerMsg(editingPost ? "✓ Notice updated successfully!" : "✓ Notice broadcasted successfully!");
+      setEditingPost(null);
       setTitle("");
       setContent("");
       setAttachmentUrl("");
@@ -135,6 +156,68 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
       setComposerMsg(`⚠ ${err instanceof Error ? err.message : "Could not publish notice."}`);
     } finally {
       setComposerBusy(false);
+    }
+
+  }
+
+  function beginEdit(post: Announcement | EventItem, type: "announcement" | "event") {
+      setEditingPost({ id: post.id, type });
+      setPostType(type === "announcement" ? "ANNOUNCEMENT" : "EVENT");
+      setTitle(post.title);
+      setContent(type === "announcement" ? (post as Announcement).content : (post as EventItem).description);
+      setSelectedDeptId(post.departmentId || user.departmentId || 1);
+      setSelectedSectionId(post.sectionId ? String(post.sectionId) : "");
+      if (type === "announcement") {
+        const announcement = post as Announcement;
+        setUrgent(announcement.urgent);
+        setAttachmentUrl(announcement.attachmentUrl || "");
+        setAttachmentName(announcement.attachmentName || "");
+      } else {
+        const event = post as EventItem;
+        setEventLocation(event.location);
+        setEventStart(event.startAt.slice(0, 16));
+        setEventEnd(event.endAt.slice(0, 16));
+  }
+      setComposerMsg("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+  function resetComposer() {
+      setEditingPost(null);
+      setTitle("");
+      setContent("");
+      setUrgent(false);
+      setAttachmentUrl("");
+      setAttachmentName("");
+      setEventLocation("");
+      setEventStart("");
+      setEventEnd("");
+      setComposerMsg("");
+  }
+
+  async function handlePostAction(
+      id: number,
+      type: "announcement" | "event",
+      action: "publish" | "unpublish" | "archive" | "unarchive" | "cancel",
+    ) {
+      const destructive = action === "archive" || action === "cancel";
+      if (destructive && !confirm(`Are you sure you want to ${action} this ${type}?`)) return;
+      try {
+        if (type === "announcement") {
+          if (action === "publish") await publishAnnouncement(id);
+          if (action === "unpublish") await unpublishAnnouncement(id);
+          if (action === "archive") await archiveAnnouncement(id);
+          if (action === "unarchive") await unarchiveAnnouncement(id);
+        } else {
+          if (action === "publish") await publishEvent(id);
+          if (action === "unpublish") await unpublishEvent(id);
+          if (action === "archive") await archiveEvent(id);
+          if (action === "unarchive") await unarchiveEvent(id);
+          if (action === "cancel") await cancelEvent(id);
+        }
+        await loadData();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : `Failed to ${action} ${type}.`);
     }
   }
 
@@ -195,19 +278,19 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-ink">
+    <div className="nh-dashboard-view min-h-screen bg-bg text-ink">
       {/* Header */}
       <header className="sticky top-0 z-30 flex min-h-[74px] flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
         <Link href="/" className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white shadow-glow transition-all duration-300 group-hover:scale-110">
+          <span className="grid h-10 w-10 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-inset)] transition-transform duration-200 group-hover:scale-105">
             ◈
           </span>
-          <span className="tracking-tight text-xl font-extrabold">
+          <span className="tracking-tight text-xl font-medium">
             Notify<span className="text-brand-light">Hub</span>
           </span>
         </Link>
         <div className="hidden items-center gap-2 text-xs font-semibold text-muted md:flex">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-3 py-0.5 text-[10px] font-extrabold uppercase text-brand-light shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-3 py-0.5 text-[10px] font-medium uppercase text-brand-light shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             FACULTY WORKSPACE
           </span>
@@ -243,7 +326,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[10px] font-extrabold tracking-widest text-amber-400 uppercase">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[10px] font-medium tracking-widest text-amber-400 uppercase">
                   ★ HOME: {user.department || "Engineering"}
                 </span>
                 {mappings.filter((m) => m.relationship !== "HOME").map((m) => (
@@ -255,7 +338,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                   </span>
                 ))}
               </div>
-              <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">
+              <h1 className="mt-2 text-3xl sm:text-4xl font-medium tracking-tight">
                 {faculty?.name || "Faculty Professor"}
               </h1>
               <p className="mt-1 text-sm text-muted">
@@ -265,15 +348,15 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             <div className="flex flex-wrap gap-3">
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">My Posts</span>
-                <span className="text-2xl font-extrabold text-white">{myAnns.length + myEvts.length}</span>
+                <span className="text-2xl font-medium text-white">{myAnns.length + myEvts.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Student Inquiries</span>
-                <span className="text-2xl font-extrabold text-brand-light">{studentQueries.length}</span>
+                <span className="text-2xl font-medium text-brand-light">{studentQueries.length}</span>
               </div>
               <div className="rounded-2xl border border-white/10 bg-surface-2/60 px-4 py-3 text-center min-w-[110px]">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Pending Replies</span>
-                <span className="text-2xl font-extrabold text-amber-400">
+                <span className="text-2xl font-medium text-amber-400">
                   {studentQueries.filter((q) => q.status === "OPEN").length}
                 </span>
               </div>
@@ -284,7 +367,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
           <div className="mt-8 flex gap-2 border-t border-white/[0.08] pt-6 overflow-x-auto">
             <button
               onClick={() => setTab("notices")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "notices"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -294,7 +377,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("inbox")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "inbox"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -304,7 +387,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             </button>
             <button
               onClick={() => setTab("askAdmin")}
-              className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition-all ${
+              className={`rounded-xl px-5 py-2.5 text-xs font-medium transition-all ${
                 tab === "askAdmin"
                   ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-glow"
                   : "bg-surface-2/60 text-muted hover:text-white"
@@ -322,17 +405,23 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             {/* Post Composer */}
             <div className="lg:col-span-5">
               <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 shadow-lift">
-                <h2 className="text-xl font-extrabold text-white">Broadcast Class / Dept Notice</h2>
+                <h2 className="text-xl font-medium text-white">Broadcast Class / Dept Notice</h2>
                 <p className="mt-1 text-xs text-muted">
                   Post targeted academic updates or schedule class events with attachments.
                 </p>
 
                 <form onSubmit={handleCreatePost} className="mt-6 space-y-4">
+                  {editingPost && (
+                    <div className="flex items-center justify-between rounded-xl border border-brand/30 bg-brand-50 p-3 text-xs text-brand-light">
+                      <span>Editing {editingPost.type} #{editingPost.id}</span>
+                      <button type="button" onClick={resetComposer} className="font-bold hover:underline">Cancel edit</button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setPostType("ANNOUNCEMENT")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                      className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                         postType === "ANNOUNCEMENT"
                           ? "border-brand bg-brand-50 text-brand-light shadow-sm"
                           : "border-white/10 bg-surface-2/60 text-muted"
@@ -343,7 +432,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                     <button
                       type="button"
                       onClick={() => setPostType("EVENT")}
-                      className={`rounded-xl border p-2.5 text-xs font-extrabold transition-all ${
+                      className={`rounded-xl border p-2.5 text-xs font-medium transition-all ${
                         postType === "EVENT"
                           ? "border-brand bg-brand-50 text-brand-light shadow-sm"
                           : "border-white/10 bg-surface-2/60 text-muted"
@@ -485,7 +574,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                   )}
 
                   <Button type="submit" variant="primary" disabled={composerBusy} className="w-full">
-                    {composerBusy ? "Broadcasting…" : "Broadcast Notice →"}
+                    {composerBusy ? (editingPost ? "Saving…" : "Broadcasting…") : (editingPost ? "Save Changes →" : "Broadcast Notice →")}
                   </Button>
                 </form>
               </Spotlight>
@@ -495,7 +584,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
             <div className="lg:col-span-7">
               <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 shadow-lift">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-xl font-extrabold text-white">Your Broadcasted Posts</h2>
+                  <h2 className="text-xl font-medium text-white">Your Broadcasted Posts</h2>
                   <span className="text-xs font-bold text-muted">{myAnns.length + myEvts.length} Sent</span>
                 </div>
 
@@ -510,19 +599,30 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-extrabold text-white">{a.title}</span>
+                            <span className="text-xs font-medium text-white">{a.title}</span>
                             {a.urgent && (
-                              <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-[9px] font-extrabold text-red-400">
+                              <span className="rounded-md bg-red-500/20 px-2 py-0.5 text-[9px] font-medium text-red-400">
                                 URGENT
                               </span>
                             )}
                           </div>
-                          <button
-                            onClick={() => void handleDeletePost(a.id, "announcement")}
-                            className="text-xs font-bold text-red-400 hover:underline"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {a.status === "DRAFT" && (
+                              <>
+                                <button onClick={() => beginEdit(a, "announcement")} className="text-xs font-bold text-brand-light hover:underline">Edit</button>
+                                <button onClick={() => void handlePostAction(a.id, "announcement", "publish")} className="text-xs font-bold text-teal-300 hover:underline">Publish</button>
+                              </>
+                            )}
+                            {a.status === "PUBLISHED" && (
+                              <button onClick={() => void handlePostAction(a.id, "announcement", "unpublish")} className="text-xs font-bold text-amber-300 hover:underline">Unpublish</button>
+                            )}
+                            {a.status === "ARCHIVED" ? (
+                              <button onClick={() => void handlePostAction(a.id, "announcement", "unarchive")} className="text-xs font-bold text-teal-300 hover:underline">Unarchive</button>
+                            ) : (
+                              <button onClick={() => void handlePostAction(a.id, "announcement", "archive")} className="text-xs font-bold text-amber-300 hover:underline">Archive</button>
+                            )}
+                            <button onClick={() => void handleDeletePost(a.id, "announcement")} className="text-xs font-bold text-red-400 hover:underline">Delete</button>
+                          </div>
                         </div>
                         <p className="mt-1 text-xs text-muted line-clamp-2">{a.content}</p>
                         {safeUrl(a.attachmentUrl) && (
@@ -548,17 +648,31 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-extrabold text-white">📅 {e.title}</span>
-                            <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[9px] font-extrabold text-brand-light">
+                            <span className="text-xs font-medium text-white">📅 {e.title}</span>
+                            <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[9px] font-medium text-brand-light">
                               EVENT
                             </span>
                           </div>
-                          <button
-                            onClick={() => void handleDeletePost(e.id, "event")}
-                            className="text-xs font-bold text-red-400 hover:underline"
-                          >
-                            Delete
-                          </button>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {e.status === "DRAFT" && (
+                              <>
+                                <button onClick={() => beginEdit(e, "event")} className="text-xs font-bold text-brand-light hover:underline">Edit</button>
+                                <button onClick={() => void handlePostAction(e.id, "event", "publish")} className="text-xs font-bold text-teal-300 hover:underline">Publish</button>
+                              </>
+                            )}
+                            {e.status === "PUBLISHED" && (
+                              <>
+                                <button onClick={() => void handlePostAction(e.id, "event", "unpublish")} className="text-xs font-bold text-amber-300 hover:underline">Unpublish</button>
+                                <button onClick={() => void handlePostAction(e.id, "event", "cancel")} className="text-xs font-bold text-red-400 hover:underline">Cancel event</button>
+                              </>
+                            )}
+                            {e.status === "ARCHIVED" ? (
+                              <button onClick={() => void handlePostAction(e.id, "event", "unarchive")} className="text-xs font-bold text-teal-300 hover:underline">Unarchive</button>
+                            ) : (
+                              <button onClick={() => void handlePostAction(e.id, "event", "archive")} className="text-xs font-bold text-amber-300 hover:underline">Archive</button>
+                            )}
+                            <button onClick={() => void handleDeletePost(e.id, "event")} className="text-xs font-bold text-red-400 hover:underline">Delete</button>
+                          </div>
                         </div>
                         <p className="mt-1 text-xs text-muted line-clamp-2">{e.description}</p>
                         <div className="mt-2 flex items-center gap-2 text-[10px] text-muted">
@@ -579,12 +693,34 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
           <div className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-extrabold text-white">Student Inquiries Desk</h2>
+                <h2 className="text-2xl font-medium text-white">Student Inquiries Desk</h2>
                 <p className="text-xs text-muted">Inquiries sent directly to you from students in your department.</p>
               </div>
-              <span className="rounded-xl border border-brand/30 bg-brand-50 px-3.5 py-1.5 text-xs font-extrabold text-brand-light">
+              <span className="rounded-xl border border-brand/30 bg-brand-50 px-3.5 py-1.5 text-xs font-medium text-brand-light">
                 {studentQueries.filter((q) => q.status === "OPEN").length} Queries Awaiting Answer
               </span>
+            </div>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <label className="flex items-center gap-2 text-xs text-muted">
+                Status
+                <select
+                  value={inboxStatus}
+                  onChange={(e) => { setInboxStatus(e.target.value as typeof inboxStatus); setInboxPage(0); }}
+                  className={`${inputBase} w-auto`}
+                >
+                  <option value="">All statuses</option>
+                  <option value="OPEN">Open</option>
+                  <option value="ANSWERED">Answered</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+              </label>
+              {inboxTotalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button type="button" disabled={inboxPage === 0} onClick={() => setInboxPage((p) => p - 1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-muted disabled:opacity-40">Previous</button>
+                  <span className="text-xs text-muted">Page {inboxPage + 1} of {inboxTotalPages}</span>
+                  <button type="button" disabled={inboxPage + 1 >= inboxTotalPages} onClick={() => setInboxPage((p) => p + 1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-muted disabled:opacity-40">Next</button>
+                </div>
+              )}
             </div>
 
             {studentQueries.length === 0 ? (
@@ -598,7 +734,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <span className="text-sm font-extrabold text-white">{q.subject || "Student Inquiry"}</span>
+                        <span className="text-sm font-medium text-white">{q.subject || "Student Inquiry"}</span>
                         <p className="text-xs text-muted">
                           From: <strong className="text-ink">{q.name || q.email}</strong> ({q.department})
                         </p>
@@ -612,7 +748,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
 
                     {q.adminResponse ? (
                       <div className="rounded-xl border border-teal-500/30 bg-teal-soft/60 p-3.5 text-xs">
-                        <span className="block text-[10px] font-extrabold uppercase tracking-wider text-teal-light">
+                        <span className="block text-[10px] font-medium uppercase tracking-wider text-teal-light">
                           Your Answer:
                         </span>
                         <p className="mt-1 text-ink">{q.adminResponse}</p>
@@ -671,7 +807,7 @@ export default function FacultyDashboardView({ user }: { user: CurrentUser }) {
         {!error && tab === "askAdmin" && (
           <div className="max-w-2xl mx-auto">
             <Spotlight tone="brand" className="rounded-3xl border border-white/12 bg-surface/95 p-6 sm:p-8 shadow-lift">
-              <h2 className="text-2xl font-extrabold text-white">Contact Department Administration</h2>
+              <h2 className="text-2xl font-medium text-white">Contact Department Administration</h2>
               <p className="mt-1 text-xs text-muted">
                 Submit academic requests, lab requirements, or administrative inquiries to your Home Department Admin.
               </p>

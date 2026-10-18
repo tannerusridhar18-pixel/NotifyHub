@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,6 +29,7 @@ class QueryIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired QueryRepository queryRepo;
+    @Autowired com.notifyhub.rbac.AuditLogRepository auditRepo;
     @Autowired JwtService jwt;
 
     @Test
@@ -106,5 +108,39 @@ class QueryIntegrationTest {
                 .andExpect(jsonPath("$.data.content", hasSize(1)))
                 .andExpect(jsonPath("$.data.content[0].status").value("ANSWERED"))
                 .andExpect(jsonPath("$.data.content[0].adminResponse").value("Lab 3 is open Mon-Fri from 9am to 6pm."));
+
+        // Verify answer attribution on the persisted entity
+        CampusQuery answeredQuery = queryRepo.findById(savedQuery.getId()).orElseThrow();
+        assertThat(answeredQuery.getAnsweredBy()).isNotNull();
+        assertThat(answeredQuery.getAnsweredBy().getId()).isEqualTo(admin.getId());
+
+        // Verify audit log recorded the action
+        boolean auditFound = auditRepo.findAll().stream()
+                .anyMatch(a -> "QUERY_ANSWER".equals(a.getAction()) && String.valueOf(savedQuery.getId()).equals(a.getTargetId()));
+        assertThat(auditFound).isTrue();
+    }
+
+    @Test
+    @Transactional
+    void testFacultyInboxEndpoints() throws Exception {
+        String facultyEmail = "faculty." + System.nanoTime() + "@example.edu";
+        User faculty = new User();
+        faculty.setUsername(facultyEmail);
+        faculty.setEmail(facultyEmail);
+        faculty.setPasswordHash("hash");
+        faculty.setRole(Role.FACULTY);
+        faculty.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(faculty);
+        String token = jwt.accessToken(faculty);
+
+        mvc.perform(get("/api/v1/queries/faculty/inbox")
+                .cookie(new Cookie("NH_ACCESS", token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        mvc.perform(get("/api/v1/queries/faculty-inbox")
+                .cookie(new Cookie("NH_ACCESS", token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

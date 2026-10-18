@@ -22,31 +22,69 @@ public class InvitationEmailDispatcher {
         this.invitations = invitations;
     }
 
+    public static boolean isTemporaryAccount(String email) {
+        if (email == null || email.isBlank()) return true;
+        String e = email.trim().toLowerCase();
+        return e.endsWith("@notifyhub.local")
+                || e.endsWith("@localhost")
+                || e.endsWith(".local")
+                || e.endsWith(".test")
+                || e.endsWith(".invalid")
+                || e.endsWith(".temp")
+                || e.contains("@temporary.")
+                || e.contains("@temp.")
+                || e.contains("temporary")
+                || e.startsWith("temp.")
+                || e.startsWith("temp-")
+                || e.startsWith("temp_")
+                || e.startsWith("staging.")
+                || e.contains("staging.student")
+                || e.contains("student.audit");
+    }
+
     @Async("notifyHubTaskExecutor")
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void dispatch(InvitationCreatedEvent event) {
         try {
+            var invOpt = invitations.findById(event.invitationId());
+            if (invOpt.isPresent()) {
+                var inv = invOpt.get();
+                if (inv.getStatus() == com.notifyhub.auth.InvitationStatus.USED || inv.getUsedAt() != null) {
+                    log.info("Invitation {} is already accepted/used; skipping email dispatch.", event.invitationId());
+                    return;
+                }
+            }
+
+            if (isTemporaryAccount(event.email())) {
+                log.info("Invitation {} is for a temporary account; suppressing outbound email dispatch.", event.invitationId());
+                mark(event.invitationId(), InvitationEmailStatus.SENT, "Outbound email delivery skipped for temporary account");
+                return;
+            }
+
             emailService.send(event.email(), event.role(), event.rawToken(), event.expiresAt().toString());
-            mark(event, InvitationEmailStatus.SENT, null);
+            mark(event.invitationId(), InvitationEmailStatus.SENT, null);
             log.info("Invitation email sent successfully for invitation {}", event.invitationId());
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             String message = safeError(ex);
-            mark(event, InvitationEmailStatus.FAILED, message);
-            log.error("Invitation {} was persisted but email delivery failed: {}", event.invitationId(), message, ex);
+            mark(event.invitationId(), InvitationEmailStatus.FAILED, message);
+            log.error("Invitation {} was persisted but email delivery failed: {}", event.invitationId(), message);
         }
     }
 
-    private void mark(InvitationCreatedEvent event, InvitationEmailStatus status, String error) {
-        invitations.findById(event.invitationId()).ifPresent(invitation -> {
+    private void mark(java.util.UUID invitationId, InvitationEmailStatus status, String error) {
+        invitations.findById(invitationId).ifPresent(invitation -> {
             invitation.setEmailStatus(status);
             invitation.setEmailError(error);
             invitations.save(invitation);
         });
     }
 
-    private String safeError(RuntimeException ex) {
+    private String safeError(Exception ex) {
         String message = ex.getMessage();
         if (message == null || message.isBlank()) return ex.getClass().getSimpleName();
-        return message.length() > 500 ? message.substring(0, 500) : message;
+        String sanitized = message
+                .replaceAll("(?i)(password|secret|token|cred(ential)?s?)[=:][^\\s,;]+", "$1=***")
+                .replaceAll("(?i)(bearer\\s+)[a-zA-Z0-9._~+/-]+", "$1***");
+        return sanitized.length() > 500 ? sanitized.substring(0, 500) : sanitized;
     }
 }

@@ -1,0 +1,110 @@
+/* NotifyHub Home Design Tokens — extracted from the existing home page visual system. */
+:root {
+  --nh-bg: #060708;
+  --nh-panel: rgba(18, 20, 22, 0.72);
+  --nh-line: rgba(255, 255, 255, 0.09);
+  --nh-text: #f4f5f1;
+  --nh-muted: rgba(226, 232, 240, 0.56);
+  --nh-green: #b8ff5a;
+  --nh-blue: #76d7ff;
+  --nh-red: #ff5d73;
+  --nh-violet: #a78bfa;
+
+  --nh-surface: #121416;
+  --nh-surface-2: #181b1f;
+  --nh-surface-3: #1f2328;
+  --nh-surface-elevated: #242a30;
+  --nh-border: rgba(255, 255, 255, 0.09);
+  --nh-border-strong: rgba(255, 255, 255, 0.14);
+
+  --nh-radius-sm: 0.5rem;
+  --nh-radius-md: 0.75rem;
+  --nh-radius-lg: 1rem;
+  --nh-radius-xl: 1.5rem;
+  --nh-radius-pill: 9999px;
+
+  --nh-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --nh-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.055), 0 25px 70px rgba(0, 0, 0, 0.22);
+  --nh-shadow-float: 0 35px 75px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --nh-shadow-glow-green: 0 0 45px rgba(184, 255, 90, 0.5), 0 0 150px rgba(184, 255, 90, 0.16);
+
+  --nh-font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --nh-font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --nh-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --nh-text-xs: 0.75rem;
+  --nh-text-sm: 0.875rem;
+  --nh-text-md: 1rem;
+  --nh-text-lg: 1.16rem;
+  --nh-text-xl: 1.45rem;
+  --nh-text-2xl: 2.5rem;
+  --nh-text-hero: clamp(3.6rem, 8vw, 7.4rem);
+
+  --nh-weight-regular: 400;
+  --nh-weight-medium: 500;
+  --nh-weight-bold: 700;
+  --nh-weight-heavy: 800;
+
+  --nh-transition: 200ms ease;
+}
+
+/* Tailwind v4 aliases. Existing semantic utilities now resolve to the home palette. */
+@theme inline {
+  --font-display: var(--nh-font-display);
+  --font-sans: var(--nh-font-body);
+  --font-mono: var(--nh-font-mono);
+
+  --color-bg: var(--nh-bg);
+  --color-surface: var(--nh-surface);
+  --color-surface-2: var(--nh-surface-2);
+  --color-surface-3: var(--nh-surface-3);
+  --color-surface-elevated: var(--nh-surface-elevated);
+  --color-ink: var(--nh-text);
+  --color-muted: var(--nh-muted);
+  --color-border: var(--nh-border);
+  --color-border-glow: var(--nh-border-strong);
+
+  --color-brand: var(--nh-green);
+  --color-brand-light: var(--nh-green);
+  --color-brand-2: var(--nh-blue);
+  --color-brand-2-light: var(--nh-blue);
+  --color-brand-magenta: var(--nh-red);
+  --color-brand-50: rgba(184, 255, 90, 0.08);
+  --color-brand-100: rgba(184, 255, 90, 0.14);
+
+  --color-cyan: var(--nh-blue);
+  --color-cyan-light: var(--nh-blue);
+  --color-teal: var(--nh-blue);
+  --color-teal-light: var(--nh-blue);
+  --color-teal-soft: rgba(118, 215, 255, 0.08);
+
+  --color-success: var(--nh-green);
+  --color-success-light: var(--nh-green);
+  --color-success-soft: rgba(184, 255, 90, 0.08);
+
+  --color-danger: var(--nh-red);
+  --color-danger-light: var(--nh-red);
+  --color-danger-soft: rgba(255, 93, 115, 0.08);
+
+  --color-warning: #f5c451;
+  --color-warning-light: #f5c451;
+  --color-warning-soft: rgba(245, 196, 81, 0.08);
+  --color-amber: #f5c451;
+  --color-amber-light: #f5c451;
+
+  --color-ink-900: #050607;
+  --color-ink-800: var(--nh-bg);
+  --color-ink-700: #0b0d10;
+
+  --shadow-soft: var(--nh-shadow-card);
+  --shadow-card: var(--nh-shadow-card);
+  --shadow-card-hover: var(--nh-shadow-card);
+  --shadow-lift: var(--nh-shadow-float);
+  --shadow-glow: var(--nh-shadow-glow-green);
+  --shadow-glow-violet: 0 0 45px rgba(167, 139, 250, 0.22);
+  --shadow-glow-cyan: 0 0 45px rgba(118, 215, 255, 0.22);
+  --shadow-glow-danger: 0 0 45px rgba(255, 93, 115, 0.22);
+  --shadow-glow-amber: 0 0 45px rgba(245, 196, 81, 0.22);
+
+  --radius-card: var(--nh-radius-lg);
+}

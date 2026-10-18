@@ -159,11 +159,237 @@ class AdminInvitationServiceTest {
         verify(events, never()).publishEvent(any());
     }
 
+    @Test
+    void resendRenewsTokenAndPublishesEvent() {
+        UUID invitationId = UUID.randomUUID();
+        User invitedUser = new User();
+        invitedUser.setPublicId(UUID.randomUUID());
+        invitedUser.setEmail("student@example.edu");
+        invitedUser.setRole(Role.STUDENT);
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(invitedUser);
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setEmailStatus(InvitationEmailStatus.FAILED);
+        invitation.setEmailError("SMTP connection timed out");
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        AdminInvitationService.InvitationResult result = service.resend("admin", invitationId);
+
+        assertThat(result.email()).isEqualTo("student@example.edu");
+        assertThat(result.emailStatus()).isEqualTo("PENDING");
+        assertThat(result.emailError()).isNull();
+        assertThat(invitation.getEmailStatus()).isEqualTo(InvitationEmailStatus.PENDING);
+        assertThat(invitation.getEmailError()).isNull();
+        verify(invitations).save(invitation);
+        verify(events).publishEvent(any(InvitationCreatedEvent.class));
+    }
+
+    @Test
+    void resendRejectsAlreadyAcceptedInvitation() {
+        UUID invitationId = UUID.randomUUID();
+        User invitedUser = new User();
+        invitedUser.setEmail("accepted@example.edu");
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(invitedUser);
+        invitation.setStatus(InvitationStatus.USED);
+        invitation.setUsedAt(java.time.Instant.now());
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.resend("admin", invitationId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Invitation has already been accepted");
+        verify(events, never()).publishEvent(any());
+    }
+
+    @Test
+    void listExcludesActivatedInvitations() {
+        User pendingUser = new User();
+        pendingUser.setEmail("pending@example.edu");
+        pendingUser.setAccountStatus(AccountStatus.INVITED);
+        pendingUser.setPublicId(UUID.randomUUID());
+
+        Invitation pendingInv = new Invitation();
+        setInvitationId(pendingInv);
+        pendingInv.setUser(pendingUser);
+        pendingInv.setStatus(InvitationStatus.PENDING);
+        pendingInv.setExpiresAt(java.time.Instant.now().plusSeconds(3600));
+
+        User activatedUser = new User();
+        activatedUser.setEmail("active@example.edu");
+        activatedUser.setAccountStatus(AccountStatus.ACTIVE);
+        activatedUser.setPublicId(UUID.randomUUID());
+
+        Invitation activatedInv = new Invitation();
+        setInvitationId(activatedInv);
+        activatedInv.setUser(activatedUser);
+        activatedInv.setStatus(InvitationStatus.USED);
+        activatedInv.setUsedAt(java.time.Instant.now());
+        activatedInv.setExpiresAt(java.time.Instant.now().plusSeconds(3600));
+
+        User expiredUser = new User();
+        expiredUser.setEmail("expired@example.edu");
+        expiredUser.setAccountStatus(AccountStatus.INVITED);
+        expiredUser.setPublicId(UUID.randomUUID());
+
+        Invitation expiredInv = new Invitation();
+        setInvitationId(expiredInv);
+        expiredInv.setUser(expiredUser);
+        expiredInv.setStatus(InvitationStatus.EXPIRED);
+        expiredInv.setExpiresAt(java.time.Instant.now().minusSeconds(3600));
+
+        when(invitations.findAllByOrderByCreatedAtDesc()).thenReturn(java.util.List.of(pendingInv, activatedInv, expiredInv));
+
+        var list = service.list("admin");
+
+        // Activated invitation must be excluded
+        assertThat(list).hasSize(2);
+        assertThat(list).extracting(AdminInvitationService.InvitationView::email)
+                .containsExactlyInAnyOrder("pending@example.edu", "expired@example.edu")
+                .doesNotContain("active@example.edu");
+    }
+
+    @Test
+    void deletePendingInvitationSuccessfullyRemovesInvitationAndUnactivatedAccount() {
+        UUID invitationId = UUID.randomUUID();
+        User invitedUser = new User();
+        invitedUser.setId(99L);
+        invitedUser.setEmail("pending.delete@example.edu");
+        invitedUser.setAccountStatus(AccountStatus.INVITED);
+
+        Invitation invitation = new Invitation();
+        setInvitationId(invitation, invitationId);
+        invitation.setUser(invitedUser);
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setExpiresAt(java.time.Instant.now().plusSeconds(3600));
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+        when(invitations.findAll()).thenReturn(java.util.List.of(invitation));
+
+        service.delete("admin", invitationId);
+
+        verify(invitations).delete(invitation);
+        verify(invitations).flush();
+        verify(users).delete(invitedUser);
+        verify(users).flush();
+    }
+
+    @Test
+    void deletePendingStudentInvitationWithHostelDecrementsRoomAndCleansAssignments() {
+        UUID invitationId = UUID.randomUUID();
+        User invitedUser = new User();
+        invitedUser.setId(105L);
+        invitedUser.setEmail("student.hostel@example.edu");
+        invitedUser.setAccountStatus(AccountStatus.INVITED);
+
+        Invitation invitation = new Invitation();
+        setInvitationId(invitation, invitationId);
+        invitation.setUser(invitedUser);
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setExpiresAt(java.time.Instant.now().plusSeconds(3600));
+
+        StudentProfile sp = new StudentProfile();
+        com.notifyhub.hostel.Room room = new com.notifyhub.hostel.Room();
+        room.setCurrentOccupancy(2);
+        try {
+            Field roomField = StudentProfile.class.getDeclaredField("room");
+            roomField.setAccessible(true);
+            roomField.set(sp, room);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        com.notifyhub.rbac.UserRoleAssignment assignment = new com.notifyhub.rbac.UserRoleAssignment();
+        assignment.setUser(invitedUser);
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+        when(invitations.findAll()).thenReturn(java.util.List.of(invitation));
+        when(students.findByUserId(105L)).thenReturn(Optional.of(sp));
+        when(userRoleAssignments.findByUserId(105L)).thenReturn(java.util.List.of(assignment));
+
+        service.delete("admin", invitationId);
+
+        verify(invitations).delete(invitation);
+        verify(invitations).flush();
+        assertThat(room.getCurrentOccupancy()).isEqualTo(1);
+        verify(rooms).saveAndFlush(room);
+        verify(students).delete(sp);
+        verify(students).flush();
+        verify(userRoleAssignments).deleteAll(java.util.List.of(assignment));
+        verify(userRoleAssignments).flush();
+        verify(users).delete(invitedUser);
+        verify(users).flush();
+    }
+
+    @Test
+    void deleteRejectsActivatedInvitationAndProtectsActiveUserAccount() {
+        UUID invitationId = UUID.randomUUID();
+        User activatedUser = new User();
+        activatedUser.setId(100L);
+        activatedUser.setEmail("activated.user@example.edu");
+        activatedUser.setAccountStatus(AccountStatus.ACTIVE);
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(activatedUser);
+        invitation.setStatus(InvitationStatus.USED);
+        invitation.setUsedAt(java.time.Instant.now());
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.delete("admin", invitationId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Cannot delete an invitation that has already been accepted and activated");
+
+        // Active account and invitation must NOT be deleted
+        verify(invitations, never()).delete(any());
+        verify(users, never()).delete(any());
+    }
+
+    @Test
+    void departmentAdminCannotDeleteInvitationOfOtherDepartment() {
+        UUID invitationId = UUID.randomUUID();
+        Department dept1 = mock(Department.class);
+        when(dept1.getId()).thenReturn(1L);
+        Department dept2 = mock(Department.class);
+        when(dept2.getId()).thenReturn(2L);
+
+        User deptAdmin = new User();
+        deptAdmin.setUsername("deptadmin");
+        deptAdmin.setRole(Role.DEPARTMENT_ADMIN);
+        deptAdmin.setRoleEntity(deptAdminRole);
+        deptAdmin.setDepartmentEntity(dept1);
+        deptAdmin.setAccountStatus(AccountStatus.ACTIVE);
+        when(users.findByUsername("deptadmin")).thenReturn(Optional.of(deptAdmin));
+
+        User otherDeptUser = new User();
+        otherDeptUser.setDepartmentEntity(dept2);
+        otherDeptUser.setAccountStatus(AccountStatus.INVITED);
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(otherDeptUser);
+        invitation.setStatus(InvitationStatus.PENDING);
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.delete("deptadmin", invitationId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Department admins may only delete invitations for their own department");
+
+        verify(invitations, never()).delete(any());
+    }
+
     private void setInvitationId(Invitation invitation) {
+        setInvitationId(invitation, UUID.randomUUID());
+    }
+
+    private void setInvitationId(Invitation invitation, UUID id) {
         try {
             Field idField = Invitation.class.getDeclaredField("id");
             idField.setAccessible(true);
-            idField.set(invitation, UUID.randomUUID());
+            idField.set(invitation, id != null ? id : UUID.randomUUID());
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

@@ -31,21 +31,21 @@ export default function AuthenticatedContentShell({ children, role }: { children
 
   return (
     <div className="min-h-screen bg-bg text-ink">
-      <header className="sticky top-0 z-30 flex min-h-[72px] flex-wrap items-center gap-4 border-b border-white/[0.08] bg-bg/85 px-4 py-3 backdrop-blur-xl sm:min-h-[80px] sm:flex-nowrap sm:px-8">
+      <header className="sticky top-0 z-30 flex min-h-[72px] flex-wrap items-center gap-4 border-b border-white/[0.08] bg-bg/90 px-4 py-3 backdrop-blur-xl sm:min-h-[80px] sm:flex-nowrap sm:px-8">
         <Link href={dashboardHref} className="group flex items-center gap-3 font-display text-lg font-bold">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand to-brand-2 text-white shadow-glow transition-transform duration-300 group-hover:scale-105">
+          <span className="grid h-9 w-9 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-black shadow-[var(--nh-shadow-glow-green)] transition-transform duration-300 group-hover:scale-105">
             ◈
           </span>
           <span className="tracking-tight">
             Notify<span className="text-brand">Hub</span>
           </span>
         </Link>
-        <span className="hidden items-center gap-2 rounded-full border border-border/80 bg-surface-2/80 px-3 py-1 text-xs font-bold text-muted md:inline-flex">
+        <span className="hidden items-center gap-2 rounded-[var(--nh-radius-pill)] border border-white/10 bg-surface-2 px-3 py-1 text-xs font-bold text-muted md:inline-flex">
           <span className="h-1.5 w-1.5 rounded-full bg-brand" />
           {role} · Campus workspace
         </span>
         <nav className="ml-auto flex items-center gap-1.5 sm:gap-2.5" aria-label="Authenticated dashboard navigation">
-          <Link href={`/dashboard/feed?from=${from}`} className="rounded-xl px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
+          <Link href={`/dashboard/feed?from=${from}`} className="rounded-[var(--nh-radius-md)] px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
             Feed
           </Link>
           <Link href={`/dashboard/calendar?from=${from}`} className="rounded-xl px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
@@ -57,7 +57,7 @@ export default function AuthenticatedContentShell({ children, role }: { children
           <Link href={`/dashboard/profile?from=${from}`} className="rounded-xl px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
             Profile
           </Link>
-          <Link href={dashboardHref} className="rounded-xl px-3 py-2 text-xs font-bold text-brand-light bg-brand-50/80 border border-brand/30 hover:bg-brand-50 transition-colors">
+          <Link href={dashboardHref} className="rounded-xl px-3 py-2 text-xs font-bold text-brand bg-brand-50 border border-brand/30 hover:bg-brand-50 transition-colors">
             Dashboard
           </Link>
           <button className={buttonClasses("secondary", "!px-3.5 !py-2 !text-xs")} onClick={() => void signOut()}>

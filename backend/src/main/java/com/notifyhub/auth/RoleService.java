@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +18,15 @@ import java.util.List;
 public class RoleService {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private static final java.util.Set<String> FIXED_ROLE_NAMES = java.util.Set.of(
+            "SUPER_ADMIN", "PRINCIPAL", "DEAN", "HOD", "DEPARTMENT_ADMIN", "FACULTY", "STUDENT"
+    );
+
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public RoleService(RoleRepository roleRepository, UserRepository userRepository) {
         this.roleRepository = roleRepository;
@@ -70,9 +80,31 @@ public class RoleService {
         return RoleDto.from(roleRepository.save(role));
     }
 
+    public void deleteRole(Long id) {
+        RoleEntity role = getRole(id);
+        if (role.isSystemRole() || role.isSuperadmin() || FIXED_ROLE_NAMES.contains(role.getName().toUpperCase())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "System roles cannot be deleted.");
+        }
+
+        Number assignedUsers = (Number) entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM users WHERE role_id = ?1"
+        ).setParameter(1, id).getSingleResult();
+        if (assignedUsers.longValue() > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Role cannot be deleted while users are assigned to it. Reassign those users first.");
+        }
+
+        entityManager.createNativeQuery("DELETE FROM user_role_assignments WHERE role_id = ?1")
+                .setParameter(1, id).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM role_permissions WHERE role_id = ?1")
+                .setParameter(1, id).executeUpdate();
+        roleRepository.delete(role);
+        roleRepository.flush();
+    }
+
     public RoleDto updateRole(Long id, UpdateRoleRequest request) {
         RoleEntity role = getRole(id);
-        if (role.isSystemRole()) {
+        if (role.isSystemRole() || role.isSuperadmin() || FIXED_ROLE_NAMES.contains(role.getName().toUpperCase())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "System roles cannot be edited.");
         }
         if (request.level() != null && request.level() == 0) {

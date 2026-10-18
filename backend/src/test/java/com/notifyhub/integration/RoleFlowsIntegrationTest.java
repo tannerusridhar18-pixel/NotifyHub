@@ -307,10 +307,15 @@ class RoleFlowsIntegrationTest {
         announcement.setCreatedBy(facultyUser);
         announcementRepo.saveAndFlush(announcement);
 
-        mvc.perform(get("/api/v1/announcements")
+        MvcResult feedResult = mvc.perform(get("/api/v1/announcements")
                 .cookie(authCookie(studentUser)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[0].attachmentUrl").value("https://example.com/midterms.pdf"));
+                .andReturn();
+        var feedContent = objectMapper.readTree(feedResult.getResponse().getContentAsString()).path("data").path("content");
+        boolean attachmentFound = java.util.stream.StreamSupport.stream(feedContent.spliterator(), false)
+                .anyMatch(item -> "CSE Dept Midterms".equals(item.path("title").asText())
+                        && "https://example.com/midterms.pdf".equals(item.path("attachmentUrl").asText()));
+        assertThat(attachmentFound).isTrue();
 
         // 2. Register for event
         Event event = new Event();
