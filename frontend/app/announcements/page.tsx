@@ -46,15 +46,8 @@ export default function AnnouncementsPage() {
           <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
           <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
         </div>
-<Reveal className="max-w-[760px]">
-        <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-xs font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_16px_rgba(99,102,241,0.25)] backdrop-blur-xl">
-          <span className="relative flex h-2 w-2 items-center justify-center">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-light opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-light" />
-          </span>
-          Campus Broadcast Stream
-        </span>
-        <h1 className="my-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Campus Announcements</h1>
+      <Reveal className="max-w-[760px]">
+        <h1 className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Campus Announcements</h1>
         <p className="text-base sm:text-lg leading-relaxed text-muted">
           Official campus updates, academic circulars, and departmental notices, unified into a real-time, searchable feed.
         </p>

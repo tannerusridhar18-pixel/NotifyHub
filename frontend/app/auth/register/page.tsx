@@ -23,7 +23,7 @@ export default function Register() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!token) {
-      setError("This registration link is missing its invitation token. Open the link from your NotifyHub invitation email.");
+      setError("This registration link is missing its invitation token. Open the link from your VNotify invitation email.");
       return;
     }
     if (form.password !== form.confirmPassword) {
@@ -52,7 +52,7 @@ export default function Register() {
           <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
-            <span>NotifyHub</span>
+            <span>VNotify</span>
           </div>
 
           <div className={styles.eyebrow}>Invitation Onboarding</div>
@@ -74,7 +74,7 @@ export default function Register() {
               <div>
                 <b className={styles.statusTitle}>{token ? "Invitation verified" : "Invitation link required"}</b>
                 <small className={styles.statusCopy}>
-                  {token ? "Token validated. Enter password to activate." : "Open the link from your NotifyHub invitation email."}
+                  {token ? "Token validated. Enter password to activate." : "Open the link from your VNotify invitation email."}
                 </small>
               </div>
             </div>

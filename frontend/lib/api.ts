@@ -24,11 +24,11 @@ function friendlyMessage(status: number, body: ApiResponse<unknown> | null, path
   if (status === 400) return "The information could not be saved. Check the highlighted fields and try again.";
   if (status === 401) return "Your session has expired — please log in again.";
   if (status === 403) return "You do not have permission to perform this action.";
-  if (status === 404) return "That NotifyHub resource could not be found.";
+  if (status === 404) return "That VNotify resource could not be found.";
   if (status >= 500)
     return path.includes("/announcements") || path.includes("/events")
-      ? "NotifyHub could not save this draft. Check the server and database, then try again."
-      : "NotifyHub could not complete that request. Please try again.";
+      ? "VNotify could not save this draft. Check the server and database, then try again."
+      : "VNotify could not complete that request. Please try again.";
   return `Request failed (${status}). Please try again.`;
 }
 
@@ -98,7 +98,7 @@ async function request<T>(
   try {
     response = await fetch(`${API_URL}${path}`, { ...init, headers, credentials: "include", cache: "no-store" });
   } catch {
-    throw new Error("NotifyHub cannot reach the server right now. Check that the backend is running, then try again.");
+    throw new Error("VNotify cannot reach the server right now. Check that the backend is running, then try again.");
   }
   if (response.status === 401 && retry && !path.startsWith("/auth/")) {
     if (await refresh()) return request<T>(path, init, false);
@@ -220,7 +220,15 @@ export type InvitationRequest = {
   };
 };
 
-export type InvitationResult = { invitationId: string; userPublicId: string; email: string; role: string; expiresAt: string };
+export type InvitationResult = {
+  invitationId: string;
+  userPublicId: string;
+  email: string;
+  role: string;
+  expiresAt: string;
+  emailStatus?: "PENDING" | "SENT" | "FAILED";
+  emailError?: string | null;
+};
 export type InvitationView = {
   invitationId: string;
   email: string;
@@ -232,11 +240,14 @@ export type InvitationView = {
   createdAt: string;
   usedAt: string | null;
   userPublicId: string | null;
+  emailError?: string | null;
 };
 
 export const invitableRoles = () => request<InvitableRole[]>("/roles/invitable");
 export const createInvitation = (payload: InvitationRequest) =>
   request<InvitationResult>("/admin/invitations", { method: "POST", body: JSON.stringify(payload) });
+export const resendInvitation = (invitationId: string) =>
+  request<InvitationResult>(`/admin/invitations/${invitationId}/resend`, { method: "POST" });
 export const adminInvitations = () => request<InvitationView[]>("/admin/invitations");
 export const resetPassword = (token: string, password: string, confirmPassword: string) =>
   request<void>("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, password, confirmPassword }) });
@@ -265,6 +276,23 @@ export const upcomingEvents = (page = 0, size = 12) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<EventItem>>(`/events/upcoming?${q}`);
 };
+
+export async function getEvent(id: number): Promise<EventItem> {
+  try {
+    return await request<EventItem>(`/events/${id}`, { redirectOn401: false });
+  } catch {
+    const [upcoming, all] = await Promise.all([
+      upcomingEvents(0, 50).catch(() => ({ content: [] as EventItem[] })),
+      events({ page: 0, size: 50 }).catch(() => ({ content: [] as EventItem[] })),
+    ]);
+    const found = upcoming.content.find((e) => e.id === id) || all.content.find((e) => e.id === id);
+    if (found) {
+      return found;
+    }
+    throw new Error("Event not found.");
+  }
+}
+
 
 type StudentRegistrationView = {
   registrationId: number;
@@ -355,6 +383,8 @@ export type AnnouncementPayload = {
   recipientTargets?: string;
   attachmentUrl?: string;
   attachmentName?: string;
+  photoUrl?: string;
+  imageUrl?: string;
 };
 
 export type EventPayload = {
@@ -383,10 +413,20 @@ export const managedAnnouncements = (page = 0, size = 50) => {
   const q = new URLSearchParams({ page: String(page), size: String(size) });
   return request<PageResponse<Announcement>>(`/announcements/management?${q}`);
 };
-export const createAnnouncement = (p: AnnouncementPayload) =>
-  request<Announcement>("/announcements", { method: "POST", body: JSON.stringify(p) });
-export const updateAnnouncement = (id: number, p: AnnouncementPayload) =>
-  request<Announcement>(`/announcements/${id}`, { method: "PUT", body: JSON.stringify(p) });
+export const createAnnouncement = (p: AnnouncementPayload) => {
+  const body = {
+    ...p,
+    attachmentUrl: p.photoUrl || p.imageUrl || p.attachmentUrl,
+  };
+  return request<Announcement>("/announcements", { method: "POST", body: JSON.stringify(body) });
+};
+export const updateAnnouncement = (id: number, p: AnnouncementPayload) => {
+  const body = {
+    ...p,
+    attachmentUrl: p.photoUrl || p.imageUrl || p.attachmentUrl,
+  };
+  return request<Announcement>(`/announcements/${id}`, { method: "PUT", body: JSON.stringify(body) });
+};
 export const publishAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/publish`, { method: "POST" });
 export const archiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/archive`, { method: "POST" });
 export const unarchiveAnnouncement = (id: number) => request<Announcement>(`/announcements/${id}/unarchive`, { method: "POST" });

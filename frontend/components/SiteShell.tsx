@@ -41,19 +41,9 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
               ◈
             </span>
             <span className="flex items-center text-xl font-medium tracking-tight">
-              Notify<span className="text-gradient-animated">Hub</span>
+              V<span className="text-gradient-animated">Notify</span>
             </span>
           </Link>
-
-          {/* Live Campus Signal Beacon */}
-          <div className="hidden items-center gap-2 rounded-[var(--nh-radius-pill)] border border-brand-2/30 bg-surface-2 px-3.5 py-1 text-[11px] font-medium text-brand-2-light shadow-[var(--nh-shadow-inset)] backdrop-blur-md lg:flex">
-            <span className="relative flex h-2 w-2 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
-            </span>
-            <span>CAMPUS SIGNAL</span>
-            <span className="rounded-[var(--nh-radius-pill)] bg-brand-2/10 px-1.5 py-0.2 text-[9px] font-medium tracking-widest text-brand-2-light">LIVE</span>
-          </div>
 
           <nav aria-label="Public navigation" className="hidden flex-1 items-center justify-center gap-1.5 md:flex">
             {links.map(([href, label]) => {
@@ -136,7 +126,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2.5 text-center sm:text-left">
             <span className="grid h-7 w-7 place-items-center rounded-xl bg-brand-50 text-xs font-bold text-brand-light border border-brand/20">◈</span>
             <span>
-              <strong className="text-ink font-bold">NotifyHub</strong> · Unified smart campus communications & broadcast network.
+              <strong className="text-ink font-bold">VNotify</strong> · Unified smart campus communications & broadcast network.
             </span>
           </div>
           <div className="flex items-center gap-4 text-muted/90 font-medium">

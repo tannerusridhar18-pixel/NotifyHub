@@ -54,7 +54,7 @@ export default function AdminLogin() {
           <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
-            <span>NotifyHub</span>
+            <span>VNotify</span>
           </div>
 
           <div className={styles.eyebrow}>Restricted Control Room</div>
@@ -70,7 +70,7 @@ export default function AdminLogin() {
             </span>
             <h2 className={styles.cardTitle}>Control Room Sign In</h2>
             <p className={styles.cardDescription}>
-              Authorized administrators only. Your session will be protected by the NotifyHub identity layer.
+              Authorized administrators only. Your session will be protected by the VNotify identity layer.
             </p>
 
             <form onSubmit={submit} className={styles.form}>

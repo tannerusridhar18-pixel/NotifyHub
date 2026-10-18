@@ -141,7 +141,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
     setInviteBusy(true);
     setInviteMsg("");
     try {
-      await createInvitation({
+      const res = await createInvitation({
         email: inviteEmail,
         role: "FACULTY",
         departmentId: deptId,
@@ -154,7 +154,11 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
           departmentId: deptId,
         },
       });
-      setInviteMsg("✓ Faculty invitation link generated & dispatched!");
+      if (res?.emailStatus === "FAILED") {
+        setInviteMsg(`⚠ Faculty invitation saved to database, but email delivery failed (${res.emailError || "SMTP error"}).`);
+      } else {
+        setInviteMsg("✓ Faculty invitation link generated & dispatched!");
+      }
       setInviteEmail("");
       setInviteName("");
       setInviteFacultyId("");
@@ -703,7 +707,7 @@ export default function DepartmentAdminDashboardView({ user }: { user: CurrentUs
               </span>
               <h2 className="mt-3 text-2xl font-medium text-white">Batch Student Year-Promotion</h2>
               <p className="mt-1 text-xs text-muted leading-relaxed">
-                Seamlessly advance entire student cohorts to the next academic year. NotifyHub validates branch maximum years, transitions final years to Graduated status, and keeps section mappings consistent.
+                Seamlessly advance entire student cohorts to the next academic year. VNotify validates branch maximum years, transitions final years to Graduated status, and keeps section mappings consistent.
               </p>
 
               <div className="mt-6 space-y-4">
