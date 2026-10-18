@@ -14,6 +14,9 @@ import com.notifyhub.query.CampusQuery;
 import com.notifyhub.query.QueryRepository;
 import com.notifyhub.targeting.TargetType;
 import com.notifyhub.targeting.TargetingService;
+import com.notifyhub.event.Event;
+import com.notifyhub.event.EventRepository;
+import com.notifyhub.event.EventStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.Cookie;
@@ -30,6 +33,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,6 +47,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -64,6 +70,7 @@ class AccessControlRegressionTest {
     @Autowired DepartmentRepository departmentRepo;
     @Autowired AnnouncementRepository announcementRepo;
     @Autowired TargetingService targetingService;
+    @Autowired EventRepository eventRepo;
     @PersistenceContext EntityManager em;
 
     private User newUser(String prefix, Role role) {
@@ -90,6 +97,39 @@ class AccessControlRegressionTest {
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/users").cookie(cookieFor(admin)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @Transactional
+    void studentCannotUseDepartmentLeadershipAliases() throws Exception {
+        User student = newUser("student-leadership", Role.STUDENT);
+
+        mvc.perform(get("/api/v1/departments/1/students").cookie(cookieFor(student)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/departments/1/faculty").cookie(cookieFor(student)))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/students/batch-promote")
+                        .with(csrf()).cookie(cookieFor(student))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"departmentId\":1,\"fromYear\":1,\"toYear\":2}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    void studentCanReadFacultyDirectoryOnlyForOwnDepartment() throws Exception {
+        Department department = new Department();
+        department.setName("Student Faculty Directory " + System.nanoTime());
+        department = departmentRepo.saveAndFlush(department);
+
+        User student = newUser("student-faculty", Role.STUDENT);
+        student.setDepartmentEntity(department);
+        users.saveAndFlush(student);
+
+        mvc.perform(get("/api/v1/departments/" + department.getId() + "/faculty").cookie(cookieFor(student)))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/departments/" + (department.getId() + 1) + "/faculty").cookie(cookieFor(student)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -285,5 +325,340 @@ class AccessControlRegressionTest {
 
         assertThrows(ResponseStatusException.class, () -> authService.refresh(session.rawRefreshToken()));
         assertThrows(ResponseStatusException.class, () -> authService.refresh(first.rawRefreshToken()));
+    }
+
+    @Test
+    void unauthenticatedCannotRegisterForEvent() throws Exception {
+        mvc.perform(post("/api/v1/events/999/register")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @Transactional
+    void nonStudentCannotRegisterForEvent() throws Exception {
+        User admin = newUser("admin", Role.ADMIN);
+        User faculty = newUser("faculty", Role.FACULTY);
+
+        Event event = new Event();
+        event.setTitle("Campus Tech Talk");
+        event.setDescription("Tech Talk Description");
+        event.setLocation("Auditorium");
+        event.setStartAt(Instant.now().plusSeconds(86400));
+        event.setEndAt(Instant.now().plusSeconds(93600));
+        event.setStatus(EventStatus.PUBLISHED);
+        event.setTargetType(TargetType.GLOBAL);
+        event.setRegistrationEnabled(true);
+        event.setCreatedBy(admin);
+        event = eventRepo.saveAndFlush(event);
+
+        mvc.perform(post("/api/v1/events/" + event.getId() + "/register")
+                        .with(csrf())
+                        .cookie(cookieFor(faculty)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(containsString("Only students can register for events")));
+    }
+
+    @Test
+    @Transactional
+    void duplicateStudentRegistrationReturnsConflict() throws Exception {
+        User admin = newUser("admin", Role.ADMIN);
+        User student = newUser("student", Role.STUDENT);
+
+        Event event = new Event();
+        event.setTitle("Hackathon 2026");
+        event.setDescription("Annual Hackathon");
+        event.setLocation("Main Hall");
+        event.setStartAt(Instant.now().plusSeconds(86400));
+        event.setEndAt(Instant.now().plusSeconds(93600));
+        event.setStatus(EventStatus.PUBLISHED);
+        event.setTargetType(TargetType.GLOBAL);
+        event.setRegistrationEnabled(true);
+        event.setCreatedBy(admin);
+        event = eventRepo.saveAndFlush(event);
+
+        // First registration succeeds
+        mvc.perform(post("/api/v1/events/" + event.getId() + "/register")
+                        .with(csrf())
+                        .cookie(cookieFor(student)))
+                .andExpect(status().isCreated());
+
+        // Duplicate registration returns 409 Conflict
+        mvc.perform(post("/api/v1/events/" + event.getId() + "/register")
+                        .with(csrf())
+                        .cookie(cookieFor(student)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value(containsString("already registered")));
+    }
+
+    @Test
+    @Transactional
+    void departmentAdminCanOnlyAccessRegistrationsForOwnDepartment() throws Exception {
+        User admin = newUser("admin", Role.ADMIN);
+
+        Department deptA = new Department();
+        deptA.setName("DeptA-" + System.nanoTime());
+        deptA = departmentRepo.saveAndFlush(deptA);
+
+        Department deptB = new Department();
+        deptB.setName("DeptB-" + System.nanoTime());
+        deptB = departmentRepo.saveAndFlush(deptB);
+
+        User deptAdmin = newUser("deptadmin", Role.DEPARTMENT_ADMIN);
+        deptAdmin.setDepartmentEntity(deptA);
+        deptAdmin = users.saveAndFlush(deptAdmin);
+
+        Event eventA = new Event();
+        eventA.setTitle("Event Dept A");
+        eventA.setDescription("Desc");
+        eventA.setLocation("Room 1");
+        eventA.setStartAt(Instant.now().plusSeconds(86400));
+        eventA.setEndAt(Instant.now().plusSeconds(93600));
+        eventA.setStatus(EventStatus.PUBLISHED);
+        eventA.setTargetType(TargetType.DEPARTMENT);
+        eventA.setTargetDepartment(deptA);
+        eventA.setRegistrationEnabled(true);
+        eventA.setCreatedBy(admin);
+        eventA = eventRepo.saveAndFlush(eventA);
+
+        Event eventB = new Event();
+        eventB.setTitle("Event Dept B");
+        eventB.setDescription("Desc");
+        eventB.setLocation("Room 2");
+        eventB.setStartAt(Instant.now().plusSeconds(86400));
+        eventB.setEndAt(Instant.now().plusSeconds(93600));
+        eventB.setStatus(EventStatus.PUBLISHED);
+        eventB.setTargetType(TargetType.DEPARTMENT);
+        eventB.setTargetDepartment(deptB);
+        eventB.setRegistrationEnabled(true);
+        eventB.setCreatedBy(admin);
+        eventB = eventRepo.saveAndFlush(eventB);
+
+        // Dept admin viewing own department event registrations -> 200 OK
+        mvc.perform(get("/api/v1/events/" + eventA.getId() + "/registrations")
+                        .cookie(cookieFor(deptAdmin)))
+                .andExpect(status().isOk());
+
+        // Dept admin viewing another department event registrations -> 403 Forbidden
+        mvc.perform(get("/api/v1/events/" + eventB.getId() + "/registrations")
+                        .cookie(cookieFor(deptAdmin)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    void superAdminCanAccessRegistrationsForAnyDepartment() throws Exception {
+        User admin = newUser("admin", Role.ADMIN);
+        User superAdmin = newUser("superadmin", Role.SUPER_ADMIN);
+
+        Department dept = new Department();
+        dept.setName("DeptX-" + System.nanoTime());
+        dept = departmentRepo.saveAndFlush(dept);
+
+        Event event = new Event();
+        event.setTitle("Event Dept X");
+        event.setDescription("Desc");
+        event.setLocation("Room X");
+        event.setStartAt(Instant.now().plusSeconds(86400));
+        event.setEndAt(Instant.now().plusSeconds(93600));
+        event.setStatus(EventStatus.PUBLISHED);
+        event.setTargetType(TargetType.DEPARTMENT);
+        event.setTargetDepartment(dept);
+        event.setRegistrationEnabled(true);
+        event.setCreatedBy(admin);
+        event = eventRepo.saveAndFlush(event);
+
+        mvc.perform(get("/api/v1/events/" + event.getId() + "/registrations")
+                        .cookie(cookieFor(superAdmin)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @Transactional
+    void departmentAdminCanOnlyAccessDepartmentScopedEventManagementApi() throws Exception {
+        User admin = newUser("admin", Role.ADMIN);
+        User superAdmin = newUser("superadmin", Role.SUPER_ADMIN);
+
+        Department deptA = new Department();
+        deptA.setName("DeptA-Mgmt-" + System.nanoTime());
+        deptA = departmentRepo.saveAndFlush(deptA);
+
+        Department deptB = new Department();
+        deptB.setName("DeptB-Mgmt-" + System.nanoTime());
+        deptB = departmentRepo.saveAndFlush(deptB);
+
+        User deptAdmin = newUser("deptadmin", Role.DEPARTMENT_ADMIN);
+        deptAdmin.setDepartmentEntity(deptA);
+        deptAdmin = users.saveAndFlush(deptAdmin);
+
+        Event eventA = new Event();
+        eventA.setTitle("Event In Dept A");
+        eventA.setDescription("Desc");
+        eventA.setLocation("Hall A");
+        eventA.setStartAt(Instant.now().plusSeconds(86400));
+        eventA.setEndAt(Instant.now().plusSeconds(93600));
+        eventA.setStatus(EventStatus.PUBLISHED);
+        eventA.setTargetType(TargetType.DEPARTMENT);
+        eventA.setTargetDepartment(deptA);
+        eventA.setRegistrationEnabled(true);
+        eventA.setCreatedBy(admin);
+        eventRepo.saveAndFlush(eventA);
+
+        Event eventB = new Event();
+        eventB.setTitle("Event In Dept B");
+        eventB.setDescription("Desc");
+        eventB.setLocation("Hall B");
+        eventB.setStartAt(Instant.now().plusSeconds(86400));
+        eventB.setEndAt(Instant.now().plusSeconds(93600));
+        eventB.setStatus(EventStatus.PUBLISHED);
+        eventB.setTargetType(TargetType.DEPARTMENT);
+        eventB.setTargetDepartment(deptB);
+        eventB.setRegistrationEnabled(true);
+        eventB.setCreatedBy(admin);
+        eventRepo.saveAndFlush(eventB);
+
+        // Dept admin calling department-management endpoint: succeeds and returns only Dept A event
+        mvc.perform(get("/api/v1/events/department-management")
+                        .cookie(cookieFor(deptAdmin)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Event In Dept A")))
+                .andExpect(content().string(not(containsString("Event In Dept B"))));
+
+        // Dept admin calling global /events/management endpoint -> 403 Forbidden
+        mvc.perform(get("/api/v1/events/management")
+                        .cookie(cookieFor(deptAdmin)))
+                .andExpect(status().isForbidden());
+
+        // Super Admin calling global /events/management endpoint -> 200 OK
+        mvc.perform(get("/api/v1/events/management")
+                        .cookie(cookieFor(superAdmin)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Event In Dept A")))
+                .andExpect(content().string(containsString("Event In Dept B")));
+    }
+
+    @Test
+    @Transactional
+    void eventDraftLifecycleAndExclusionFromPublicFeed() throws Exception {
+        User superAdmin = newUser("superadmin-events", Role.SUPER_ADMIN);
+        String startAt = Instant.now().plusSeconds(86400).toString();
+        String endAt = Instant.now().plusSeconds(93600).toString();
+
+        String draftPayload = """
+            {
+                "title": "Confidential Research Symposium",
+                "description": "Internal discussion and planning",
+                "location": "Auditorium X",
+                "startAt": "%s",
+                "endAt": "%s",
+                "targetType": "GLOBAL"
+            }
+            """.formatted(startAt, endAt);
+
+        // 1. Super Admin saves draft event
+        var createResult = mvc.perform(post("/api/v1/events")
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(draftPayload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.status").value("DRAFT"))
+                .andExpect(jsonPath("$.data.title").value("Confidential Research Symposium"))
+                .andReturn();
+
+        String responseBody = createResult.getResponse().getContentAsString();
+        long eventId = com.jayway.jsonpath.JsonPath.parse(responseBody).read("$.data.id", Long.class);
+
+        // 2. Draft is excluded from public feeds
+        mvc.perform(get("/api/v1/events"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Confidential Research Symposium"))));
+
+        mvc.perform(get("/api/v1/events/upcoming"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Confidential Research Symposium"))));
+
+        // 3. Draft appears in super admin management queue
+        mvc.perform(get("/api/v1/events/management")
+                        .cookie(cookieFor(superAdmin)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Confidential Research Symposium")));
+
+        // 4. Update the draft
+        String updatePayload = """
+            {
+                "title": "Annual Research Symposium 2026",
+                "description": "Updated event description",
+                "location": "Auditorium Main",
+                "startAt": "%s",
+                "endAt": "%s",
+                "targetType": "GLOBAL"
+            }
+            """.formatted(startAt, endAt);
+
+        mvc.perform(put("/api/v1/events/" + eventId)
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DRAFT"))
+                .andExpect(jsonPath("$.data.title").value("Annual Research Symposium 2026"));
+
+        // 5. Publish the event
+        mvc.perform(post("/api/v1/events/" + eventId + "/publish")
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+
+        // 6. Now published event is visible in public feed
+        mvc.perform(get("/api/v1/events"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Annual Research Symposium 2026")));
+    }
+
+    @Test
+    @Transactional
+    void adminPasswordChangeRevokesActiveRefreshTokens() throws Exception {
+        User superAdmin = newUser("superadmin", Role.SUPER_ADMIN);
+        User user = newUser("session-victim", Role.FACULTY);
+        user.setPasswordHash(passwordEncoder.encode("InitialPassword123!"));
+        users.saveAndFlush(user);
+
+        // 1. User logs in and receives an active session
+        var session = authService.login(user.getEmail(), "InitialPassword123!");
+        assertThat(session.rawRefreshToken()).isNotBlank();
+
+        // 2. Refresh token works before password change
+        var refreshed = authService.refresh(session.rawRefreshToken());
+        assertThat(refreshed.accessToken()).isNotBlank();
+
+        // 3. Admin changes the user's password
+        String updatePayload = """
+            {
+                "password": "NewAdminAssignedPassword123!"
+            }
+            """;
+        mvc.perform(put("/api/v1/admin/users/" + user.getPublicId())
+                        .with(csrf())
+                        .cookie(cookieFor(superAdmin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload))
+                .andExpect(status().isOk());
+
+        // 4. Old refresh tokens are now revoked / invalidated
+        assertThatThrownBy(() -> authService.refresh(session.rawRefreshToken()))
+                .isInstanceOf(ResponseStatusException.class);
+        assertThatThrownBy(() -> authService.refresh(refreshed.rawRefreshToken()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        // 5. User can no longer log in with old password
+        assertThatThrownBy(() -> authService.login(user.getEmail(), "InitialPassword123!"))
+                .isInstanceOf(ResponseStatusException.class);
+
+        // 6. User can successfully log in with new password
+        var newSession = authService.login(user.getEmail(), "NewAdminAssignedPassword123!");
+        assertThat(newSession.rawRefreshToken()).isNotBlank();
     }
 }

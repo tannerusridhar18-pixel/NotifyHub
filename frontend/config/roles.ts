@@ -101,6 +101,7 @@ export function getRoleConfig(role?: string | null, roleLevel?: number | null): 
 }
 
 export function getRoleRoute(role?: string | null, roleLevel?: number | null): string {
-  const config = getRoleConfig(role, roleLevel);
+  const normalized = normalizeRoleKey(role);
+  const config = normalized ? ROLE_CONFIGS[normalized] : null;
   return config ? config.route : "/access-denied";
 }

@@ -131,4 +131,32 @@ class AuthServiceTest {
         assertThat(user.getPasswordHash()).isNotEqualTo("Password1");
         assertThat(invitation.getUsedAt()).isNotNull();
     }
+
+    @Test
+    void safeMessageRedactsPasswordsTokensAndBearerCredentials() {
+        RuntimeException ex = new RuntimeException("SMTP send failed: password=supersecret123, token=abcdef987654321, Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.test");
+        String sanitized = AuthService.safeMessage(ex);
+
+        assertThat(sanitized).doesNotContain("supersecret123");
+        assertThat(sanitized).doesNotContain("abcdef987654321");
+        assertThat(sanitized).doesNotContain("eyJhbGciOiJIUzI1NiJ9.test");
+        assertThat(sanitized).contains("password=***");
+        assertThat(sanitized).contains("token=***");
+        assertThat(sanitized).contains("Bearer ***");
+    }
+
+    @Test
+    void safeMessageHandlesBlankOrNullMessage() {
+        assertThat(AuthService.safeMessage(new RuntimeException())).isEqualTo("RuntimeException");
+        assertThat(AuthService.safeMessage(new RuntimeException("   "))).isEqualTo("RuntimeException");
+    }
+
+    @Test
+    void requestPasswordResetSuppressesMailExceptionAndLogsSafely() {
+        when(users.findByEmailIgnoreCase("student@example.edu")).thenReturn(Optional.of(user));
+        doThrow(new RuntimeException("SMTP transport error password=secret123")).when(resetEmail).send(anyString(), anyString(), anyLong());
+
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> service.requestPasswordReset("student@example.edu"));
+        verify(resetTokens).save(any(PasswordResetToken.class));
+    }
 }

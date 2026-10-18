@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { announcements, currentUser, logout, upcomingEvents, type CurrentUser } from "@/lib/api";
-import type { Announcement, EventItem } from "@/types";
+import dynamic from "next/dynamic";
+import { currentUser, logout, type CurrentUser } from "@/lib/api";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import EventCard from "@/components/EventCard";
 import { Empty, ErrorState } from "@/components/States";
@@ -12,18 +12,41 @@ import { cx } from "@/components/ui/classes";
 import Counter from "@/components/ui/Counter";
 import Reveal from "@/components/ui/Reveal";
 
-import StudentDashboardView from "@/components/dashboards/StudentDashboardView";
-import FacultyDashboardView from "@/components/dashboards/FacultyDashboardView";
-import HodDashboardView from "@/components/dashboards/HodDashboardView";
-import PrincipalDashboardView from "@/components/dashboards/PrincipalDashboardView";
-import DeanDashboardView from "@/components/dashboards/DeanDashboardView";
-import DepartmentAdminDashboardView from "@/components/dashboards/DepartmentAdminDashboardView";
 import { getRoleRoute, normalizeRoleKey } from "@/config/roles";
+
+function DashboardViewLoading() {
+  return (
+    <div className="grid min-h-screen place-content-center place-items-center gap-4 bg-bg text-ink" role="status" aria-live="polite">
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand via-brand-light to-brand-2 text-white font-black shadow-glow animate-spin-slow text-xl">
+        ◈
+      </div>
+      <p className="text-sm font-bold tracking-wide text-muted">Loading your campus workspace…</p>
+    </div>
+  );
+}
+
+const StudentDashboardView = dynamic(() => import("@/components/dashboards/StudentDashboardView"), {
+  loading: DashboardViewLoading,
+});
+const FacultyDashboardView = dynamic(() => import("@/components/dashboards/FacultyDashboardView"), {
+  loading: DashboardViewLoading,
+});
+const HodDashboardView = dynamic(() => import("@/components/dashboards/HodDashboardView"), {
+  loading: DashboardViewLoading,
+});
+const PrincipalDashboardView = dynamic(() => import("@/components/dashboards/PrincipalDashboardView"), {
+  loading: DashboardViewLoading,
+});
+const DeanDashboardView = dynamic(() => import("@/components/dashboards/DeanDashboardView"), {
+  loading: DashboardViewLoading,
+});
+const DepartmentAdminDashboardView = dynamic(
+  () => import("@/components/dashboards/DepartmentAdminDashboardView"),
+  { loading: DashboardViewLoading }
+);
 
 export default function RoleDashboard({ role }: { role?: string }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
-  const [anns, setAnns] = useState<Announcement[]>([]);
-  const [events, setEvents] = useState<EventItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -51,10 +74,7 @@ export default function RoleDashboard({ role }: { role?: string }) {
         return;
       }
 
-      const [a, e] = await Promise.all([announcements({ size: 8 }), upcomingEvents(0, 6)]);
       setUser(u);
-      setAnns(a.content || []);
-      setEvents(e.content || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load your dashboard.");
     } finally {

@@ -46,7 +46,7 @@ public class InvitationEmailService {
             log.info("NotifyHub SMTP connection/authentication validated successfully for {}:{}.", sender.getHost(), sender.getPort());
         } catch (Exception ex) {
             log.error("NotifyHub SMTP authentication failed for {}:{}: {}. Invitation creation will remain available; configure valid SMTP credentials (for Gmail, use an App Password with 2-Step Verification) before expecting invitation emails to send.",
-                    sender.getHost(), sender.getPort(), safeMessage(ex), ex);
+                    sender.getHost(), sender.getPort(), safeMessage(ex));
         }
     }
 
@@ -63,6 +63,9 @@ public class InvitationEmailService {
 
     private String safeMessage(Exception ex) {
         String message = ex.getMessage();
-        return message == null || message.isBlank() ? ex.getClass().getSimpleName() : message;
+        if (message == null || message.isBlank()) return ex.getClass().getSimpleName();
+        return message
+                .replaceAll("(?i)(password|secret|token|cred(ential)?s?)[=:][^\\s,;]+", "$1=***")
+                .replaceAll("(?i)(bearer\\s+)[a-zA-Z0-9._~+/-]+", "$1***");
     }
 }

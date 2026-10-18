@@ -62,3 +62,33 @@ desktop.ini
 
 docs/
 *.tsbuildinfo
+
+### ---- Local development & audit artifacts (added 2026-10-18) ----
+VNOTIFY_*_REPORT.md
+VNOTIFY_*_AUDIT.md
+VNOTIFY_FINAL_READINESS_REPORT.md
+VNOTIFY_FINAL_SECURITY_CLOSURE_REPORT.md
+VNOTIFY_LOG_SECURITY_AUDIT.md
+NOTIFYHUB_AUDIT_REPORT.md
+OPERATIONS_BACKUP_AND_DR_RUNBOOK.md
+PRODUCTION_READINESS_REPORT.md
+PROGRESS.md
+*.hprof
+*.jtl
+*.jks
+*.p12
+test-results/
+playwright-report/
+
+### ---- Load testing tools, scripts, binaries & artifacts ----
+load-tests/
+load-testing-tools/
+LOAD_TEST_REPORT.md
+k6.exe
+k6
+*k6*.exe
+*k6*.zip
+*k6*.tar.gz
+load-test-*.json
+load-test-report*.md
+

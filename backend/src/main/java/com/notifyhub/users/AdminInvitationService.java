@@ -30,6 +30,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class AdminInvitationService {
     private final UserRepository users;
     private final RoleRepository roles;
@@ -186,7 +187,111 @@ public class AdminInvitationService {
         invitation.setEmailStatus(InvitationEmailStatus.PENDING);
         invitations.save(invitation);
         events.publishEvent(new InvitationCreatedEvent(invitation.getId(), user.getEmail(), user.getEffectiveRoleName(), rawToken, invitation.getExpiresAt()));
-        return new InvitationResult(invitation.getId().toString(), user.getPublicId().toString(), user.getEmail(), user.getEffectiveRoleName(), invitation.getExpiresAt());
+        return new InvitationResult(
+                invitation.getId().toString(),
+                user.getPublicId().toString(),
+                user.getEmail(),
+                user.getEffectiveRoleName(),
+                invitation.getExpiresAt(),
+                invitation.getEmailStatus() != null ? invitation.getEmailStatus().name() : "PENDING",
+                invitation.getEmailError()
+        );
+    }
+
+    @Transactional
+    public InvitationResult resend(String adminUsername, UUID invitationId) {
+        User caller = admin(adminUsername);
+        Invitation invitation = invitations.findById(invitationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found."));
+
+        User user = invitation.getUser();
+        if (invitation.getUsedAt() != null || invitation.getStatus() == InvitationStatus.USED
+                || (user != null && user.getAccountStatus() == AccountStatus.ACTIVE && invitation.getStatus() != InvitationStatus.PENDING)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Invitation has already been accepted and activated.");
+        }
+
+        if (caller.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())) {
+            Long callerDeptId = caller.getDepartmentEntity() == null ? null : caller.getDepartmentEntity().getId();
+            Long userDeptId = user.getDepartmentEntity() == null ? null : user.getDepartmentEntity().getId();
+            if (callerDeptId == null || !callerDeptId.equals(userDeptId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins may only resend invitations for their own department.");
+            }
+        }
+
+        String rawToken = secureTokens.rawToken();
+        invitation.setTokenHash(secureTokens.hash(rawToken));
+        invitation.setExpiresAt(Instant.now().plus(invitationHours, ChronoUnit.HOURS));
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setEmailStatus(InvitationEmailStatus.PENDING);
+        invitation.setEmailError(null);
+        invitations.save(invitation);
+
+        events.publishEvent(new InvitationCreatedEvent(invitation.getId(), user.getEmail(), user.getEffectiveRoleName(), rawToken, invitation.getExpiresAt()));
+
+        return new InvitationResult(
+                invitation.getId().toString(),
+                user.getPublicId().toString(),
+                user.getEmail(),
+                user.getEffectiveRoleName(),
+                invitation.getExpiresAt(),
+                invitation.getEmailStatus().name(),
+                invitation.getEmailError()
+        );
+    }
+
+    @Transactional
+    public void delete(String adminUsername, UUID invitationId) {
+        User caller = admin(adminUsername);
+        Invitation invitation = invitations.findById(invitationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found."));
+
+        User user = invitation.getUser();
+        if (invitation.getUsedAt() != null || invitation.getStatus() == InvitationStatus.USED
+                || (user != null && user.getAccountStatus() == AccountStatus.ACTIVE && invitation.getStatus() != InvitationStatus.PENDING)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot delete an invitation that has already been accepted and activated.");
+        }
+
+        if (caller.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())) {
+            Long callerDeptId = caller.getDepartmentEntity() == null ? null : caller.getDepartmentEntity().getId();
+            Long userDeptId = user == null || user.getDepartmentEntity() == null ? null : user.getDepartmentEntity().getId();
+            if (callerDeptId == null || !callerDeptId.equals(userDeptId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins may only delete invitations for their own department.");
+            }
+        }
+
+        invitations.delete(invitation);
+        invitations.flush();
+
+        if (user != null && user.getAccountStatus() == AccountStatus.INVITED) {
+            boolean otherInvitationsExist = invitations.findAll().stream()
+                    .anyMatch(i -> !java.util.Objects.equals(i.getId(), invitationId) && i.getUser() != null && java.util.Objects.equals(i.getUser().getId(), user.getId()));
+            if (!otherInvitationsExist) {
+                students.findByUserId(user.getId()).ifPresent(sp -> {
+                    if (sp.getRoom() != null) {
+                        Room r = sp.getRoom();
+                        if (r.getCurrentOccupancy() > 0) {
+                            r.setCurrentOccupancy(r.getCurrentOccupancy() - 1);
+                            rooms.saveAndFlush(r);
+                        }
+                    }
+                    students.delete(sp);
+                    students.flush();
+                });
+                faculty.findByUserId(user.getId()).ifPresent(fp -> {
+                    faculty.delete(fp);
+                    faculty.flush();
+                });
+                var assignments = userRoleAssignments.findByUserId(user.getId());
+                if (assignments != null && !assignments.isEmpty()) {
+                    userRoleAssignments.deleteAll(assignments);
+                    userRoleAssignments.flush();
+                }
+                users.delete(user);
+                users.flush();
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -195,26 +300,34 @@ public class AdminInvitationService {
         Long departmentId = (caller.getRole() == Role.DEPARTMENT_ADMIN || "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName()))
                 && caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
         Instant now = Instant.now();
-        return invitations.findAllByOrderByCreatedAtDesc().stream().map(invitation -> {
-            InvitationStatus status = invitation.getUsedAt() != null ? InvitationStatus.USED
-                    : invitation.getExpiresAt().isBefore(now) ? InvitationStatus.EXPIRED : InvitationStatus.PENDING;
-            User u = invitation.getUser();
-            return new InvitationView(
-                    invitation.getId() != null ? invitation.getId().toString() : "",
-                    u != null ? u.getEmail() : "",
-                    u != null ? u.getEffectiveRoleName() : "STUDENT",
-                    u != null ? u.getDepartment() : null,
-                    status.name(),
-                    invitation.getEmailStatus() != null ? invitation.getEmailStatus().name() : "PENDING",
-                    invitation.getExpiresAt(),
-                    invitation.getCreatedAt(),
-                    invitation.getUsedAt(),
-                    u != null && u.getPublicId() != null ? u.getPublicId().toString() : null
-            );
-        }).filter(view -> departmentId == null || java.util.Objects.equals(
-            users.findByPublicId(view.userPublicId() == null ? null : java.util.UUID.fromString(view.userPublicId()))
-                .map(u -> u.getDepartmentEntity() == null ? null : u.getDepartmentEntity().getId()).orElse(null), departmentId))
-            .toList();
+        return invitations.findAllByOrderByCreatedAtDesc().stream()
+                .filter(invitation -> {
+                    User u = invitation.getUser();
+                    boolean isActivated = invitation.getUsedAt() != null
+                            || invitation.getStatus() == InvitationStatus.USED
+                            || (u != null && u.getAccountStatus() == AccountStatus.ACTIVE && invitation.getStatus() != InvitationStatus.PENDING);
+                    return !isActivated;
+                })
+                .map(invitation -> {
+                    InvitationStatus status = invitation.getExpiresAt().isBefore(now) ? InvitationStatus.EXPIRED : InvitationStatus.PENDING;
+                    User u = invitation.getUser();
+                    return new InvitationView(
+                            invitation.getId() != null ? invitation.getId().toString() : "",
+                            u != null ? u.getEmail() : "",
+                            u != null ? u.getEffectiveRoleName() : "STUDENT",
+                            u != null ? u.getDepartment() : null,
+                            status.name(),
+                            invitation.getEmailStatus() != null ? invitation.getEmailStatus().name() : "PENDING",
+                            invitation.getExpiresAt(),
+                            invitation.getCreatedAt(),
+                            invitation.getUsedAt(),
+                            u != null && u.getPublicId() != null ? u.getPublicId().toString() : null,
+                            invitation.getEmailError()
+                    );
+                }).filter(view -> departmentId == null || java.util.Objects.equals(
+                    users.findByPublicId(view.userPublicId() == null ? null : java.util.UUID.fromString(view.userPublicId()))
+                        .map(u -> u.getDepartmentEntity() == null ? null : u.getDepartmentEntity().getId()).orElse(null), departmentId))
+                .toList();
     }
 
     private void createStudent(User user, ProfileRequest request) {
@@ -284,10 +397,17 @@ public class AdminInvitationService {
         }
     }
     public record ProfileRequest(String studentId, String facultyId, String name, String phone, String personalEmail, Long departmentId, Long branchId, Long sectionId, Integer year, Integer semester, String batch, Boolean hosteller, Long hostelId, Long blockId, Long roomId, String designation, Long homeDepartmentId, java.util.List<Long> subDepartmentIds) { }
-    public record InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt) { }
-    public record InvitationView(String invitationId, String email, String role, String department, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt, String userPublicId) {
+    public record InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt, String emailStatus, String emailError) {
+        public InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt) {
+            this(invitationId, userPublicId, email, role, expiresAt, "PENDING", null);
+        }
+    }
+    public record InvitationView(String invitationId, String email, String role, String department, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt, String userPublicId, String emailError) {
         public InvitationView(String invitationId, String email, String role, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt) {
-            this(invitationId, email, role, null, status, emailStatus, expiresAt, createdAt, usedAt, null);
+            this(invitationId, email, role, null, status, emailStatus, expiresAt, createdAt, usedAt, null, null);
+        }
+        public InvitationView(String invitationId, String email, String role, String department, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt, String userPublicId) {
+            this(invitationId, email, role, department, status, emailStatus, expiresAt, createdAt, usedAt, userPublicId, null);
         }
     }
 }

@@ -7,8 +7,15 @@ spring:
     properties:
       mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
       mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:true}
+      mail.smtp.starttls.required: ${MAIL_SMTP_STARTTLS_REQUIRED:false}
+      mail.smtp.ssl.enable: ${MAIL_SMTP_SSL_ENABLE:false}
+      mail.smtp.connectiontimeout: ${MAIL_SMTP_CONN_TIMEOUT:5000}
+      mail.smtp.timeout: ${MAIL_SMTP_TIMEOUT:5000}
+      mail.smtp.writetimeout: ${MAIL_SMTP_WRITE_TIMEOUT:5000}
   config:
-    import: optional:file:./application-local.yml
+    import:
+      - optional:file:./application-local.yml
+      - optional:file:./backend/application-local.yml
   application:
     name: notifyhub-backend
   datasource:
@@ -48,10 +55,14 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+
 
 notifyhub:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
-  jwt-secret: ${JWT_SECRET:"NotifyHubProjectSecretKeyApplicationCollege"}
+  jwt-secret: ${JWT_SECRET:}
   jwt-access-minutes: ${JWT_ACCESS_MINUTES:15}
   jwt-refresh-days: ${JWT_REFRESH_DAYS:7}
   password-reset-minutes: ${PASSWORD_RESET_MINUTES:30}

@@ -8,4 +8,11 @@ import java.time.Instant;
  @Column(nullable=false) private String action; @Column(name="target_type",nullable=false) private String targetType; @Column(name="target_id",nullable=false) private String targetId;
  @Column(columnDefinition="json") private String metadata; @Column(nullable=false) private Instant timestamp;
  @PrePersist void pre(){if(timestamp==null) timestamp=Instant.now();} public AuditLog(){} public AuditLog(User a,String ac,String tt,String ti,String m){actor=a;action=ac;targetType=tt;targetId=ti;metadata=m;}
+ public Long getId(){return id;}
+ public User getActor(){return actor;}
+ public String getAction(){return action;}
+ public String getTargetType(){return targetType;}
+ public String getTargetId(){return targetId;}
+ public String getMetadata(){return metadata;}
+ public Instant getTimestamp(){return timestamp;}
 }

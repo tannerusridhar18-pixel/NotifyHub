@@ -1,24 +1,39 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
+  safeUrl,
   adminQueries,
   answerQuery,
   currentUser,
   managedAnnouncements,
   managedEvents,
+  departmentManagedAnnouncements,
+  departmentManagedEvents,
+  myAnnouncements,
+  myEvents,
   createAnnouncement,
   publishAnnouncement,
   unpublishAnnouncement,
   archiveAnnouncement,
+  unarchiveAnnouncement,
   deleteAnnouncement,
   createEvent,
+  updateEvent,
   publishEvent,
   unpublishEvent,
   cancelEvent,
+  archiveEvent,
+  unarchiveEvent,
   deleteEvent,
   deleteQuery,
   createInvitation,
+  resendInvitation,
+  deleteInvitation,
+  adminInvitations,
+  type InvitationView,
   invitableRoles,
   structureDepartments,
   structureBranches,
@@ -26,27 +41,40 @@ import {
   structureHostels,
   structureBlocks,
   structureRooms,
+  eventRegistrations,
+  type EventRegistration,
 } from "@/lib/api";
 import type { StructureDepartment, StructureBranch, StructureSection, StructureHostel, StructureBlock, StructureRoom, InvitableRole } from "@/lib/api";
-import type { Announcement, CampusQuery, EventItem, TargetType } from "@/types";
-import { ErrorState, Empty } from "@/components/States";
+import type { Announcement, CampusQuery, EventItem, Role, TargetType } from "@/types";
+import { ErrorState, Empty, Loading } from "@/components/States";
 import { Toast } from "@/components/Toast";
 import { StatusBadge, SoftBadge } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Counter from "@/components/ui/Counter";
 import Field from "@/components/ui/Field";
-import DetailModal from "@/components/ui/DetailModal";
 import { inputBase, textareaBase, cx } from "@/components/ui/classes";
-import EventRegistrationFields from "@/components/EventRegistrationFields";
+import { isGlobalAdminRole } from "@/components/adminAccess";
+import EventRegistrationManager from "@/components/EventRegistrationManager";
 
-const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
+type ComposerTargetType = TargetType | "DEPARTMENT_HOD";
+
+const DetailModal = dynamic(() => import("@/components/ui/DetailModal"), {
+  loading: () => <Loading label="Opening details…" />,
+});
+const EventRegistrationFields = dynamic(() => import("@/components/EventRegistrationFields"), {
+  loading: () => (
+    <div className="mb-4 h-28 animate-pulse rounded-lg border border-border bg-surface-2" aria-hidden="true" />
+  ),
+});
+
+const blankA = { title: "", content: "", urgent: false, photoUrl: "", targetType: "GLOBAL" as ComposerTargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
 const blankE = {
   title: "",
   description: "",
   location: "",
   startAt: "",
   endAt: "",
-  targetType: "GLOBAL" as TargetType,
+  targetType: "GLOBAL" as ComposerTargetType,
   departmentId: "",
   branchId: "",
   sectionId: "",
@@ -58,6 +86,19 @@ const blankE = {
   registrationEnabled: false,
   registrationDeadline: "",
 };
+
+function toDateTimeLocal(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 const blankInvite = {
   email: "",
   role: "STUDENT",
@@ -75,21 +116,33 @@ const blankInvite = {
   blockId: "",
   roomId: "",
 };
-type Tab = "announcements" | "events" | "queries" | "people";
-
-export default function DashboardClient() {
+type Tab = "announcements" | "events" | "registrations" | "queries" | "people";
+export default function DashboardClient({ departmentScoped = false, initialTab = "announcements" }: { departmentScoped?: boolean; initialTab?: Tab }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("announcements");
+  const [selectedRegistrationEventId, setSelectedRegistrationEventId] = useState<number | null>(null);
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return initialTab;
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    if (departmentScoped) {
+      return requestedTab === "registrations" ? "registrations" : initialTab;
+    }
+    return requestedTab === "events" || requestedTab === "announcements" || requestedTab === "registrations" || requestedTab === "queries" || requestedTab === "people"
+      ? (requestedTab as Tab)
+      : "announcements";
+  });
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [evs, setEvs] = useState<EventItem[]>([]);
   const [queries, setQueries] = useState<CampusQuery[]>([]);
   const [modalItem, setModalItem] = useState<{ type: "announcement"; data: Announcement } | { type: "event"; data: EventItem } | { type: "query"; data: CampusQuery } | null>(null);
   const [identity, setIdentity] = useState("");
+  const [scopeDepartmentId, setScopeDepartmentId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  const [a, setA] = useState(blankA);
-  const [ev, setEv] = useState(blankE);
+  const [a, setA] = useState(() => ({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankA.targetType }));
+  const [ev, setEv] = useState(() => ({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" as TargetType : blankE.targetType }));
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [eventFormError, setEventFormError] = useState("");
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [invite, setInvite] = useState(blankInvite);
   const [departments, setDepartments] = useState<StructureDepartment[]>([]);
@@ -99,19 +152,26 @@ export default function DashboardClient() {
   const [blocks, setBlocks] = useState<StructureBlock[]>([]);
   const [rooms, setRooms] = useState<StructureRoom[]>([]);
   const [invitableRoleList, setInvitableRoleList] = useState<InvitableRole[]>([]);
+  const [registrationRows, setRegistrationRows] = useState<Record<number, EventRegistration[]>>({});
+  const [registrationLoading, setRegistrationLoading] = useState<number | null>(null);
+
+  const [invitationList, setInvitationList] = useState<InvitationView[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [x, y, z, d, b, s, h, bl, r, rl] = await Promise.all([
-      managedAnnouncements(),
-      managedEvents(),
-      adminQueries(),
-      structureDepartments(),
+    const [x, y, z, d, b, s, h, bl, r, rl, invs] = await Promise.all([
+      departmentScoped ? departmentManagedAnnouncements() : managedAnnouncements(),
+      departmentScoped ? departmentManagedEvents() : managedEvents(),
+      departmentScoped ? Promise.resolve({ content: [] as CampusQuery[] }) : adminQueries(),
+      departmentScoped ? Promise.resolve([] as StructureDepartment[]) : structureDepartments(),
       structureBranches(),
       structureSections(),
-      structureHostels(),
-      structureBlocks(),
-      structureRooms(),
-      invitableRoles().catch(() => []),
+      departmentScoped ? Promise.resolve([] as StructureHostel[]) : structureHostels(),
+      departmentScoped ? Promise.resolve([] as StructureBlock[]) : structureBlocks(),
+      departmentScoped ? Promise.resolve([] as StructureRoom[]) : structureRooms(),
+      departmentScoped ? Promise.resolve([] as InvitableRole[]) : invitableRoles().catch(() => []),
+      adminInvitations().catch(() => [] as InvitationView[]),
     ]);
     setAnns(x.content);
     setEvs(y.content);
@@ -123,7 +183,8 @@ export default function DashboardClient() {
     setBlocks(bl);
     setRooms(r);
     setInvitableRoleList(rl);
-  }, []);
+    setInvitationList(invs);
+  }, [departmentScoped]);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,11 +192,12 @@ export default function DashboardClient() {
       try {
         const u = await currentUser();
         if (cancelled) return;
-        if (!u || u.roleLevel !== 0) {
+        if (!u || (departmentScoped ? u.role !== "DEPARTMENT_ADMIN" : !isGlobalAdminRole(u.role))) {
           router.replace("/");
           return;
         }
         setIdentity(u.email);
+        setScopeDepartmentId(u.departmentId ?? u.student?.departmentId ?? u.faculty?.departmentId ?? null);
         try {
           await load();
         } catch (e) {
@@ -148,20 +210,34 @@ export default function DashboardClient() {
     return () => {
       cancelled = true;
     };
-  }, [load, router]);
+  }, [departmentScoped, load, router]);
+
+  async function loadRegistrations(eventId: number) {
+    setRegistrationLoading(eventId);
+    try {
+      const rows = await eventRegistrations(eventId);
+      setRegistrationRows((current) => ({ ...current, [eventId]: rows }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load event registrations.");
+    } finally {
+      setRegistrationLoading(null);
+    }
+  }
 
   const act = useCallback(
-    async (fn: () => Promise<unknown>, success: string) => {
+    async <T,>(fn: () => Promise<T>, success: string): Promise<T | undefined> => {
       setBusy(true);
       setError("");
       try {
-        await fn();
+        const result = await fn();
         await load();
         setToast({ message: success, type: "success" });
+        return result;
       } catch (e) {
         const message = e instanceof Error ? e.message : "Operation failed.";
         setError(message);
         setToast({ message, type: "error" });
+        return undefined;
       } finally {
         setBusy(false);
       }
@@ -194,63 +270,105 @@ export default function DashboardClient() {
         title: a.title,
         content: a.content,
         urgent: a.urgent,
-        targetType: a.targetType,
-        departmentId: a.departmentId ? Number(a.departmentId) : undefined,
+        targetType: a.targetType === "DEPARTMENT_HOD" ? "ROLE" : a.targetType,
+        departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (a.departmentId ? Number(a.departmentId) : undefined),
         branchId: a.branchId ? Number(a.branchId) : undefined,
         sectionId: a.sectionId ? Number(a.sectionId) : undefined,
         hostelId: a.hostelId ? Number(a.hostelId) : undefined,
         userEmail: a.userEmail || undefined,
-        role: a.role || undefined,
+        role: a.targetType === "DEPARTMENT_HOD" ? "HOD" : (a.role || undefined),
+        attachmentUrl: a.photoUrl?.trim() || undefined,
       });
-      setA(blankA);
+      setA({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" : blankA.targetType });
     }, "Announcement draft saved.");
   }
 
   async function submitE(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
+    setEventFormError("");
+
     if (ev.targetType === "ROLE" && !ev.role) {
-      setError("Choose a role for this audience.");
+      const msg = "Choose a role for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
     if (ev.targetType === "DEPARTMENT" && !ev.departmentId) {
-      setError("Choose a department for this audience.");
+      const msg = "Choose a department for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
     if (ev.targetType === "BRANCH" && (!ev.departmentId || !ev.branchId)) {
-      setError("Choose a department and branch for this audience.");
+      const msg = "Choose a department and branch for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
     if (ev.targetType === "SECTION" && (!ev.departmentId || !ev.branchId || !ev.sectionId)) {
-      setError("Choose a department, branch and section for this audience.");
+      const msg = "Choose a department, branch and section for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
-    if (ev.targetType === "HOSTEL" && !ev.hostelId) { setError("Choose a hostel for this audience."); return; }
-    if (ev.targetType === "USER" && !ev.userEmail) { setError("Enter a user email for this audience."); return; }
+    if (ev.targetType === "HOSTEL" && !ev.hostelId) {
+      const msg = "Choose a hostel for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
+      return;
+    }
+    if (ev.targetType === "USER" && !ev.userEmail) {
+      const msg = "Enter a user email for this audience.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
+      return;
+    }
     if (!ev.startAt || !ev.endAt || new Date(ev.endAt) <= new Date(ev.startAt)) {
-      setError("End time must be after start time.");
+      const msg = "End time must be after start time.";
+      setEventFormError(msg);
+      setError(msg);
+      setToast({ message: msg, type: "error" });
       return;
     }
-    await act(async () => {
-      await createEvent({
-        title: ev.title,
-        description: ev.description,
-        location: ev.location,
-        startAt: new Date(ev.startAt).toISOString(),
-        endAt: new Date(ev.endAt).toISOString(),
-        targetType: ev.targetType,
-        departmentId: ev.departmentId ? Number(ev.departmentId) : undefined,
-        branchId: ev.branchId ? Number(ev.branchId) : undefined,
-        sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
-        hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
-        userEmail: ev.userEmail || undefined,
-        role: ev.role || undefined,
-        photoUrl: ev.photoUrl || undefined,
-        externalLink: ev.externalLink || undefined,
-        registrationEnabled: ev.registrationEnabled,
-        registrationDeadline: ev.registrationDeadline ? new Date(ev.registrationDeadline).toISOString() : undefined,
-      });
-      setEv(blankE);
-    }, "Event draft saved.");
+
+    const payload = {
+      title: ev.title.trim(),
+      description: ev.description.trim(),
+      location: ev.location.trim(),
+      startAt: new Date(ev.startAt).toISOString(),
+      endAt: new Date(ev.endAt).toISOString(),
+      targetType: ev.targetType === "DEPARTMENT_HOD" ? ("ROLE" as TargetType) : (ev.targetType as TargetType),
+      departmentId: departmentScoped ? scopeDepartmentId ?? undefined : (ev.departmentId ? Number(ev.departmentId) : undefined),
+      branchId: ev.branchId ? Number(ev.branchId) : undefined,
+      sectionId: ev.sectionId ? Number(ev.sectionId) : undefined,
+      hostelId: ev.hostelId ? Number(ev.hostelId) : undefined,
+      userEmail: ev.userEmail?.trim() || undefined,
+      role: ev.targetType === "DEPARTMENT_HOD" ? ("HOD" as Role) : (ev.role ? (ev.role as Role) : undefined),
+      recipientType: ev.targetType === "DEPARTMENT_HOD" ? "role" : ev.targetType ? ev.targetType.toLowerCase() : "all",
+      photoUrl: ev.photoUrl?.trim() || undefined,
+      externalLink: ev.externalLink?.trim() || undefined,
+      registrationEnabled: ev.registrationEnabled,
+      registrationDeadline: ev.registrationDeadline ? new Date(ev.registrationDeadline).toISOString() : undefined,
+    };
+
+    const saved = await act(async () => {
+      if (editingEventId) {
+        return await updateEvent(editingEventId, payload);
+      } else {
+        return await createEvent(payload);
+      }
+    }, editingEventId ? "Event draft updated." : "Event draft saved.");
+
+    if (saved) {
+      setEditingEventId(saved.id);
+    }
   }
 
   async function answer(id: number) {
@@ -280,8 +398,10 @@ export default function DashboardClient() {
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
     const selectedRoleObj = invitableRoleList.find((r) => r.name.toUpperCase() === invite.role.toUpperCase());
-    await act(async () => {
-      await createInvitation({
+    setBusy(true);
+    setError("");
+    try {
+      const res = await createInvitation({
         email: invite.email,
         role: invite.role,
         roleId: selectedRoleObj?.id,
@@ -305,7 +425,68 @@ export default function DashboardClient() {
         },
       });
       setInvite(blankInvite);
-    }, "Invitation created. Email delivery is being processed.");
+      await load();
+      if (res?.emailStatus === "FAILED") {
+        setToast({
+          message: `Invitation record saved to database, but email delivery failed (${res.emailError || "SMTP delivery error"}). You can retry delivery anytime.`,
+          type: "error",
+        });
+      } else if (res?.emailStatus === "SENT") {
+        setToast({ message: "Invitation created and email delivered successfully.", type: "success" });
+      } else {
+        setToast({ message: "Invitation created. Email delivery is being processed.", type: "success" });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invitation failed.";
+      setError(message);
+      setToast({ message, type: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResend(invitationId: string, email: string) {
+    setResendingId(invitationId);
+    try {
+      const res = await resendInvitation(invitationId);
+      await load();
+      if (res?.emailStatus === "FAILED") {
+        setToast({
+          message: `Invitation renewed, but email delivery failed (${res.emailError || "SMTP error"}).`,
+          type: "error",
+        });
+      } else {
+        setToast({
+          message: `Invitation email resent successfully to ${email}.`,
+          type: "success",
+        });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to resend invitation.";
+      setToast({ message, type: "error" });
+    } finally {
+      setResendingId(null);
+    }
+  }
+
+  async function handleDelete(invitationId: string, email: string) {
+    if (!window.confirm(`Are you sure you want to cancel and delete the pending invitation for ${email}?`)) {
+      return;
+    }
+    setDeletingId(invitationId);
+    try {
+      await deleteInvitation(invitationId);
+      await load();
+      setToast({
+        message: `Pending invitation for ${email} was deleted successfully.`,
+        type: "success",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete invitation.";
+      setToast({ message, type: "error" });
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const pending = queries.filter((q) => q.status === "OPEN").length;
@@ -315,30 +496,31 @@ export default function DashboardClient() {
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:flex-row">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_12px_rgba(99,102,241,0.2)] backdrop-blur-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-light animate-pulse" />
-            Operations Control Room
-          </span>
-          <h1 className="mt-2 text-[32px] leading-tight sm:text-4xl lg:text-[46px] font-extrabold">
+          <h1 className="text-[32px] leading-tight sm:text-4xl lg:text-[46px] font-extrabold">
             {tab === "announcements" ? "Campus announcements" : tab === "events" ? "Campus events" : tab === "queries" ? "Questions inbox" : "People & invitations"}
           </h1>
           <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted/90">A focused workspace for publishing, scheduling, and provisioning real-time campus communication.</p>
         </div>
-        <div className="flex items-center gap-3 pt-1">
-          <span className="flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3 py-1.5 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
-            <span className="relative flex h-2 w-2 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
-            </span>
-            System live
-          </span>
-          <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
+        <div className="flex flex-col items-end gap-2 pt-1">
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
+          </div>
+          {departmentScoped && (
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-surface-2/90 px-3.5 py-2 text-xs font-extrabold text-muted shadow-soft backdrop-blur-xl transition hover:border-brand/50 hover:bg-brand-50 hover:text-ink"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Back to Department Dashboard</span>
+            </button>
+          )}
         </div>
       </header>
 
       {error && <ErrorState message={error} onRetry={() => void load().catch((e) => setError(e instanceof Error ? e.message : "Unable to reload."))} />}
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {!departmentScoped && (      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <button
           className={cx(
             "rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover",
@@ -394,22 +576,33 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl">
-        {(["announcements", "events", "queries", "people"] as Tab[]).map((x) => (
-          <button
-            key={x}
-            role="tab"
-            aria-selected={tab === x}
-            className={cx(
-              "whitespace-nowrap rounded-xl px-4 py-2.5 text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200",
-              tab === x ? "bg-brand-50 text-white shadow-soft border border-brand/50" : "text-muted hover:bg-surface/60 hover:text-white"
-            )}
-            onClick={() => setTab(x)}
-          >
-            {x === "people" ? "People & invites" : x[0].toUpperCase() + x.slice(1)}
-          </button>
-        ))}
-      </div>
+      )}
+
+      {(!departmentScoped || initialTab !== "announcements") && (
+        <div role="tablist" className="mb-6 flex w-max max-w-full gap-1.5 overflow-auto rounded-2xl bg-surface-2/90 p-1.5 border border-white/[0.08] backdrop-blur-xl print-hide">
+          {(departmentScoped
+            ? (["events", "registrations"] as Tab[])
+            : (["announcements", "events", "registrations", "queries", "people"] as Tab[])
+          ).map((x) => (
+            <button
+              key={x}
+              role="tab"
+              aria-selected={tab === x}
+              className={cx(
+                "whitespace-nowrap rounded-xl px-4 py-2.5 text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200",
+                tab === x ? "bg-brand-50 text-white shadow-soft border border-brand/50" : "text-muted hover:bg-surface/60 hover:text-white"
+              )}
+              onClick={() => setTab(x)}
+            >
+              {x === "people"
+                ? "People & invites"
+                : x === "registrations"
+                ? "Manage Event Registrations"
+                : x[0].toUpperCase() + x.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
 
 
       {tab === "announcements" && (
@@ -422,12 +615,35 @@ export default function DashboardClient() {
               </div>
               <SoftBadge>DRAFT</SoftBadge>
             </div>
-            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} />
+            <AudienceFields value={a} onChange={(patch) => setA((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} scopeDepartmentId={scopeDepartmentId} />
             <Field label="Title" htmlFor="ann-title" className="mb-4">
               <input id="ann-title" required className={inputBase} maxLength={180} value={a.title} onChange={(e) => setA((v) => ({ ...v, title: e.target.value }))} />
             </Field>
             <Field label="Message" htmlFor="ann-content" className="mb-4">
               <textarea id="ann-content" required className={textareaBase} maxLength={10000} value={a.content} onChange={(e) => setA((v) => ({ ...v, content: e.target.value }))} />
+            </Field>
+            <Field label="Photo URL (Optional)" htmlFor="ann-photo" className="mb-4">
+              <input
+                id="ann-photo"
+                type="url"
+                className={inputBase}
+                value={a.photoUrl}
+                onChange={(e) => setA((v) => ({ ...v, photoUrl: e.target.value }))}
+                placeholder="https://… image link"
+              />
+              {safeUrl(a.photoUrl) && (
+                <div className="mt-2 overflow-hidden rounded-xl border border-white/10 max-w-sm">
+                  <Image
+                    src={safeUrl(a.photoUrl)!}
+                    alt="Announcement preview"
+                    width={400}
+                    height={120}
+                    unoptimized
+                    loader={({ src }) => src}
+                    className="h-24 w-full object-cover"
+                  />
+                </div>
+              )}
             </Field>
             <label className="mb-4 flex items-center gap-2 text-[11px] font-semibold text-muted">
               <input type="checkbox" className="accent-brand" checked={a.urgent} onChange={(e) => setA((v) => ({ ...v, urgent: e.target.checked }))} />
@@ -479,7 +695,14 @@ export default function DashboardClient() {
                               Unpublish
                             </button>
                           )}
-                          {x.status !== "ARCHIVED" && (
+                          {x.status === "ARCHIVED" ? (
+                            <button
+                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
+                              onClick={() => void act(() => unarchiveAnnouncement(x.id), "Announcement unarchived.")}
+                            >
+                              Unarchive
+                            </button>
+                          ) : (
                             <button
                               className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
                               onClick={() => void act(() => archiveAnnouncement(x.id), "Announcement archived.")}
@@ -518,11 +741,26 @@ export default function DashboardClient() {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <span className="text-[11px] font-extrabold text-brand">Scheduler</span>
-                <h2 className="mt-1.5 text-lg">Save an event draft</h2>
+                <h2 className="mt-1.5 text-lg">{editingEventId ? "Edit event draft" : "Save an event draft"}</h2>
               </div>
-              <SoftBadge>DRAFT</SoftBadge>
+              <div className="flex items-center gap-2">
+                {editingEventId && (
+                  <button
+                    type="button"
+                    className="rounded-full border border-white/10 bg-surface-2 px-2.5 py-1 text-[10px] font-bold text-muted hover:text-white transition-colors"
+                    onClick={() => {
+                      setEditingEventId(null);
+                      setEventFormError("");
+                      setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                    }}
+                  >
+                    New draft
+                  </button>
+                )}
+                <SoftBadge>{editingEventId ? `DRAFT #${editingEventId}` : "DRAFT"}</SoftBadge>
+              </div>
             </div>
-            <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} />
+            <AudienceFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} departments={departments} branches={branches} sections={sections} hostels={hostels} departmentScoped={departmentScoped} scopeDepartmentId={scopeDepartmentId} />
             <EventRegistrationFields value={ev} onChange={(patch) => setEv((v) => ({ ...v, ...patch }))} />
             <Field label="Event title" htmlFor="event-title" className="mb-4">
               <input id="event-title" required className={inputBase} maxLength={180} value={ev.title} onChange={(e) => setEv((v) => ({ ...v, title: e.target.value }))} />
@@ -564,7 +802,29 @@ export default function DashboardClient() {
                 onChange={(e) => setEv((v) => ({ ...v, description: e.target.value }))}
               />
             </Field>
-            <Button disabled={busy}>{busy ? "Saving…" : "Save draft"}</Button>
+            {eventFormError && (
+              <div className="mb-4 rounded-xl border border-danger/40 bg-danger-soft/30 px-3.5 py-2.5 text-xs font-semibold text-danger">
+                {eventFormError}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={busy}>
+                {busy ? "Saving…" : editingEventId ? "Save draft changes" : "Save draft"}
+              </Button>
+              {editingEventId && (
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-muted hover:text-white transition-colors"
+                  onClick={() => {
+                    setEditingEventId(null);
+                    setEventFormError("");
+                    setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                  }}
+                >
+                  Cancel editing
+                </button>
+              )}
+            </div>
           </form>
           <section className="min-w-0 rounded-[18px] border border-border bg-surface p-5 shadow-soft">
             <QueueHeader label="Event queue" count={evs.length} />
@@ -590,38 +850,133 @@ export default function DashboardClient() {
                         <td className="border-b border-border p-3 align-top">
                           <StatusBadge status={x.status} />
                         </td>
-                        <td className="flex flex-wrap gap-1.5 border-b border-border p-3 align-top">
-                          {x.status === "DRAFT" && (
-                            <button
-                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
-                              onClick={() => void act(() => publishEvent(x.id), "Event published.")}
-                            >
-                              Publish
-                            </button>
-                          )}
-                          {x.status === "PUBLISHED" && (
-                            <button
-                              className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
-                              onClick={() => void act(() => unpublishEvent(x.id), "Event unpublished.")}
-                            >
-                              Unpublish
-                            </button>
-                          )}
-                          {x.status !== "CANCELLED" && (
-                            <button
-                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
-                              onClick={() => void act(() => cancelEvent(x.id), "Event cancelled.")}
-                            >
-                              Cancel
-                            </button>
-                          )}
-                          {x.status !== "PUBLISHED" && x.status !== "CANCELLED" && (
-                            <button
-                              className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
-                              onClick={() => void act(() => deleteEvent(x.id), "Event deleted.")}
-                            >
-                              Delete
-                            </button>
+                        <td className="border-b border-border p-3 align-top">
+                          <div className="flex flex-wrap gap-1.5">
+                            {x.status === "DRAFT" && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light hover:bg-brand/20 transition-all"
+                                  onClick={() => {
+                                    setEditingEventId(x.id);
+                                    setEventFormError("");
+                                    setEv({
+                                      title: x.title,
+                                      description: x.description,
+                                      location: x.location,
+                                      startAt: toDateTimeLocal(x.startAt),
+                                      endAt: toDateTimeLocal(x.endAt),
+                                      targetType: (x.targetType || (departmentScoped ? "DEPARTMENT" : "GLOBAL")) as ComposerTargetType,
+                                      departmentId: x.departmentId ? String(x.departmentId) : "",
+                                      branchId: x.branchId ? String(x.branchId) : "",
+                                      sectionId: x.sectionId ? String(x.sectionId) : "",
+                                      hostelId: x.hostelId ? String(x.hostelId) : "",
+                                      userEmail: x.userEmail || "",
+                                      role: x.role || "",
+                                      photoUrl: x.photoUrl || "",
+                                      externalLink: x.externalLink || "",
+                                      registrationEnabled: Boolean(x.registrationEnabled),
+                                      registrationDeadline: toDateTimeLocal(x.registrationDeadline),
+                                    });
+                                  }}
+                                >
+                                  Edit draft
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2"
+                                  onClick={() => void act(async () => {
+                                    await publishEvent(x.id);
+                                    if (editingEventId === x.id) {
+                                      setEditingEventId(null);
+                                      setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                                    }
+                                  }, "Event published.")}
+                                >
+                                  Publish
+                                </button>
+                              </>
+                            )}
+                            {x.status === "PUBLISHED" && (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => unpublishEvent(x.id), "Event unpublished.")}>Unpublish</button>
+                            )}
+                            {x.status !== "CANCELLED" && x.status !== "ARCHIVED" && (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => cancelEvent(x.id), "Event cancelled.")}>Cancel</button>
+                            )}
+                            {x.status === "ARCHIVED" ? (
+                              <button className="rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-2" onClick={() => void act(() => unarchiveEvent(x.id), "Event unarchived.")}>Unarchive</button>
+                            ) : (
+                              <button className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]" onClick={() => void act(() => archiveEvent(x.id), "Event archived.")}>Archive</button>
+                            )}
+                            {x.status !== "PUBLISHED" && x.status !== "ARCHIVED" && (
+                              <button
+                                type="button"
+                                className="rounded-lg border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[9px] font-extrabold text-[#ffb4ac]"
+                                onClick={() => void act(async () => {
+                                  await deleteEvent(x.id);
+                                  if (editingEventId === x.id) {
+                                    setEditingEventId(null);
+                                    setEv({ ...blankE, targetType: departmentScoped ? "DEPARTMENT" : blankE.targetType });
+                                  }
+                                }, "Event deleted.")}
+                              >
+                                Delete
+                              </button>
+                            )}
+                            {x.registrationEnabled && (
+                              <button
+                                className="rounded-lg border border-brand/40 bg-brand-50 px-2.5 py-1.5 text-[9px] font-extrabold text-brand-light hover:bg-brand/20 transition-all"
+                                onClick={() => {
+                                  setSelectedRegistrationEventId(x.id);
+                                  setTab("registrations");
+                                }}
+                              >
+                                Manage registrations
+                              </button>
+                            )}
+                          </div>
+                          {x.registrationEnabled && registrationRows[x.id] && (
+                            <div className="mt-3 rounded-xl border border-border bg-surface-2/60 p-3 print-area">
+                              <div className="hidden print:block mb-4 pb-2 border-b border-black text-black">
+                                <h1 className="text-xl font-bold">{x.title}</h1>
+                                <p className="text-xs text-gray-700 mt-1">
+                                  {x.location ? `Location: ${x.location} • ` : ""}
+                                  {x.startAt ? `Date: ${new Date(x.startAt).toLocaleString()}` : ""}
+                                </p>
+                                <p className="text-xs font-semibold text-gray-800 mt-1">
+                                  Registered Attendees ({registrationRows[x.id].length})
+                                </p>
+                              </div>
+                              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 print-hide">
+                                <strong className="text-sm">{registrationRows[x.id].length} registered student{registrationRows[x.id].length === 1 ? "" : "s"}</strong>
+                                <button type="button" className="rounded-lg border border-border px-3 py-1.5 text-[10px] font-extrabold text-muted hover:text-white" onClick={() => window.print()}>Print registration list</button>
+                              </div>
+                              {registrationRows[x.id].length ? (
+                                <div className="overflow-x-auto print:overflow-visible">
+                                  <table className="w-full min-w-[620px] text-left text-[10px]">
+                                    <thead>
+                                      <tr className="border-b border-border text-muted">
+                                        <th className="p-2">Student</th><th className="p-2">Email</th><th className="p-2">Department</th><th className="p-2">Year</th><th className="p-2">Section</th><th className="p-2">Registered At</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {registrationRows[x.id].map((r) => (
+                                        <tr key={r.id} className="border-b border-border">
+                                          <td className="p-2 font-bold">{r.studentName || "—"}</td>
+                                          <td className="p-2">{r.studentEmail}</td>
+                                          <td className="p-2">{r.department || "—"}</td>
+                                          <td className="p-2">{r.year ? `Year ${r.year}` : "—"}</td>
+                                          <td className="p-2">{r.section || "—"}</td>
+                                          <td className="p-2">{new Date(r.registeredAt).toLocaleString()}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted">No students have registered for this event yet.</p>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -638,6 +993,15 @@ export default function DashboardClient() {
             </div>
           </section>
         </div>
+      )}
+
+      {tab === "registrations" && (
+        <EventRegistrationManager
+          departmentScoped={departmentScoped}
+          events={evs}
+          initialEventId={selectedRegistrationEventId}
+          onEventSelect={(id) => setSelectedRegistrationEventId(id)}
+        />
       )}
 
       {tab === "queries" && (
@@ -929,6 +1293,107 @@ export default function DashboardClient() {
               <span className="text-[9px] text-muted">Invitation expiry follows the backend configuration.</span>
             </div>
           </form>
+
+          {/* Active and recent invitations table */}
+          {(() => {
+            const displayedInvitations = invitationList.filter((inv) => inv.status !== "USED");
+            return (
+              <div className="mt-8 border-t border-border pt-6">
+                <QueueHeader label="Sent & Pending Invitations" count={displayedInvitations.length} />
+                {displayedInvitations.length === 0 ? (
+                  <Empty label="No pending invitations." />
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-soft">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-border bg-surface-2 text-[10px] font-extrabold uppercase tracking-wider text-muted">
+                        <tr>
+                          <th className="px-4 py-3">Recipient</th>
+                          <th className="px-4 py-3">Role</th>
+                          <th className="px-4 py-3">Account Status</th>
+                          <th className="px-4 py-3">Email Delivery</th>
+                          <th className="px-4 py-3">Expires At</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {displayedInvitations.map((inv) => (
+                          <tr key={inv.invitationId} className="transition hover:bg-surface-2/50">
+                            <td className="px-4 py-3 font-semibold text-ink">
+                              {inv.email}
+                              {inv.department && (
+                                <span className="block text-[10px] font-normal text-muted">{inv.department}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <SoftBadge>{inv.role}</SoftBadge>
+                            </td>
+                            <td className="px-4 py-3">
+                              <StatusBadge status={inv.status} />
+                            </td>
+                            <td className="px-4 py-3">
+                              {inv.status === "EXPIRED" ? (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2 px-2.5 py-0.5 text-[10px] font-extrabold text-muted">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-muted" />
+                                  Expired
+                                </span>
+                              ) : inv.emailStatus === "SENT" ? (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/40 bg-teal-soft/90 px-2.5 py-0.5 text-[10px] font-extrabold text-teal-light">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-teal-light" />
+                                  Delivered
+                                </span>
+                              ) : inv.emailStatus === "FAILED" ? (
+                                <div className="group relative inline-block">
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-danger/40 bg-danger/10 px-2.5 py-0.5 text-[10px] font-extrabold text-danger cursor-help">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+                                    Delivery Failed
+                                  </span>
+                                  {inv.emailError && (
+                                    <div className="absolute left-0 top-full z-20 mt-1 hidden w-64 rounded-md border border-border bg-surface-3 p-2 text-[10px] text-muted shadow-lg group-hover:block">
+                                      {inv.emailError}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-2.5 py-0.5 text-[10px] font-extrabold text-brand">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+                                  Pending Dispatch
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-muted">
+                              {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className="px-2.5 py-1 text-[11px]"
+                                  disabled={resendingId === inv.invitationId || deletingId === inv.invitationId || busy}
+                                  onClick={() => handleResend(inv.invitationId, inv.email)}
+                                >
+                                  {resendingId === inv.invitationId ? "Resending…" : "Resend"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="px-2.5 py-1 text-[11px] text-danger hover:bg-danger/10 hover:text-danger-light"
+                                  disabled={resendingId === inv.invitationId || deletingId === inv.invitationId || busy}
+                                  onClick={() => handleDelete(inv.invitationId, inv.email)}
+                                >
+                                  {deletingId === inv.invitationId ? "Deleting…" : "Delete"}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </section>
       )}
       <DetailModal item={modalItem} onClose={() => setModalItem(null)} />
@@ -967,17 +1432,37 @@ function AudienceFields({
   branches,
   sections,
   hostels,
+  departmentScoped = false,
+  scopeDepartmentId = null,
 }: {
-  value: { targetType: TargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
+  value: { targetType: ComposerTargetType; departmentId: string; branchId: string; sectionId: string; hostelId: string; userEmail: string; role: string };
   onChange: (v: Partial<typeof value>) => void;
   departments: StructureDepartment[];
   branches: StructureBranch[];
   sections: StructureSection[];
   hostels: StructureHostel[];
+  departmentScoped?: boolean;
+  scopeDepartmentId?: number | null;
 }) {
-  const target = value.targetType;
+  const target = value.targetType as ComposerTargetType;
+  const scopedDepartmentId = scopeDepartmentId ? String(scopeDepartmentId) : value.departmentId;
+  const cseBranch = departmentScoped
+    ? branches.find(
+        (x) =>
+          x.active &&
+          String(x.departmentId) === scopedDepartmentId &&
+          x.name.trim().toUpperCase() === "CSE"
+      )
+    : undefined;
+  const fixedSectionBranchId = departmentScoped ? String(cseBranch?.id ?? "") : value.branchId;
   const filteredBranches = branches.filter((x) => x.active && (!value.departmentId || String(x.departmentId) === value.departmentId));
-  const filteredSections = sections.filter((x) => x.active && (!value.branchId || String(x.branchId) === value.branchId));
+  const filteredSections = sections.filter(
+    (x) =>
+      x.active &&
+      (departmentScoped
+        ? String(x.branchId) === fixedSectionBranchId
+        : (!value.branchId || String(x.branchId) === value.branchId))
+  );
   return (
     <div className="mb-4 rounded-xl border border-border bg-surface-2 p-3">
       <Field label="Audience" htmlFor="audience-target">
@@ -985,35 +1470,68 @@ function AudienceFields({
           id="audience-target"
           className={inputBase}
           value={target}
-          onChange={(e) => onChange({ targetType: e.target.value as TargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" })}
+          onChange={(e) => {
+            const next = e.target.value as ComposerTargetType;
+            onChange({
+              targetType: next,
+              departmentId: departmentScoped ? scopedDepartmentId : "",
+              branchId: departmentScoped && next === "SECTION" ? fixedSectionBranchId : "",
+              sectionId: "",
+              hostelId: "",
+              userEmail: "",
+              role: next === "DEPARTMENT_HOD" ? "HOD" : "",
+            });
+          }}
         >
-          <option value="GLOBAL">Everyone</option>
-          <option value="ROLE">By role</option>
-          <option value="DEPARTMENT">Department</option>
-          <option value="BRANCH">Branch</option>
-          <option value="SECTION">Section</option>
-          <option value="HOSTEL">Hostel</option>
-          <option value="USER">Specific user</option>
+          {departmentScoped ? (
+            <>
+              <option value="DEPARTMENT">Department</option>
+              <option value="SECTION">Section wise</option>
+              <option value="ROLE">By role</option>
+              <option value="USER">Specific user</option>
+              <option value="DEPARTMENT_HOD">Department HOD</option>
+            </>
+          ) : (
+            <>
+              <option value="GLOBAL">Everyone</option>
+              <option value="ROLE">By role</option>
+              <option value="DEPARTMENT">Department</option>
+              <option value="BRANCH">Branch</option>
+              <option value="SECTION">Section</option>
+              <option value="HOSTEL">Hostel</option>
+              <option value="USER">Specific user</option>
+            </>
+          )}
         </select>
       </Field>
       {target === "ROLE" && (
         <Field label="Role" htmlFor="audience-role" className="mt-3">
           <select id="audience-role" className={inputBase} value={value.role} onChange={(e) => onChange({ role: e.target.value })}>
             <option value="">Choose target role</option>
-            <option value="PRINCIPAL">Principal (L1)</option>
-            <option value="DEAN">Dean (L2)</option>
-            <option value="HOD">HOD / Department Heads (L3)</option>
-            <option value="FACULTY">Faculty (L4)</option>
-            <option value="STUDENT">Student (L5)</option>
+            {departmentScoped ? (
+              <>
+                <option value="STUDENT">Student</option>
+                <option value="FACULTY">Faculty</option>
+              </>
+            ) : (
+              <>
+                <option value="PRINCIPAL">Principal (L1)</option>
+                <option value="DEAN">Dean (L2)</option>
+                <option value="HOD">HOD / Department Heads (L3)</option>
+                <option value="FACULTY">Faculty (L4)</option>
+                <option value="STUDENT">Student (L5)</option>
+              </>
+            )}
           </select>
         </Field>
       )}
       {target === "USER" && (
         <Field label="User email" htmlFor="audience-user-email" className="mt-3">
-          <input id="audience-user-email" required type="email" className={inputBase} value={value.userEmail} onChange={(e) => onChange({ userEmail: e.target.value })} placeholder="person@campus.edu" />
+          <input id="audience-user-email" required type="email" className={inputBase} value={value.userEmail} onChange={(e) => onChange({ userEmail: e.target.value })} placeholder="student@campus.edu or faculty@campus.edu" />
         </Field>
       )}
-      {target === "HOSTEL" && (
+      {target === "DEPARTMENT_HOD" && <p className="mt-3 text-[11px] text-muted">This targets the HOD of your department only.</p>}
+      {!departmentScoped && target === "HOSTEL" && (
         <Field label="Hostel" htmlFor="audience-hostel" className="mt-3">
           <select id="audience-hostel" required className={inputBase} value={value.hostelId} onChange={(e) => onChange({ hostelId: e.target.value })}>
             <option value="">Choose hostel</option>
@@ -1021,7 +1539,7 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {target !== "GLOBAL" && target !== "ROLE" && (
+      {!departmentScoped && target !== "GLOBAL" && target !== "ROLE" && target !== "DEPARTMENT_HOD" && (
         <Field label="Department" htmlFor="audience-department" className="mt-3">
           <select
             id="audience-department"
@@ -1039,7 +1557,7 @@ function AudienceFields({
           </select>
         </Field>
       )}
-      {(target === "BRANCH" || target === "SECTION") && (
+      {!departmentScoped && target === "BRANCH" && (
         <Field label="Branch" htmlFor="audience-branch" className="mt-3">
           <select
             id="audience-branch"
@@ -1058,9 +1576,17 @@ function AudienceFields({
           </select>
         </Field>
       )}
+
+      {departmentScoped && target === "SECTION" && (
+        <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm">
+          <span className="font-semibold text-muted">Branch</span>
+          <div className="mt-1 font-bold text-ink">{cseBranch?.name ?? "CSE"}</div>
+          {!cseBranch && <p className="mt-1 text-xs text-danger">CSE branch is not configured for your department.</p>}
+        </div>
+      )}
       {target === "SECTION" && (
         <Field label="Section" htmlFor="audience-section" className="mt-3">
-          <select id="audience-section" required className={inputBase} disabled={!value.branchId} value={value.sectionId} onChange={(e) => onChange({ sectionId: e.target.value })}>
+          <select id="audience-section" required className={inputBase} disabled={departmentScoped ? !cseBranch : !value.branchId} value={value.sectionId} onChange={(e) => onChange({ sectionId: e.target.value })}>
             <option value="">Choose section</option>
             {filteredSections.map((x) => (
               <option key={x.id} value={x.id}>
