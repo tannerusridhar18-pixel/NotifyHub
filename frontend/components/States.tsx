@@ -1,6 +1,6 @@
 import { buttonClasses } from "@/components/ui/Button";
 
-export function Loading({ label = "Loading NotifyHub…" }: { label?: string }) {
+export function Loading({ label = "Loading VNotify…" }: { label?: string }) {
   return (
     <div className="grid place-items-center gap-4 py-20 text-center text-muted">
       <div className="relative grid h-14 w-14 place-items-center rounded-[var(--nh-radius-lg)] bg-brand text-white font-black shadow-glow animate-spin-slow text-xl">

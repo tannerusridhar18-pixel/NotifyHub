@@ -24,7 +24,7 @@ export default function ResetPassword() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!token) {
-      setError("This reset link is missing its token. Open the link from your NotifyHub email.");
+      setError("This reset link is missing its token. Open the link from your VNotify email.");
       return;
     }
     if (form.password !== form.confirm) {
@@ -70,7 +70,7 @@ export default function ResetPassword() {
               <small className="block text-xs text-muted">
                 {token
                   ? "Your recovery token will be verified upon submission."
-                  : "Please click the link inside your NotifyHub recovery email."}
+                  : "Please click the link inside your VNotify recovery email."}
               </small>
             </div>
           </div>

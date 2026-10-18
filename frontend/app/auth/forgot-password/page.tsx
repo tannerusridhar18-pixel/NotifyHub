@@ -33,7 +33,7 @@ export default function ForgotPassword() {
           <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
-            <span>NotifyHub</span>
+            <span>VNotify</span>
           </div>
 
           <div className={styles.eyebrow}>Security Verification</div>

@@ -264,4 +264,128 @@ describe("Phase 1 authentication API contract", () => {
     expect(result.title).toBe("Updated Hackathon");
     expect(result.status).toBe("DRAFT");
   });
+
+  it("fetches event directly by id via getEvent", async () => {
+    const { getEvent } = await import("@/lib/api");
+    const mockEvent = {
+      id: 99,
+      title: "Science Fair",
+      description: "Science Fair projects",
+      location: "Auditorium",
+      startAt: "2026-11-10T10:00:00Z",
+      endAt: "2026-11-10T12:00:00Z",
+      status: "PUBLISHED",
+      photoUrl: "https://example.com/photo.jpg",
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: mockEvent, message: null }), { status: 200 })
+    );
+
+    const event = await getEvent(99);
+    expect(event.id).toBe(99);
+    expect(event.photoUrl).toBe("https://example.com/photo.jpg");
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/events/99"), expect.anything());
+  });
+
+  it("falls back to public events list when getEvent by id fails due to unauthenticated session", async () => {
+    const { getEvent } = await import("@/lib/api");
+    const mockUpcoming = {
+      content: [
+        {
+          id: 101,
+          title: "Robotics Expo",
+          description: "Robotics showcases",
+          location: "Robotics Lab",
+          startAt: "2026-11-12T10:00:00Z",
+          endAt: "2026-11-12T12:00:00Z",
+          status: "PUBLISHED",
+          photoUrl: "https://example.com/robot.jpg",
+        },
+      ],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1,
+    };
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/events/101")) {
+        return new Response(JSON.stringify({ success: false, data: null, message: "Authentication required." }), { status: 401 });
+      }
+      if (urlStr.includes("/events/upcoming")) {
+        return new Response(JSON.stringify({ success: true, data: mockUpcoming, message: null }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ success: true, data: { content: [] }, message: null }), { status: 200 });
+    });
+
+    const event = await getEvent(101);
+    expect(event.id).toBe(101);
+    expect(event.title).toBe("Robotics Expo");
+    expect(event.photoUrl).toBe("https://example.com/robot.jpg");
+  });
+
+  it("createInvitation requests /admin/invitations and returns delivery status", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            invitationId: "inv-123",
+            userPublicId: "usr-456",
+            email: "invited@example.edu",
+            role: "STUDENT",
+            expiresAt: "2026-10-19T12:00:00Z",
+            emailStatus: "SENT",
+            emailError: null,
+          },
+          message: null,
+        }),
+        { status: 201 }
+      )
+    );
+
+    const { createInvitation } = await import("@/lib/api");
+    const result = await createInvitation({
+      email: "invited@example.edu",
+      role: "STUDENT",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/admin/invitations"),
+      expect.objectContaining({ method: "POST", body: expect.stringContaining("invited@example.edu") })
+    );
+    expect(result.invitationId).toBe("inv-123");
+    expect(result.emailStatus).toBe("SENT");
+  });
+
+  it("resendInvitation calls /admin/invitations/{id}/resend", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            invitationId: "inv-123",
+            userPublicId: "usr-456",
+            email: "invited@example.edu",
+            role: "STUDENT",
+            expiresAt: "2026-10-19T12:00:00Z",
+            emailStatus: "SENT",
+            emailError: null,
+          },
+          message: null,
+        }),
+        { status: 200 }
+      )
+    );
+
+    const { resendInvitation } = await import("@/lib/api");
+    const result = await resendInvitation("inv-123");
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/admin/invitations/inv-123/resend"),
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(result.emailStatus).toBe("SENT");
+  });
 });
+

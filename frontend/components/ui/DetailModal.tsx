@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import type { Announcement, CampusQuery, EventItem } from "@/types";
-import { StatusBadge, UrgentBadge } from "@/components/ui/Badge";
+import { AudienceBadge, StatusBadge, UrgentBadge, formatAudienceLabel } from "@/components/ui/Badge";
 import Countdown from "@/components/Countdown";
 import { buttonClasses } from "@/components/ui/Button";
 import { safeUrl } from "@/lib/api";
@@ -126,17 +127,25 @@ export default function DetailModal({
           {item.type === "announcement" && (
             <div>
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-light shadow-[0_0_8px_rgba(124,58,237,0.85)]" />
-                  Target: {item.data.targetType === "GLOBAL" ? "Everyone" : item.data.targetType}
-                </span>
+                <AudienceBadge audience={formatAudienceLabel(item.data)} urgent={item.data.urgent} tone="brand" />
                 {item.data.urgent && <UrgentBadge />}
-                <StatusBadge status={item.data.status} />
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
                 {item.data.title}
               </h2>
+              {safeUrl(item.data.imageUrl || item.data.photoUrl || item.data.attachmentUrl) && (
+                <Image
+                  src={safeUrl(item.data.imageUrl || item.data.photoUrl || item.data.attachmentUrl) ?? ""}
+                  alt=""
+                  width={1200}
+                  height={192}
+                  loader={({ src }) => src}
+                  unoptimized
+                  onClick={(e) => e.preventDefault()}
+                  className="mb-5 h-48 w-full rounded-2xl object-cover"
+                />
+              )}
               <p className="text-xs font-semibold text-muted mb-6">
                 Published on{" "}
                 {item.data.publishedAt
@@ -178,11 +187,7 @@ export default function DetailModal({
           {item.type === "event" && (
             <div>
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-2 shadow-[0_0_8px_rgba(147,51,234,0.85)]" />
-                  Target: {item.data.targetType}
-                </span>
-                <StatusBadge status={item.data.status} />
+                <AudienceBadge audience={formatAudienceLabel(item.data)} tone="violet" />
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
@@ -196,6 +201,7 @@ export default function DetailModal({
                   height={192}
                   loader={({ src }) => src}
                   unoptimized
+                  onClick={(e) => e.preventDefault()}
                   className="mb-5 h-48 w-full rounded-2xl object-cover"
                 />
               )}
@@ -226,7 +232,16 @@ export default function DetailModal({
               <div className="rounded-2xl border border-white/[0.08] bg-surface-2/80 p-5 sm:p-6 text-sm sm:text-base leading-relaxed text-muted/95 whitespace-pre-wrap">
                 {item.data.description}
               </div>
-              {safeUrl(item.data.externalLink) && <a href={safeUrl(item.data.externalLink)} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-brand-light underline">Open event link</a>}
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                {safeUrl(item.data.externalLink) && (
+                  <a href={safeUrl(item.data.externalLink)} target="_blank" rel="noreferrer" className="text-sm font-bold text-brand-light underline">
+                    Open event link
+                  </a>
+                )}
+                <Link href={`/events/${item.data.id}`} onClick={onClose} className="text-sm font-bold text-brand-2-light hover:underline">
+                  View full event page →
+                </Link>
+              </div>
               <EventRegistrationPanel event={item.data} />
             </div>
           )}

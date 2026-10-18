@@ -111,6 +111,7 @@ export default function MyPostsPage() {
                 <form action={(form) => saveAnnouncement(item, form).catch((reason) => setError(reason instanceof Error ? reason.message : "Unable to save announcement."))} className="space-y-3">
                   <input name="title" defaultValue={item.title} className={inputClass} required maxLength={180} />
                   <textarea name="content" defaultValue={item.content} className={`${inputClass} min-h-28`} required maxLength={10000} />
+                  <input name="attachmentUrl" defaultValue={item.attachmentUrl || item.photoUrl || ""} placeholder="Photo / Image URL (optional)" className={inputClass} />
                   <div className="flex gap-2"><button className="rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white" type="submit">Save</button><button className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-muted" type="button" onClick={() => setEditing(null)}>Cancel</button></div>
                 </form>
               ) : <><h2 className="text-xl font-bold">{item.title}</h2><p className="mt-2 whitespace-pre-wrap text-sm text-muted">{item.content}</p><div className="mt-4 flex gap-2"><button className="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-muted hover:text-ink" onClick={() => setEditing(`announcement-${item.id}`)}>Edit</button><button className="rounded-xl border border-red-400/30 px-3 py-2 text-sm font-bold text-red-200" onClick={() => remove("announcement", item.id)}>Delete</button></div></>}

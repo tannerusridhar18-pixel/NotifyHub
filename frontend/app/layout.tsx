@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import SiteShell from "@/components/SiteShell";
 
 export const metadata: Metadata = {
-  title: "NotifyHub — Campus Signal",
+  title: "VNotify — Campus Signal",
   description: "Smart campus announcements, events and student queries.",
 };
 

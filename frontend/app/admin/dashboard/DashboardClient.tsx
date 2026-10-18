@@ -1,8 +1,10 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import {
+  safeUrl,
   adminQueries,
   answerQuery,
   currentUser,
@@ -28,6 +30,9 @@ import {
   deleteEvent,
   deleteQuery,
   createInvitation,
+  resendInvitation,
+  adminInvitations,
+  type InvitationView,
   invitableRoles,
   structureDepartments,
   structureBranches,
@@ -61,7 +66,7 @@ const EventRegistrationFields = dynamic(() => import("@/components/EventRegistra
   ),
 });
 
-const blankA = { title: "", content: "", urgent: false, targetType: "GLOBAL" as ComposerTargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
+const blankA = { title: "", content: "", urgent: false, photoUrl: "", targetType: "GLOBAL" as ComposerTargetType, departmentId: "", branchId: "", sectionId: "", hostelId: "", userEmail: "", role: "" };
 const blankE = {
   title: "",
   description: "",
@@ -149,8 +154,11 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   const [registrationRows, setRegistrationRows] = useState<Record<number, EventRegistration[]>>({});
   const [registrationLoading, setRegistrationLoading] = useState<number | null>(null);
 
+  const [invitationList, setInvitationList] = useState<InvitationView[]>([]);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
-    const [x, y, z, d, b, s, h, bl, r, rl] = await Promise.all([
+    const [x, y, z, d, b, s, h, bl, r, rl, invs] = await Promise.all([
       departmentScoped ? departmentManagedAnnouncements() : managedAnnouncements(),
       departmentScoped ? departmentManagedEvents() : managedEvents(),
       departmentScoped ? Promise.resolve({ content: [] as CampusQuery[] }) : adminQueries(),
@@ -161,6 +169,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
       departmentScoped ? Promise.resolve([] as StructureBlock[]) : structureBlocks(),
       departmentScoped ? Promise.resolve([] as StructureRoom[]) : structureRooms(),
       departmentScoped ? Promise.resolve([] as InvitableRole[]) : invitableRoles().catch(() => []),
+      adminInvitations().catch(() => [] as InvitationView[]),
     ]);
     setAnns(x.content);
     setEvs(y.content);
@@ -172,6 +181,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
     setBlocks(bl);
     setRooms(r);
     setInvitableRoleList(rl);
+    setInvitationList(invs);
   }, [departmentScoped]);
 
   useEffect(() => {
@@ -265,6 +275,7 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         hostelId: a.hostelId ? Number(a.hostelId) : undefined,
         userEmail: a.userEmail || undefined,
         role: a.targetType === "DEPARTMENT_HOD" ? "HOD" : (a.role || undefined),
+        attachmentUrl: a.photoUrl?.trim() || undefined,
       });
       setA({ ...blankA, targetType: departmentScoped ? "DEPARTMENT" : blankA.targetType });
     }, "Announcement draft saved.");
@@ -385,8 +396,10 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
     const selectedRoleObj = invitableRoleList.find((r) => r.name.toUpperCase() === invite.role.toUpperCase());
-    await act(async () => {
-      await createInvitation({
+    setBusy(true);
+    setError("");
+    try {
+      const res = await createInvitation({
         email: invite.email,
         role: invite.role,
         roleId: selectedRoleObj?.id,
@@ -410,7 +423,48 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
         },
       });
       setInvite(blankInvite);
-    }, "Invitation created. Email delivery is being processed.");
+      await load();
+      if (res?.emailStatus === "FAILED") {
+        setToast({
+          message: `Invitation record saved to database, but email delivery failed (${res.emailError || "SMTP delivery error"}). You can retry delivery anytime.`,
+          type: "error",
+        });
+      } else if (res?.emailStatus === "SENT") {
+        setToast({ message: "Invitation created and email delivered successfully.", type: "success" });
+      } else {
+        setToast({ message: "Invitation created. Email delivery is being processed.", type: "success" });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invitation failed.";
+      setError(message);
+      setToast({ message, type: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResend(invitationId: string, email: string) {
+    setResendingId(invitationId);
+    try {
+      const res = await resendInvitation(invitationId);
+      await load();
+      if (res?.emailStatus === "FAILED") {
+        setToast({
+          message: `Invitation renewed, but email delivery failed (${res.emailError || "SMTP error"}).`,
+          type: "error",
+        });
+      } else {
+        setToast({
+          message: `Invitation email resent successfully to ${email}.`,
+          type: "success",
+        });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to resend invitation.";
+      setToast({ message, type: "error" });
+    } finally {
+      setResendingId(null);
+    }
   }
 
   const pending = queries.filter((q) => q.status === "OPEN").length;
@@ -420,24 +474,13 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       <header className="mb-8 flex flex-col items-start justify-between gap-6 sm:flex-row">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand-50/90 px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-brand-light uppercase shadow-[0_0_12px_rgba(99,102,241,0.2)] backdrop-blur-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-light animate-pulse" />
-            Operations Control Room
-          </span>
-          <h1 className="mt-2 text-[32px] leading-tight sm:text-4xl lg:text-[46px] font-extrabold">
+          <h1 className="text-[32px] leading-tight sm:text-4xl lg:text-[46px] font-extrabold">
             {tab === "announcements" ? "Campus announcements" : tab === "events" ? "Campus events" : tab === "queries" ? "Questions inbox" : "People & invitations"}
           </h1>
           <p className="mt-2.5 max-w-[650px] text-[13px] leading-relaxed text-muted/90">A focused workspace for publishing, scheduling, and provisioning real-time campus communication.</p>
         </div>
         <div className="flex flex-col items-end gap-2 pt-1">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2 rounded-full border border-teal-light/40 bg-teal-soft/90 px-3 py-1.5 text-[10px] font-extrabold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
-              <span className="relative flex h-2 w-2 items-center justify-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
-              </span>
-              System live
-            </span>
             <span className="text-[11px] font-semibold text-muted bg-surface-2/90 px-3 py-1.5 rounded-full border border-white/[0.06]">{identity}</span>
           </div>
           {departmentScoped && (
@@ -554,6 +597,29 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
             </Field>
             <Field label="Message" htmlFor="ann-content" className="mb-4">
               <textarea id="ann-content" required className={textareaBase} maxLength={10000} value={a.content} onChange={(e) => setA((v) => ({ ...v, content: e.target.value }))} />
+            </Field>
+            <Field label="Photo URL (Optional)" htmlFor="ann-photo" className="mb-4">
+              <input
+                id="ann-photo"
+                type="url"
+                className={inputBase}
+                value={a.photoUrl}
+                onChange={(e) => setA((v) => ({ ...v, photoUrl: e.target.value }))}
+                placeholder="https://… image link"
+              />
+              {safeUrl(a.photoUrl) && (
+                <div className="mt-2 overflow-hidden rounded-xl border border-white/10 max-w-sm">
+                  <Image
+                    src={safeUrl(a.photoUrl)!}
+                    alt="Announcement preview"
+                    width={400}
+                    height={120}
+                    unoptimized
+                    loader={({ src }) => src}
+                    className="h-24 w-full object-cover"
+                  />
+                </div>
+              )}
             </Field>
             <label className="mb-4 flex items-center gap-2 text-[11px] font-semibold text-muted">
               <input type="checkbox" className="accent-brand" checked={a.urgent} onChange={(e) => setA((v) => ({ ...v, urgent: e.target.checked }))} />
@@ -1203,6 +1269,90 @@ export default function DashboardClient({ departmentScoped = false, initialTab =
               <span className="text-[9px] text-muted">Invitation expiry follows the backend configuration.</span>
             </div>
           </form>
+
+          {/* Active and recent invitations table */}
+          <div className="mt-8 border-t border-border pt-6">
+            <QueueHeader label="Sent & Pending Invitations" count={invitationList.length} />
+            {invitationList.length === 0 ? (
+              <Empty label="No invitations issued yet." />
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-soft">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-border bg-surface-2 text-[10px] font-extrabold uppercase tracking-wider text-muted">
+                    <tr>
+                      <th className="px-4 py-3">Recipient</th>
+                      <th className="px-4 py-3">Role</th>
+                      <th className="px-4 py-3">Account Status</th>
+                      <th className="px-4 py-3">Email Delivery</th>
+                      <th className="px-4 py-3">Expires At</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {invitationList.map((inv) => (
+                      <tr key={inv.invitationId} className="transition hover:bg-surface-2/50">
+                        <td className="px-4 py-3 font-semibold text-ink">
+                          {inv.email}
+                          {inv.department && (
+                            <span className="block text-[10px] font-normal text-muted">{inv.department}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <SoftBadge>{inv.role}</SoftBadge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={inv.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          {inv.emailStatus === "SENT" ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-light/40 bg-teal-soft/90 px-2.5 py-0.5 text-[10px] font-extrabold text-teal-light">
+                              <span className="h-1.5 w-1.5 rounded-full bg-teal-light" />
+                              Delivered
+                            </span>
+                          ) : inv.emailStatus === "FAILED" ? (
+                            <div className="group relative inline-block">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-danger/40 bg-danger/10 px-2.5 py-0.5 text-[10px] font-extrabold text-danger cursor-help">
+                                <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+                                Delivery Failed
+                              </span>
+                              {inv.emailError && (
+                                <div className="absolute left-0 top-full z-20 mt-1 hidden w-64 rounded-md border border-border bg-surface-3 p-2 text-[10px] text-muted shadow-lg group-hover:block">
+                                  {inv.emailError}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-50 px-2.5 py-0.5 text-[10px] font-extrabold text-brand">
+                              <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+                              Pending Dispatch
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-muted">
+                          {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {inv.status === "USED" ? (
+                            <span className="text-[10px] font-bold text-muted">Activated</span>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="px-2.5 py-1 text-[11px]"
+                              disabled={resendingId === inv.invitationId || busy}
+                              onClick={() => handleResend(inv.invitationId, inv.email)}
+                            >
+                              {resendingId === inv.invitationId ? "Resending…" : "Resend"}
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </section>
       )}
       <DetailModal item={modalItem} onClose={() => setModalItem(null)} />

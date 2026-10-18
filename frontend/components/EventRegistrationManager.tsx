@@ -382,7 +382,7 @@ export default function EventRegistrationManager({
                     <div className="flex justify-between items-start">
                       <div>
                         <span className="text-xs font-bold uppercase tracking-wider text-gray-600">
-                          NotifyHub Campus Portal — Event Attendee Roster
+                          VNotify Campus Portal — Event Attendee Roster
                         </span>
                         <h1 className="text-2xl font-bold mt-1">{selectedEvent.title}</h1>
                         <p className="text-xs text-gray-700 mt-1">

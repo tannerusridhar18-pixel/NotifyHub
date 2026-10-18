@@ -40,7 +40,7 @@ export default function UserLogin() {
           <AuthFloatingCards />
           <div className={styles.brand}>
             <span className={styles.brandMark}>◈</span>
-            <span>NotifyHub</span>
+            <span>VNotify</span>
           </div>
 
           <div className={styles.eyebrow}>Unified Campus Identity</div>
@@ -55,7 +55,7 @@ export default function UserLogin() {
               <span className={styles.cardLabelDot} />
               Portal Sign In
             </span>
-            <h2 className={styles.cardTitle}>Continue to NotifyHub</h2>
+            <h2 className={styles.cardTitle}>Continue to VNotify</h2>
             <p className={styles.cardDescription}>Sign in with your registered campus credentials.</p>
 
             <form onSubmit={submit} className={styles.form} suppressHydrationWarning>

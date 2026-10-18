@@ -51,7 +51,7 @@ const featureItems = [
     number: "04",
     label: "Role-aware communication",
     title: "The right information for the right people.",
-    text: "NotifyHub supports targeted communication across roles and academic structures, including departments, branches, sections, hostels, and individual users.",
+    text: "VNotify supports targeted communication across roles and academic structures, including departments, branches, sections, hostels, and individual users.",
     tone: "violet",
   },
 ];
@@ -128,7 +128,7 @@ export default function Home() {
 
             <Reveal delay={180}>
               <p className="nh-hero-subtitle mt-7">
-                NotifyHub brings official announcements, campus events, and urgent updates
+                VNotify brings official announcements, campus events, and urgent updates
                 into one digital campus communication platform.
               </p>
             </Reveal>
@@ -144,7 +144,7 @@ export default function Home() {
                 className={buttonClasses("secondary", "!border-white/10 !bg-white/[.04] !px-7 !py-3.5 !text-base !text-white")}
                 href="/auth/login"
               >
-                Sign in to NotifyHub
+                Sign in to VNotify
               </Link>
             </Reveal>
           </div>
@@ -184,9 +184,9 @@ export default function Home() {
               <div className="nh-product-window">
                 <div className="nh-product-topbar">
                   <div className="flex items-center gap-3">
-                    <span className="nh-product-logo">N</span>
+                    <span className="nh-product-logo">V</span>
                     <div>
-                      <p>NotifyHub</p>
+                      <p>VNotify</p>
                       <span>Campus communication</span>
                     </div>
                   </div>
@@ -250,7 +250,7 @@ export default function Home() {
           <span>Everything your campus needs to communicate clearly</span>
           <h2>One platform for everyday updates and important moments.</h2>
           <p>
-            NotifyHub keeps the public campus signal simple while giving authorized users
+            VNotify keeps the public campus signal simple while giving authorized users
             the tools to publish and manage communication.
           </p>
         </Reveal>
@@ -345,9 +345,9 @@ export default function Home() {
       <section className="nh-final-cta mx-auto w-full max-w-[1240px] px-4 pb-24 sm:px-6 sm:pb-32">
         <Reveal className="nh-cta-panel">
           <div className="nh-cta-glow" aria-hidden="true" />
-          <span>NotifyHub</span>
+          <span>VNotify</span>
           <h2>Keep your campus informed.</h2>
-          <p>Explore the public campus feed or sign in to your NotifyHub workspace.</p>
+          <p>Explore the public campus feed or sign in to your VNotify workspace.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link className={buttonClasses("primary", "!border-0 !bg-[#b8ff5a] !text-[#07100a] !px-7 !py-3.5")} href="/announcements">
               Explore campus updates →

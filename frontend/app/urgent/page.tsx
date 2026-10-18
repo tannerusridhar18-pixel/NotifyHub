@@ -45,14 +45,7 @@ export default function UrgentPage() {
       </div>
 
       <Reveal className="max-w-[760px]">
-        <span className="inline-flex items-center gap-2 rounded-full border border-danger/50 bg-gradient-to-r from-danger-soft via-[#3b121c] to-danger-soft px-3.5 py-1 text-[10px] font-extrabold tracking-widest text-[#ff8ba0] uppercase shadow-[0_0_20px_rgba(244,63,94,0.4)] backdrop-blur-xl animate-pulse-glow">
-          <span className="relative flex h-2 w-2 items-center justify-center">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-85" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-danger" />
-          </span>
-          Priority Broadcast Channel
-        </span>
-        <h1 className="my-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Urgent Campus Alerts</h1>
+        <h1 className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Urgent Campus Alerts</h1>
         <p className="text-base sm:text-lg leading-relaxed text-muted/95">
           Time-critical campus notifications, security advisories, campus emergency notices, and high-priority administrative signals.
         </p>

@@ -1,20 +1,25 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import type { Announcement } from "@/types";
 import { cx } from "@/components/ui/classes";
-import { StatusBadge, UrgentBadge } from "@/components/ui/Badge";
+import { AudienceBadge, UrgentBadge, formatAudienceLabel } from "@/components/ui/Badge";
 import Spotlight from "@/components/ui/Spotlight";
 import { Loading } from "@/components/States";
+import { safeUrl } from "@/lib/api";
 
 const DetailModal = dynamic(() => import("@/components/ui/DetailModal"), {
   loading: () => <Loading label="Opening announcement details…" />,
 });
 
-const targetLabel = (x: Announcement) => (x.targetType === "GLOBAL" ? "Everyone" : x.targetType.toLowerCase());
-
 export default function AnnouncementCard({ item }: { item: Announcement }) {
   const [open, setOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const rawImage = item.imageUrl || item.photoUrl || item.attachmentUrl;
+  const imageUrl = safeUrl(rawImage);
+  const hasImage = Boolean(imageUrl) && !imageError;
 
   return (
     <>
@@ -30,12 +35,31 @@ export default function AnnouncementCard({ item }: { item: Announcement }) {
       >
         <div onClick={() => setOpen(true)}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface-2/95 px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase text-muted transition-[transform,border-color] duration-200 ease-out group-hover:scale-105 group-hover:border-white/25">
-              <span className={cx("h-1.5 w-1.5 rounded-full transition-transform duration-300 group-hover:scale-125", item.urgent ? "bg-danger shadow-[0_0_8px_rgba(255,42,95,0.85)]" : "bg-brand-light shadow-[0_0_8px_rgba(124,58,237,0.85)]")} />
-              {targetLabel(item)}
-            </span>
+            <AudienceBadge audience={formatAudienceLabel(item)} urgent={item.urgent} tone="brand" />
             {item.urgent && <UrgentBadge />}
           </div>
+
+          {hasImage && (
+            <div
+              className="mb-3 overflow-hidden rounded-xl cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(true);
+              }}
+            >
+              <Image
+                src={imageUrl!}
+                alt={item.title}
+                width={1200}
+                height={128}
+                loader={({ src }) => src}
+                unoptimized
+                onError={() => setImageError(true)}
+                className="h-32 w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+              />
+            </div>
+          )}
+
           <h3 className="mb-2 text-xl font-extrabold tracking-tight text-ink [overflow-wrap:anywhere] transition-colors duration-200 group-hover:text-brand">
             {item.title}
           </h3>
@@ -48,17 +72,13 @@ export default function AnnouncementCard({ item }: { item: Announcement }) {
         </div>
 
         <div className="mt-6 pt-3.5 border-t border-white/[0.08] flex items-center justify-between" onClick={() => setOpen(true)}>
-          {item.status !== "PUBLISHED" ? (
-            <StatusBadge status={item.status} />
-          ) : (
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted/80 group-hover:text-ink transition-colors hover:text-brand-light"
-            >
-              <span>Read update</span>
-              <span className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1 text-brand-light">→</span>
-            </button>
-          )}
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted/80 group-hover:text-ink transition-colors hover:text-brand-light"
+          >
+            <span>Read update</span>
+            <span className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1 text-brand-light">→</span>
+          </button>
           <div className="h-1.5 w-1.5 rounded-full bg-border transition-all duration-300 group-hover:scale-150 group-hover:bg-brand-light group-hover:shadow-[0_0_8px_rgba(124,58,237,0.85)]" />
         </div>
 

@@ -83,20 +83,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               ◈
             </span>
             <span className="tracking-tight text-xl font-extrabold">
-              Notify<span className="text-brand-2-light">Hub</span>
+              V<span className="text-brand-2-light">Notify</span>
             </span>
           </Link>
         </div>
 
-        <div className="my-5 flex items-center gap-2.5 rounded-xl border border-teal-light/40 bg-teal-soft/90 px-3.5 py-2.5 text-xs font-bold text-teal-light shadow-[0_0_12px_rgba(45,212,191,0.2)] backdrop-blur-md">
-          <span className="relative flex h-2 w-2 items-center justify-center">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-light opacity-75" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-light" />
-          </span>
-          <span>Campus Control Room</span>
-        </div>
-
-        <div className="px-2 pb-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-muted/80">
+        <div className="mt-6 px-2 pb-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-muted/80">
           Management
         </div>
 

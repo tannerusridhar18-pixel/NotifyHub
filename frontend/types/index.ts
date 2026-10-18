@@ -67,6 +67,8 @@ export type Announcement = {
   authorRole?: string;
   attachmentUrl?: string | null;
   attachmentName?: string | null;
+  photoUrl?: string | null;
+  imageUrl?: string | null;
 };
 
 export type EventItem = {
