@@ -21,16 +21,23 @@ public class ProductionSafetyCheck {
     private final String jwtSecret;
     private final boolean cookieSecure;
     private final String frontendOrigin;
+    private final String dbUrl;
     private final String dbPassword;
 
     public ProductionSafetyCheck(@Value("${notifyhub.jwt-secret:}") String jwtSecret,
                                  @Value("${notifyhub.auth.cookie-secure:false}") boolean cookieSecure,
                                  @Value("${notifyhub.frontend-origin:}") String frontendOrigin,
+                                 @Value("${spring.datasource.url:}") String dbUrl,
                                  @Value("${spring.datasource.password:}") String dbPassword) {
         this.jwtSecret = jwtSecret;
         this.cookieSecure = cookieSecure;
         this.frontendOrigin = frontendOrigin;
+        this.dbUrl = dbUrl;
         this.dbPassword = dbPassword;
+    }
+
+    public ProductionSafetyCheck(String jwtSecret, boolean cookieSecure, String frontendOrigin, String dbPassword) {
+        this(jwtSecret, cookieSecure, frontendOrigin, "jdbc:mysql://db.production.local:3306/notifyhub?sslMode=REQUIRED", dbPassword);
     }
 
     @PostConstruct
@@ -59,6 +66,9 @@ public class ProductionSafetyCheck {
         }
         if (dbPassword == null || dbPassword.isBlank()) {
             problems.add("DB_PASSWORD is empty.");
+        }
+        if (dbUrl != null && !dbUrl.isBlank() && dbUrl.toLowerCase().contains("usessl=false")) {
+            problems.add("DB_URL must not disable SSL in production (remove 'useSSL=false').");
         }
         if (!problems.isEmpty()) {
             throw new IllegalStateException("Refusing to start with insecure production settings:\n - " + String.join("\n - ", problems));

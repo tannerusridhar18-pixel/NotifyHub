@@ -186,7 +186,56 @@ public class AdminInvitationService {
         invitation.setEmailStatus(InvitationEmailStatus.PENDING);
         invitations.save(invitation);
         events.publishEvent(new InvitationCreatedEvent(invitation.getId(), user.getEmail(), user.getEffectiveRoleName(), rawToken, invitation.getExpiresAt()));
-        return new InvitationResult(invitation.getId().toString(), user.getPublicId().toString(), user.getEmail(), user.getEffectiveRoleName(), invitation.getExpiresAt());
+        return new InvitationResult(
+                invitation.getId().toString(),
+                user.getPublicId().toString(),
+                user.getEmail(),
+                user.getEffectiveRoleName(),
+                invitation.getExpiresAt(),
+                invitation.getEmailStatus() != null ? invitation.getEmailStatus().name() : "PENDING",
+                invitation.getEmailError()
+        );
+    }
+
+    @Transactional
+    public InvitationResult resend(String adminUsername, UUID invitationId) {
+        User caller = admin(adminUsername);
+        Invitation invitation = invitations.findById(invitationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found."));
+
+        if (invitation.getUsedAt() != null || invitation.getStatus() == InvitationStatus.USED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Invitation has already been accepted and activated.");
+        }
+
+        User user = invitation.getUser();
+        if (caller.getRole() == Role.DEPARTMENT_ADMIN
+                || "DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())) {
+            Long callerDeptId = caller.getDepartmentEntity() == null ? null : caller.getDepartmentEntity().getId();
+            Long userDeptId = user.getDepartmentEntity() == null ? null : user.getDepartmentEntity().getId();
+            if (callerDeptId == null || !callerDeptId.equals(userDeptId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins may only resend invitations for their own department.");
+            }
+        }
+
+        String rawToken = secureTokens.rawToken();
+        invitation.setTokenHash(secureTokens.hash(rawToken));
+        invitation.setExpiresAt(Instant.now().plus(invitationHours, ChronoUnit.HOURS));
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setEmailStatus(InvitationEmailStatus.PENDING);
+        invitation.setEmailError(null);
+        invitations.save(invitation);
+
+        events.publishEvent(new InvitationCreatedEvent(invitation.getId(), user.getEmail(), user.getEffectiveRoleName(), rawToken, invitation.getExpiresAt()));
+
+        return new InvitationResult(
+                invitation.getId().toString(),
+                user.getPublicId().toString(),
+                user.getEmail(),
+                user.getEffectiveRoleName(),
+                invitation.getExpiresAt(),
+                invitation.getEmailStatus().name(),
+                invitation.getEmailError()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -209,7 +258,8 @@ public class AdminInvitationService {
                     invitation.getExpiresAt(),
                     invitation.getCreatedAt(),
                     invitation.getUsedAt(),
-                    u != null && u.getPublicId() != null ? u.getPublicId().toString() : null
+                    u != null && u.getPublicId() != null ? u.getPublicId().toString() : null,
+                    invitation.getEmailError()
             );
         }).filter(view -> departmentId == null || java.util.Objects.equals(
             users.findByPublicId(view.userPublicId() == null ? null : java.util.UUID.fromString(view.userPublicId()))
@@ -284,10 +334,17 @@ public class AdminInvitationService {
         }
     }
     public record ProfileRequest(String studentId, String facultyId, String name, String phone, String personalEmail, Long departmentId, Long branchId, Long sectionId, Integer year, Integer semester, String batch, Boolean hosteller, Long hostelId, Long blockId, Long roomId, String designation, Long homeDepartmentId, java.util.List<Long> subDepartmentIds) { }
-    public record InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt) { }
-    public record InvitationView(String invitationId, String email, String role, String department, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt, String userPublicId) {
+    public record InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt, String emailStatus, String emailError) {
+        public InvitationResult(String invitationId, String userPublicId, String email, String role, Instant expiresAt) {
+            this(invitationId, userPublicId, email, role, expiresAt, "PENDING", null);
+        }
+    }
+    public record InvitationView(String invitationId, String email, String role, String department, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt, String userPublicId, String emailError) {
         public InvitationView(String invitationId, String email, String role, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt) {
-            this(invitationId, email, role, null, status, emailStatus, expiresAt, createdAt, usedAt, null);
+            this(invitationId, email, role, null, status, emailStatus, expiresAt, createdAt, usedAt, null, null);
+        }
+        public InvitationView(String invitationId, String email, String role, String department, String status, String emailStatus, Instant expiresAt, Instant createdAt, Instant usedAt, String userPublicId) {
+            this(invitationId, email, role, department, status, emailStatus, expiresAt, createdAt, usedAt, userPublicId, null);
         }
     }
 }

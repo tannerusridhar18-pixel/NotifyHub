@@ -1,0 +1,300 @@
+{
+    "root_group": {
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "public events status 200": {
+                    "fails": 0,
+                    "name": "public events status 200",
+                    "path": "::public events status 200",
+                    "id": "f10fefa3ae9d8d963cfc3b6c6c0d2dd0",
+                    "passes": 2830
+                },
+                "public events not empty": {
+                    "fails": 0,
+                    "name": "public events not empty",
+                    "path": "::public events not empty",
+                    "id": "c8be9c7e471917d15882062666214778",
+                    "passes": 2830
+                },
+                "public events excludes drafts": {
+                    "name": "public events excludes drafts",
+                    "path": "::public events excludes drafts",
+                    "id": "3b288be3d76a6fd4b135bbeb6b8f49b3",
+                    "passes": 2830,
+                    "fails": 0
+                },
+                "event detail 200": {
+                    "passes": 735,
+                    "fails": 0,
+                    "name": "event detail 200",
+                    "path": "::event detail 200",
+                    "id": "4306984770cc08c817746a6746148601"
+                },
+                "public announcements status 200": {
+                    "path": "::public announcements status 200",
+                    "id": "f6819cb189a45d1fba21afb14fc87b69",
+                    "passes": 2830,
+                    "fails": 0,
+                    "name": "public announcements status 200"
+                },
+                "register status is 201 or 409": {
+                    "name": "register status is 201 or 409",
+                    "path": "::register status is 201 or 409",
+                    "id": "c3408ca6edd47a2390922ccb54fe951d",
+                    "passes": 1040,
+                    "fails": 0
+                },
+                "duplicate register returns 409": {
+                    "name": "duplicate register returns 409",
+                    "path": "::duplicate register returns 409",
+                    "id": "9e1720c25e357e54a30ee06441609a65",
+                    "passes": 1040,
+                    "fails": 0
+                },
+                "cse admin views own dept registrations 200": {
+                    "name": "cse admin views own dept registrations 200",
+                    "path": "::cse admin views own dept registrations 200",
+                    "id": "8243bbe4b3c5400c1ff6939ff452c36a",
+                    "passes": 735,
+                    "fails": 0
+                },
+                "cse admin blocked from other dept 403": {
+                    "passes": 735,
+                    "fails": 0,
+                    "name": "cse admin blocked from other dept 403",
+                    "path": "::cse admin blocked from other dept 403",
+                    "id": "daf7c73a091cb8ea5f9c8e24e5fb5d96"
+                },
+                "urgent feed status 200": {
+                    "path": "::urgent feed status 200",
+                    "id": "64f8ee423fd2a6c678f4c2176a40a640",
+                    "passes": 2830,
+                    "fails": 0,
+                    "name": "urgent feed status 200"
+                },
+                "events page 1 status 200": {
+                    "name": "events page 1 status 200",
+                    "path": "::events page 1 status 200",
+                    "id": "3c81b2e9474794611c9fb4e5c484e407",
+                    "passes": 348,
+                    "fails": 0
+                },
+                "announcements page 0 status 200": {
+                    "name": "announcements page 0 status 200",
+                    "path": "::announcements page 0 status 200",
+                    "id": "02ef5fb826f4def7b9989dc5aaa0ae7c",
+                    "passes": 348,
+                    "fails": 0
+                },
+                "upcoming events status 200": {
+                    "passes": 2830,
+                    "fails": 0,
+                    "name": "upcoming events status 200",
+                    "path": "::upcoming events status 200",
+                    "id": "326ed639756fe83699f50fac5be0bf59"
+                },
+                "student login status 200": {
+                    "name": "student login status 200",
+                    "path": "::student login status 200",
+                    "id": "dfcfef9c0e8e45184007a3e5f976a1c8",
+                    "passes": 1746,
+                    "fails": 0
+                },
+                "create draft status 201": {
+                    "name": "create draft status 201",
+                    "path": "::create draft status 201",
+                    "id": "13ca45d201e610c3df4cac77ed871b9b",
+                    "passes": 397,
+                    "fails": 0
+                },
+                "created draft has DRAFT status": {
+                    "name": "created draft has DRAFT status",
+                    "path": "::created draft has DRAFT status",
+                    "id": "62869eed8567b8231d014cf616ea544d",
+                    "passes": 397,
+                    "fails": 0
+                },
+                "update draft status 200": {
+                    "passes": 397,
+                    "fails": 0,
+                    "name": "update draft status 200",
+                    "path": "::update draft status 200",
+                    "id": "df47d06d534b603d418fdf94abe09598"
+                },
+                "users/me status 200": {
+                    "name": "users/me status 200",
+                    "path": "::users/me status 200",
+                    "id": "84ab2652c4b52ac8876c32a9651e0661",
+                    "passes": 1746,
+                    "fails": 0
+                },
+                "my-registrations status 200": {
+                    "path": "::my-registrations status 200",
+                    "id": "a2d2ecbbf8d5c4545880797e6a5fef1f",
+                    "passes": 1746,
+                    "fails": 0,
+                    "name": "my-registrations status 200"
+                }
+            },
+        "name": "",
+        "path": ""
+    },
+    "metrics": {
+        "http_req_blocked": {
+            "med": 0,
+            "max": 661.2657,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.18112564976228193,
+            "min": 0
+        },
+        "http_req_tls_handshaking": {
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0
+        },
+        "data_sent": {
+            "count": 7261847,
+            "rate": 34427.48891080588
+        },
+        "iterations": {
+            "count": 7096,
+            "rate": 33.641229471108176
+        },
+        "vus": {
+            "min": 6,
+            "max": 300,
+            "value": 6
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 1739.7703685578397,
+            "min": 2.6327,
+            "med": 1573.789,
+            "max": 9367.7235,
+            "p(90)": 3377.76366,
+            "p(95)": 3928.083115
+        },
+        "http_reqs": {
+            "rate": 119.65961553703077,
+            "count": 25240
+        },
+        "http_req_connecting": {
+            "avg": 0.16516042789223453,
+            "min": 0,
+            "med": 0,
+            "max": 660.7105,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "rate_expected_negatives": {
+            "passes": 2770,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_waiting": {
+            "avg": 1738.6458184627495,
+            "min": 2.2142,
+            "med": 1573.42985,
+            "max": 9367.7235,
+            "p(90)": 3375.2425300000004,
+            "p(95)": 3926.907635
+        },
+        "duration_writes": {
+            "max": 7678.9112,
+            "p(90)": 3770.15595,
+            "p(95)": 4298.65169,
+            "avg": 2338.206347290501,
+            "min": 8.3973,
+            "med": 2368.29345
+        },
+        "iteration_duration": {
+            "p(95)": 13673.65785,
+            "avg": 6976.681368841618,
+            "min": 308.2419,
+            "med": 6802.1603,
+            "max": 23596.9773,
+            "p(90)": 11133.87155
+        },
+        "rate_429_ratelimit": {
+            "passes": 0,
+            "fails": 19518,
+            "value": 0
+        },
+        "http_req_duration": {
+            "p(95)": 3928.083115,
+            "avg": 1739.7703685578397,
+            "min": 2.6327,
+            "med": 1573.789,
+            "max": 9367.7235,
+            "p(90)": 3377.76366
+        },
+        "checks": {
+            "passes": 28390,
+            "fails": 0,
+            "value": 1
+        },
+        "rate_5xx_errors": {
+            "passes": 0,
+            "fails": 19518,
+            "thresholds": {
+                "rate<0.05": false
+            },
+            "value": 0
+        },
+        "http_req_receiving": {
+            "avg": 0.9237764580031687,
+            "min": 0,
+            "med": 0,
+            "max": 595.2066,
+            "p(90)": 0.9963,
+            "p(95)": 1.0031
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 25240,
+            "value": 0
+        },
+        "duration_reads": {
+            "med": 1275.90855,
+            "max": 9367.7235,
+            "p(90)": 2667.9757700000005,
+            "p(95)": 3261.8735899999997,
+            "avg": 1383.5428627812414,
+            "min": 2.6327
+        },
+        "rate_2xx": {
+            "passes": 19563,
+            "fails": 0,
+            "value": 1
+        },
+        "vus_max": {
+            "value": 300,
+            "min": 300,
+            "max": 300
+        },
+        "duration_registration": {
+            "max": 6729.8107,
+            "p(90)": 3393.63427,
+            "p(95)": 3895.0072,
+            "avg": 1831.0007709615404,
+            "min": 8.3973,
+            "med": 1855.00765
+        },
+        "data_received": {
+            "count": 30698356,
+            "rate": 145536.98401659675
+        },
+        "http_req_sending": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.20077363708399384,
+            "min": 0,
+            "med": 0,
+            "max": 553.828
+        }
+    }
+}

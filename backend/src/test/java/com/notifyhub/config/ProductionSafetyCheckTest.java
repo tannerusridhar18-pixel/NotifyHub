@@ -31,4 +31,14 @@ class ProductionSafetyCheckTest {
         assertTrue(ex.getMessage().contains("FRONTEND_ORIGIN"));
         assertTrue(ex.getMessage().contains("DB_PASSWORD"));
     }
+
+    @Test
+    void rejectsDisabledDatabaseSsl() {
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> new ProductionSafetyCheck(
+                STRONG_SECRET, true, "https://notifyhub.example.edu",
+                "jdbc:mysql://db.production.local:3306/notifyhub?useSSL=false", "db-secret").verify());
+        assertTrue(ex.getMessage().contains("DB_URL"));
+        assertTrue(ex.getMessage().contains("useSSL=false"));
+    }
 }
+

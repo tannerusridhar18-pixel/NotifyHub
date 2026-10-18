@@ -46,6 +46,16 @@ public class AdminInvitationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(result));
     }
 
+    @PostMapping("/{id}/resend")
+    public ResponseEntity<ApiResponse<AdminInvitationService.InvitationResult>> resend(Authentication authentication, @PathVariable("id") java.util.UUID id) {
+        var result = invitations.resend(authentication.getName(), id);
+        if (authentication != null) {
+            users.findByUsername(authentication.getName()).or(() -> users.findByEmailIgnoreCase(authentication.getName()))
+                    .ifPresent(actor -> audit.save(new com.notifyhub.rbac.AuditLog(actor, "USER_INVITE_RESEND", "INVITATION", result.invitationId(), "{}")));
+        }
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
     public record Request(
             @NotBlank @Email String email,
             String role,

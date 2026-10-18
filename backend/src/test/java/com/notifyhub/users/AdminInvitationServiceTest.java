@@ -159,6 +159,52 @@ class AdminInvitationServiceTest {
         verify(events, never()).publishEvent(any());
     }
 
+    @Test
+    void resendRenewsTokenAndPublishesEvent() {
+        UUID invitationId = UUID.randomUUID();
+        User invitedUser = new User();
+        invitedUser.setPublicId(UUID.randomUUID());
+        invitedUser.setEmail("student@example.edu");
+        invitedUser.setRole(Role.STUDENT);
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(invitedUser);
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setEmailStatus(InvitationEmailStatus.FAILED);
+        invitation.setEmailError("SMTP connection timed out");
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        AdminInvitationService.InvitationResult result = service.resend("admin", invitationId);
+
+        assertThat(result.email()).isEqualTo("student@example.edu");
+        assertThat(result.emailStatus()).isEqualTo("PENDING");
+        assertThat(result.emailError()).isNull();
+        assertThat(invitation.getEmailStatus()).isEqualTo(InvitationEmailStatus.PENDING);
+        assertThat(invitation.getEmailError()).isNull();
+        verify(invitations).save(invitation);
+        verify(events).publishEvent(any(InvitationCreatedEvent.class));
+    }
+
+    @Test
+    void resendRejectsAlreadyAcceptedInvitation() {
+        UUID invitationId = UUID.randomUUID();
+        User invitedUser = new User();
+        invitedUser.setEmail("accepted@example.edu");
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(invitedUser);
+        invitation.setStatus(InvitationStatus.USED);
+        invitation.setUsedAt(java.time.Instant.now());
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.resend("admin", invitationId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Invitation has already been accepted");
+        verify(events, never()).publishEvent(any());
+    }
+
     private void setInvitationId(Invitation invitation) {
         try {
             Field idField = Invitation.class.getDeclaredField("id");
