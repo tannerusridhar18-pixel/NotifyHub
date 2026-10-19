@@ -49,25 +49,44 @@ The backend reads environment variables and automatically imports an optional `.
 
 Copy `application-local.yml.example` to `application-local.yml` and fill in your local credentials. Then simply run `mvn spring-boot:run`.
 
-For deployment, configure the following variables in the hosting provider instead:
+### Production Deployment & Profile Activation
 
-- `DB_URL`
-- `DB_USERNAME`
-- `DB_PASSWORD`
-- `JWT_SECRET`
-- `JWT_ACCESS_MINUTES`
-- `JWT_REFRESH_DAYS`
-- `FRONTEND_ORIGIN`
-- `ADMIN_USERNAME`
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
+In production (e.g. Railway, containerized environments), set:
+```bash
+SPRING_PROFILES_ACTIVE=prod
+```
+Setting `SPRING_PROFILES_ACTIVE=prod` activates `application-prod.yml` and the `ProductionSafetyCheck` validator, which halts startup if:
+- `JWT_SECRET` is unset, shorter than 32 characters, has low entropy, or matches a known template placeholder.
+- `AUTH_COOKIE_SECURE` is false (ensures cookies are only sent over HTTPS).
+- `FRONTEND_ORIGIN` is unset, points to localhost, or is not an `https://` URI.
+- `DB_PASSWORD` is blank.
+- `DB_URL` contains `useSSL=false` (forces TLS encryption to MySQL).
 
-Email delivery (invitation emails and announcement-publish notifications) is off by default. To enable it, set:
+### Production Environment Variables
 
-- `MAIL_ENABLED=true`
-- `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`
-- `MAIL_FROM`
-- `INVITATION_PATH` (default `/auth/register`) and `ANNOUNCEMENT_PATH` (default `/announcements`) — frontend routes used to build links in emails
+| Variable | Required? | Purpose | Example Format (Non-Secret) |
+| :--- | :---: | :--- | :--- |
+| `SPRING_PROFILES_ACTIVE` | **Yes** | Activates production profile, connection pooling, and startup safety validation | `prod` |
+| `PORT` | **Yes** | Port Tomcat binds to (automatically injected by Railway) | `8080` |
+| `DB_URL` | **Yes** | JDBC connection string to managed MySQL database (must not disable SSL) | `jdbc:mysql://mysql.railway.internal:3306/railway?sslMode=REQUIRED` |
+| `DB_USERNAME` | **Yes** | Database username | `root` |
+| `DB_PASSWORD` | **Yes** | Database user password (must be non-empty) | `[managed_database_password]` |
+| `JWT_SECRET` | **Yes** | Cryptographic signing key for HMAC-SHA (minimum 32 characters, 256-bit entropy) | `[random_high_entropy_32+_char_secret]` |
+| `FRONTEND_ORIGIN` | **Yes** | Exact public HTTPS origin of the frontend on Vercel (no trailing slash) | `https://vnotify.vercel.app` |
+| `AUTH_COOKIE_SECURE` | Optional (default: `true`) | Enforces HTTPS-only delivery of session cookies | `true` |
+| `AUTH_COOKIE_SAME_SITE` | Optional (default: `None`) | SameSite cookie policy (`None` required for cross-origin Vercel → Railway over HTTPS; `Lax` for same-domain) | `None` |
+| `JWT_ACCESS_MINUTES` | Optional (default: `15`) | Lifetime of short-lived JWT access cookie | `15` |
+| `JWT_REFRESH_DAYS` | Optional (default: `7`) | Lifetime of rotating refresh token cookie | `7` |
+| `ADMIN_USERNAME` | Optional (default: `admin`) | Super Admin username created by `AdminSeeder` | `admin` |
+| `ADMIN_EMAIL` | Optional (default: `admin@notifyhub.local`) | Super Admin notification/login email | `admin@institution.edu` |
+| `ADMIN_PASSWORD` | Optional | Initial Super Admin password (if unset, admin seeding is safely skipped) | `[strong_initial_admin_password]` |
+| `ADMIN_SYNC_PASSWORD` | Optional (default: `false`) | Force-updates admin password in DB to `ADMIN_PASSWORD` on restart | `false` |
+| `MAIL_ENABLED` | Optional (default: `false`) | Enables outbound invitation and announcement emails | `true` |
+| `MAIL_HOST` | If mail enabled | Outbound SMTP relay hostname | `smtp.gmail.com` |
+| `MAIL_PORT` | If mail enabled | Outbound SMTP relay port | `587` |
+| `MAIL_USERNAME` | If mail enabled | SMTP relay username/email | `notifications@institution.edu` |
+| `MAIL_PASSWORD` | If mail enabled | SMTP relay password (e.g. Gmail App Password) | `[smtp_relay_password]` |
+| `MAIL_FROM` | If mail enabled | Outbound sender address displayed to recipients | `notifications@institution.edu` |
 
 Never commit `application-local.yml`, `.env`, or real secrets. The committed configuration has no JWT fallback secret and no default mail/admin/database credentials; every secret must be supplied through environment configuration or the ignored local file.
 
@@ -117,15 +136,26 @@ For production, always set `ADMIN_PASSWORD` and `JWT_SECRET` through the deploym
 
 ## Security notes
 
-- Access tokens are signed with an HMAC key requiring at least 32 bytes.
-- Refresh tokens are random and only their SHA-256 hashes are stored.
-- Public query responses do not expose submitted query data; query listing is admin-only.
-- Write operations are protected by the Spring Security admin role.
-- CSRF is disabled because the API is stateless and uses bearer tokens rather than browser cookies for authentication.
-- CORS is restricted to `FRONTEND_ORIGIN`.
-- Security headers include CSP, frame denial, and HSTS for HTTPS requests.
-- The included rate limiter is per-instance. For multiple production instances, use a shared gateway/Redis limiter.
+- Access tokens are signed with HMAC-SHA requiring at least 32 bytes (256-bit).
+- Refresh tokens are cryptographically random strings; only their SHA-256 hashes are stored in the database.
+- Sessions use HttpOnly cookies (`NH_ACCESS`, `NH_REFRESH`). In production, cookies are configured with `Secure` and `SameSite=None` to allow cross-origin API calls between Vercel and Railway over HTTPS.
+- CSRF protection is enforced via `CookieCsrfTokenRepository` (`X-XSRF-TOKEN`), with public authentication endpoints (`/login`, `/register`, `/refresh`) exempted.
+- CORS is strictly restricted to `FRONTEND_ORIGIN` with credentials allowed, explicit REST verbs, and minimal headers.
+- Security headers include Content Security Policy (CSP), frame denial (`X-Frame-Options: DENY`), and HTTP Strict Transport Security (HSTS).
+- Database migrations are strictly managed via Flyway (`V1` to `V17`). Raw Flyway JDBC connection string logging is suppressed across all environments.
+- API rate limiting is enforced per-instance with distinct tiers for public, auth, and query endpoints.
+- Server error responses return generic error structures (`server.error.include-stacktrace: never`); no SQL errors, internal file paths, or stack traces are ever exposed to API clients.
 
-## Deployment
+## Deployment Verification (Railway & Vercel)
 
-Set all secrets in the hosting provider's environment-variable/secret manager. Do not commit production credentials or `application-local.yml`.
+### Backend (Railway)
+1. Set `SPRING_PROFILES_ACTIVE=prod` in Railway Environment Variables.
+2. Link the Railway MySQL service or configure `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`. Verify `DB_URL` uses SSL (e.g. `?sslMode=REQUIRED`).
+3. Set `JWT_SECRET` to a high-entropy string (≥ 32 chars).
+4. Set `FRONTEND_ORIGIN` to the exact Vercel frontend URL (e.g. `https://vnotify.vercel.app`).
+5. Verify build logs confirm clean execution and the startup log shows `The following 1 profile is active: "prod"`.
+
+### Frontend (Vercel)
+1. Set `NOTIFYHUB_BACKEND_ORIGIN` to the public Railway backend URL (e.g. `https://notifyhub-backend.up.railway.app`).
+2. Alternatively, set `NEXT_PUBLIC_API_URL` to `https://notifyhub-backend.up.railway.app/api/v1` if calling the backend directly from the client.
+3. Verify that requests to `/api/v1/auth/login` succeed and receive `Set-Cookie` with `SameSite=None; Secure; HttpOnly`.

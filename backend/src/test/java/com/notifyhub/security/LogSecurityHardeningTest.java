@@ -234,4 +234,30 @@ class LogSecurityHardeningTest {
         assertThat(redacted).doesNotContain("synthetic_secret_password_123");
         assertThat(redacted).contains("password=***");
     }
+
+    @Test
+    @DisplayName("Base application logging config suppresses Flyway raw JDBC connection URLs")
+    void defaultLoggingConfigurationSuppressesJdbcUrls() {
+        org.springframework.beans.factory.config.YamlPropertiesFactoryBean yaml =
+                new org.springframework.beans.factory.config.YamlPropertiesFactoryBean();
+        yaml.setResources(new org.springframework.core.io.ClassPathResource("application.yml"));
+        java.util.Properties props = yaml.getObject();
+        assertThat(props).isNotNull();
+
+        String flywayLogLevel = props.getProperty("logging.level.org.flywaydb.core.FlywayExecutor");
+        assertThat(flywayLogLevel).isEqualTo("WARN");
+    }
+
+    @Test
+    @DisplayName("Production auth config configures SameSite=None and Secure=true for cross-origin hosting")
+    void productionAuthConfigSupportsCrossOriginCookies() {
+        org.springframework.beans.factory.config.YamlPropertiesFactoryBean yaml =
+                new org.springframework.beans.factory.config.YamlPropertiesFactoryBean();
+        yaml.setResources(new org.springframework.core.io.ClassPathResource("application-prod.yml"));
+        java.util.Properties props = yaml.getObject();
+        assertThat(props).isNotNull();
+
+        assertThat(props.getProperty("notifyhub.auth.cookie-same-site")).isEqualTo("${AUTH_COOKIE_SAME_SITE:None}");
+        assertThat(props.getProperty("notifyhub.auth.cookie-secure")).isEqualTo("${AUTH_COOKIE_SECURE:true}");
+    }
 }
