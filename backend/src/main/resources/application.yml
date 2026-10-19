@@ -47,6 +47,10 @@ server:
     include-stacktrace: never
     include-binding-errors: never
 
+logging:
+  level:
+    org.flywaydb.core.FlywayExecutor: WARN
+
 management:
   endpoints:
     web:
