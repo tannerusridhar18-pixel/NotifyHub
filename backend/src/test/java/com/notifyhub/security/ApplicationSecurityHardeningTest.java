@@ -361,7 +361,12 @@ class ApplicationSecurityHardeningTest {
     @DisplayName("Defect Reproduction 4: System role ADMIN cannot be deleted via RoleService")
     void taskB_defectReproduction4_adminSystemRoleCannotBeDeleted() throws Exception {
         User superAdmin = createUser("SUPER_ADMIN", Role.SUPER_ADMIN, null);
-        RoleEntity adminRole = roleRepo.findByNameIgnoreCase("ADMIN").orElseThrow();
+        RoleEntity adminRole = roleRepo.findByNameIgnoreCase("ADMIN").orElseGet(() -> {
+            RoleEntity r = new RoleEntity("ADMIN", 1, null, superAdmin, "[1,2,3,4,5]");
+            r.setSystemRole(true);
+            r.setSuperadmin(false);
+            return roleRepo.saveAndFlush(r);
+        });
 
         mvc.perform(delete("/api/v1/admin/roles/" + adminRole.getId())
                 .with(csrf()).cookie(accessCookie(superAdmin)))

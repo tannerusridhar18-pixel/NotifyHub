@@ -38,6 +38,7 @@ jobs:
           DB_URL: jdbc:mysql://127.0.0.1:3306/notifyhub?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
           DB_USERNAME: root
           DB_PASSWORD: root
+          JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
         run: mvn clean test -B
 
   frontend-test:
