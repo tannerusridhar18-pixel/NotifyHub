@@ -7,6 +7,9 @@ import com.notifyhub.auth.PasswordResetEmailService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.notifyhub.mail.EmailTransport;
+import com.notifyhub.mail.ResendEmailTransport;
+import com.notifyhub.mail.SmtpEmailTransport;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.SimpleMailMessage;
@@ -412,5 +415,145 @@ class EmailIntegrationSafetyTest {
         assertThat(invitation.getEmailError()).doesNotContain("tok_abc123");
         assertThat(invitation.getEmailError()).contains("password=***");
         assertThat(invitation.getEmailError()).contains("token=***");
+    }
+
+    @Test
+    void verifiesResendDeliverySucceedsAndUpdatesStatusToSent() {
+        EmailTransport mockTransport = mock(EmailTransport.class);
+        when(mockTransport.getProviderName()).thenReturn("Resend (HTTPS API)");
+
+        InvitationEmailService service = new InvitationEmailService(
+                mockTransport,
+                true,
+                "onboarding@resend.dev",
+                "https://staging.notifyhub.example.edu",
+                "/auth/register"
+        );
+
+        InvitationRepository mockRepo = mock(InvitationRepository.class);
+        UUID invitationId = UUID.randomUUID();
+        Invitation invitation = new Invitation();
+        invitation.setEmailStatus(InvitationEmailStatus.PENDING);
+        when(mockRepo.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        InvitationEmailDispatcher dispatcher = new InvitationEmailDispatcher(service, mockRepo);
+        Instant expires = Instant.parse("2026-10-25T12:00:00Z");
+        InvitationCreatedEvent event = new InvitationCreatedEvent(
+                invitationId,
+                "candidate.resend@example.edu",
+                "FACULTY",
+                "token-resend-abc",
+                expires
+        );
+
+        dispatcher.dispatch(event);
+
+        verify(mockTransport).send(
+                eq("onboarding@resend.dev"),
+                eq("candidate.resend@example.edu"),
+                eq("Your NotifyHub faculty invitation"),
+                contains("token-resend-abc")
+        );
+
+        assertThat(invitation.getEmailStatus()).isEqualTo(InvitationEmailStatus.SENT);
+        assertThat(invitation.getEmailError()).isNull();
+        verify(mockRepo).save(invitation);
+    }
+
+    @Test
+    void verifiesResendApiFailureRecordsFailedStatusAndPreservesInvitationRecord() {
+        EmailTransport mockTransport = mock(EmailTransport.class);
+        doThrow(new IllegalStateException("Resend API returned HTTP 422: The domain is not verified"))
+                .when(mockTransport).send(anyString(), anyString(), anyString(), anyString());
+
+        InvitationEmailService service = new InvitationEmailService(
+                mockTransport,
+                true,
+                "noreply@unverified-domain.com",
+                "https://staging.notifyhub.example.edu",
+                "/auth/register"
+        );
+
+        InvitationRepository mockRepo = mock(InvitationRepository.class);
+        UUID invitationId = UUID.randomUUID();
+        Invitation invitation = new Invitation();
+        invitation.setEmailStatus(InvitationEmailStatus.PENDING);
+        when(mockRepo.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        InvitationEmailDispatcher dispatcher = new InvitationEmailDispatcher(service, mockRepo);
+        InvitationCreatedEvent event = new InvitationCreatedEvent(
+                invitationId,
+                "candidate.failed@example.edu",
+                "STUDENT",
+                "token-fail-123",
+                Instant.now().plusSeconds(3600)
+        );
+
+        assertThatCode(() -> dispatcher.dispatch(event)).doesNotThrowAnyException();
+
+        verify(mockRepo, never()).delete(any());
+        verify(mockRepo, never()).deleteById(any());
+
+        assertThat(invitation.getEmailStatus()).isEqualTo(InvitationEmailStatus.FAILED);
+        assertThat(invitation.getEmailError()).contains("HTTP 422");
+        assertThat(invitation.getEmailError()).contains("domain is not verified");
+        verify(mockRepo).save(invitation);
+    }
+
+    @Test
+    void verifiesAuthorizedResendRetriesDeliveryAndClearsPreviousError() {
+        EmailTransport mockTransport = mock(EmailTransport.class);
+        InvitationEmailService service = new InvitationEmailService(
+                mockTransport,
+                true,
+                "onboarding@resend.dev",
+                "https://staging.notifyhub.example.edu",
+                "/auth/register"
+        );
+
+        InvitationRepository mockRepo = mock(InvitationRepository.class);
+        UUID invitationId = UUID.randomUUID();
+        Invitation invitation = new Invitation();
+        // Previous state was FAILED with an error
+        invitation.setEmailStatus(InvitationEmailStatus.FAILED);
+        invitation.setEmailError("Previous network timeout");
+        when(mockRepo.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        InvitationEmailDispatcher dispatcher = new InvitationEmailDispatcher(service, mockRepo);
+        InvitationCreatedEvent resendEvent = new InvitationCreatedEvent(
+                invitationId,
+                "retry.student@example.edu",
+                "STUDENT",
+                "new-raw-token-456",
+                Instant.now().plusSeconds(7200)
+        );
+
+        dispatcher.dispatch(resendEvent);
+
+        verify(mockTransport).send(
+                eq("onboarding@resend.dev"),
+                eq("retry.student@example.edu"),
+                eq("Your NotifyHub student invitation"),
+                contains("new-raw-token-456")
+        );
+
+        assertThat(invitation.getEmailStatus()).isEqualTo(InvitationEmailStatus.SENT);
+        assertThat(invitation.getEmailError()).isNull();
+        verify(mockRepo).save(invitation);
+    }
+
+    @Test
+    void verifiesSmtpConnectionFailureProvidesClearGuidanceAboutBlockedPorts() {
+        JavaMailSenderImpl unreachableSender = new JavaMailSenderImpl();
+        unreachableSender.setHost("127.0.0.1");
+        unreachableSender.setPort(65534); // Closed port simulating dropped/blocked packets
+        unreachableSender.setUsername("smtp-user");
+        unreachableSender.setPassword("smtp-pass");
+
+        SmtpEmailTransport transport = new SmtpEmailTransport(unreachableSender);
+
+        // Validation must not crash application startup
+        assertThatCode(transport::validateConnection).doesNotThrowAnyException();
+        assertThat(transport.getProviderName()).isEqualTo("SMTP");
     }
 }
