@@ -79,7 +79,10 @@ public class SecurityConfig {
         CsrfTokenRequestHandler csrfHandler = new SpaCsrfTokenRequestHandler();
 
         http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokens).csrfTokenRequestHandler(csrfHandler)
-                        .ignoringRequestMatchers("/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password", "/api/v1/queries"))
+                        .ignoringRequestMatchers(
+                                "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password",
+                                "/auth/login", "/auth/register", "/auth/refresh", "/auth/forgot-password", "/auth/reset-password",
+                                "/api/v1/queries"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"))
                         .frameOptions(frame -> frame.deny()).httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000)))
@@ -88,7 +91,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint).accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/api/v1/auth/**").permitAll()
+                        .requestMatchers("/actuator/health", "/api/v1/auth/**", "/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements/management", "/api/v1/events/management").hasAnyRole("ADMIN", "SUPER_ADMIN", "PRINCIPAL", "DEAN", "HOD", "FACULTY")
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements/department-management", "/api/v1/events/department-management").hasRole("DEPARTMENT_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/urgent", "/api/v1/events", "/api/v1/events/upcoming").permitAll()
