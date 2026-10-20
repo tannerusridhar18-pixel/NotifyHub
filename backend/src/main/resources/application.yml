@@ -80,10 +80,14 @@ notifyhub:
   admin-sync-password: ${ADMIN_SYNC_PASSWORD:false}
   mail:
     enabled: ${MAIL_ENABLED:false}
+    provider: ${MAIL_PROVIDER:smtp}
     from: ${MAIL_FROM:notifyhub@localhost}
     invitation-path: ${INVITATION_PATH:/auth/register}
     password-reset-path: ${PASSWORD_RESET_PATH:/auth/reset-password}
     announcement-path: ${ANNOUNCEMENT_PATH:/announcements}
+    resend:
+      api-key: ${RESEND_API_KEY:}
+      api-url: ${RESEND_API_URL:https://api.resend.com/emails}
   rate-limit-public-per-minute: ${RATE_LIMIT_PUBLIC_PER_MINUTE:120}
   rate-limit-auth-per-minute: ${RATE_LIMIT_AUTH_PER_MINUTE:10}
   rate-limit-query-per-minute: ${RATE_LIMIT_QUERY_PER_MINUTE:10}

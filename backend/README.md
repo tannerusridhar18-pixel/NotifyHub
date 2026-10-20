@@ -154,6 +154,14 @@ For production, always set `ADMIN_PASSWORD` and `JWT_SECRET` through the deploym
 3. Set `JWT_SECRET` to a high-entropy string (≥ 32 chars).
 4. Set `FRONTEND_ORIGIN` to the exact Vercel frontend URL (e.g. `https://vnotify.vercel.app`).
 5. Verify build logs confirm clean execution and the startup log shows `The following 1 profile is active: "prod"`.
+6. **Email Delivery Configuration (Railway)**:
+   - Note: Railway blocks outbound SMTP on ports 25, 465, 587, and 2525. Direct Gmail SMTP will fail with connection timeout (`timeout 5000`).
+   - For Railway deployments, use an HTTPS API provider (e.g. Resend over port 443):
+     - `MAIL_ENABLED=true`
+     - `MAIL_PROVIDER=resend`
+     - `RESEND_API_KEY=re_...` (obtain a free API key at resend.com: 3,000 free emails/mo)
+     - `MAIL_FROM=onboarding@resend.dev` (or your verified domain `noreply@yourdomain.com`)
+   - For local or traditional servers with unblocked SMTP, use `MAIL_PROVIDER=smtp` with standard `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`.
 
 ### Frontend (Vercel)
 1. Set `NOTIFYHUB_BACKEND_ORIGIN` to the public Railway backend URL (e.g. `https://notifyhub-backend.up.railway.app`).
