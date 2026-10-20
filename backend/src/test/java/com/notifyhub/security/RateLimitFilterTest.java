@@ -78,6 +78,26 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void directAuthPathWithoutApiPrefixIsRateLimitedInAuthBucket() throws ServletException, IOException {
+        String ip = "192.0.2.20";
+
+        for (int i = 0; i < 3; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/auth/login");
+            req.setRemoteAddr(ip);
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, chain);
+            assertThat(res.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletRequest req4 = new MockHttpServletRequest("POST", "/auth/refresh");
+        req4.setRemoteAddr(ip);
+        MockHttpServletResponse res4 = new MockHttpServletResponse();
+        filter.doFilter(req4, res4, chain);
+        assertThat(res4.getStatus()).isEqualTo(429);
+        assertThat(res4.getContentAsString()).contains("Too many requests");
+    }
+
+    @Test
     void differentClientsDoNotShareLimitBehindTrustedProxy() throws ServletException, IOException {
         // Client A makes 3 auth requests through trusted proxy 127.0.0.1
         for (int i = 0; i < 3; i++) {

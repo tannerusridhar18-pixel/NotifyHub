@@ -14,8 +14,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import java.time.Instant;
 import java.util.UUID;
@@ -28,6 +32,7 @@ class SecurityIntegrationTest {
     @Autowired JwtService jwt;
     @Autowired RefreshTokenRepository refreshTokens;
     @Autowired SecureTokenService secureTokens;
+    @Autowired PasswordEncoder passwordEncoder;
 
     @Test
     void protectedCurrentUserEndpointRequiresAuthentication() throws Exception {
@@ -166,5 +171,63 @@ class SecurityIntegrationTest {
                 .andExpect(status().isUnauthorized());
         mvc.perform(post("/api/v1/auth/refresh").cookie(new Cookie("NH_REFRESH", rawRefresh)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void unauthenticatedLoginToDirectAuthPathReachesLoginHandlerAndFailsWithInvalidCredentials() throws Exception {
+        String badLogin = """
+            {"email":"nonexistent-user@example.edu","password":"InvalidPassword123"}
+            """;
+        mvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(badLogin))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("UNAUTHENTICATED"))
+                .andExpect(jsonPath("$.message").value("Invalid email or password."));
+    }
+
+    @Test
+    void unauthenticatedLoginToApiV1AuthPathReachesLoginHandlerAndFailsWithInvalidCredentials() throws Exception {
+        String badLogin = """
+            {"email":"nonexistent-user@example.edu","password":"InvalidPassword123"}
+            """;
+        mvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(badLogin))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("UNAUTHENTICATED"))
+                .andExpect(jsonPath("$.message").value("Invalid email or password."));
+    }
+
+    @Test
+    @Transactional
+    void unauthenticatedLoginToDirectAuthPathSucceedsWithValidCredentials() throws Exception {
+        User user = new User();
+        user.setUsername("login-direct-" + System.nanoTime() + "@example.edu");
+        user.setEmail(user.getUsername());
+        user.setPasswordHash(passwordEncoder.encode("ValidPassword123"));
+        user.setRole(Role.STUDENT);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(user);
+
+        String loginBody = """
+            {"email":"%s","password":"ValidPassword123"}
+            """.formatted(user.getEmail());
+
+        mvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.role").value("STUDENT"))
+                .andExpect(cookie().exists("NH_ACCESS"))
+                .andExpect(cookie().exists("NH_REFRESH"));
+    }
+
+    @Test
+    void unauthenticatedRequestToProtectedUnmatchedRouteReturnsAuthenticationRequired() throws Exception {
+        mvc.perform(get("/users/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Authentication required."));
     }
 }

@@ -45,14 +45,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
             FilterChain chain) throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        if (path == null || !path.startsWith("/api/")) {
+        if (path == null || (!path.startsWith("/api/") && !path.startsWith("/auth/"))) {
             chain.doFilter(request, response);
             return;
         }
 
         String bucket;
         int limit;
-        if (path.startsWith("/api/v1/auth/")) {
+        if (path.startsWith("/api/v1/auth/") || path.startsWith("/auth/")) {
             bucket = "AUTH";
             limit = authLimit;
         } else if ("POST".equalsIgnoreCase(request.getMethod()) &&
