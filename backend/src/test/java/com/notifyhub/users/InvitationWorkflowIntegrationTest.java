@@ -15,16 +15,22 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,7 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "notifyhub.mail.enabled=true")
 @AutoConfigureMockMvc
 class InvitationWorkflowIntegrationTest {
 
@@ -142,11 +148,16 @@ class InvitationWorkflowIntegrationTest {
                 .andExpect(jsonPath("$.data.emailStatus").value("PENDING"))
                 .andReturn();
 
-        // 4. Test Token Validation and Single-use Activation
-        // Set a known token hash on the invitation for acceptance testing
-        String testToken = "valid-raw-secret-token-" + UUID.randomUUID();
-        inv.setTokenHash(secureTokens.hash(testToken));
-        invitations.saveAndFlush(inv);
+        // 4. Use the actual resend token delivered through the mocked mail sender.
+        // This test always enables delivery locally, while the sender mock prevents real email.
+        ArgumentCaptor<SimpleMailMessage> sentMessages = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender, timeout(5_000).times(2)).send(sentMessages.capture());
+        String storedTokenHash = invitations.findById(invId).orElseThrow().getTokenHash();
+        String testToken = sentMessages.getAllValues().stream()
+                .map(InvitationWorkflowIntegrationTest::invitationToken)
+                .filter(token -> secureTokens.hash(token).equals(storedTokenHash))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No delivered invitation token matches the stored token hash."));
 
         // Invalid token should fail with 400 Bad Request
         String invalidRegisterPayload = """
@@ -243,6 +254,12 @@ class InvitationWorkflowIntegrationTest {
                         .cookie(accessCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.email").value(testEmail));
+    }
+
+    private static String invitationToken(SimpleMailMessage message) {
+        Matcher matcher = Pattern.compile("\\?token=([A-Za-z0-9_-]+)").matcher(message.getText());
+        assertThat(matcher.find()).as("invitation email contains its raw token").isTrue();
+        return matcher.group(1);
     }
 
     @Test
