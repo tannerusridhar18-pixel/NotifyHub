@@ -82,11 +82,8 @@ public class UserController {
         com.notifyhub.auth.User caller = users.findByUsername(authentication.getName())
                 .or(() -> users.findByEmailIgnoreCase(authentication.getName()))
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required."));
-        if ("DEPARTMENT_ADMIN".equalsIgnoreCase(caller.getEffectiveRoleName())) {
-            departmentId = caller.getDepartmentEntity() != null ? caller.getDepartmentEntity().getId() : null;
-            if (departmentId == null) {
-                throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Department Admin is not assigned to a department.");
-            }
+        if (!caller.hasAdminAccess() && !rbac.isSuperAdmin(caller)) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required.");
         }
         Page<IdentityService.UserListItem> paged = identity.listUsers(search, role, departmentId, status, PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 200), Sort.by(Sort.Direction.DESC, "createdAt")));
         return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(paged)));

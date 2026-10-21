@@ -166,6 +166,7 @@ class AdminInvitationServiceTest {
         invitedUser.setPublicId(UUID.randomUUID());
         invitedUser.setEmail("student@example.edu");
         invitedUser.setRole(Role.STUDENT);
+        invitedUser.setAccountStatus(AccountStatus.INVITED);
 
         Invitation invitation = new Invitation();
         invitation.setUser(invitedUser);
@@ -202,6 +203,25 @@ class AdminInvitationServiceTest {
         assertThatThrownBy(() -> service.resend("admin", invitationId))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Invitation has already been accepted");
+        verify(events, never()).publishEvent(any());
+    }
+
+    @Test
+    void resendRejectsActiveUserAccountEvenIfInvitationStatusPending() {
+        UUID invitationId = UUID.randomUUID();
+        User activeUser = new User();
+        activeUser.setEmail("active@example.edu");
+        activeUser.setAccountStatus(AccountStatus.ACTIVE);
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(activeUser);
+        invitation.setStatus(InvitationStatus.PENDING);
+
+        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.resend("admin", invitationId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Invitation has already been accepted and activated");
         verify(events, never()).publishEvent(any());
     }
 

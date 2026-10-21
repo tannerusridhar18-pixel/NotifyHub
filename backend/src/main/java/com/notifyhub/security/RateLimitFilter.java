@@ -52,7 +52,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String bucket;
         int limit;
-        if (path.startsWith("/api/v1/auth/") || path.startsWith("/auth/")) {
+        if ("/api/v1/auth/csrf".equals(path) || "/auth/csrf".equals(path)) {
+            bucket = "PUBLIC";
+            limit = publicLimit;
+        } else if (path.startsWith("/api/v1/auth/") || path.startsWith("/auth/")) {
             bucket = "AUTH";
             limit = authLimit;
         } else if ("POST".equalsIgnoreCase(request.getMethod()) &&

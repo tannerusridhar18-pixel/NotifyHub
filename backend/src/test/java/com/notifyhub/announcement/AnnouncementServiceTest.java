@@ -6,6 +6,19 @@ import com.notifyhub.auth.*; import com.notifyhub.targeting.*; import org.junit.
  @Test void archivedAnnouncementCannotBePublished(){Announcement a=new Announcement();a.setCreatedBy(author());a.setStatus(AnnouncementStatus.ARCHIVED);when(repo.findById(1L)).thenReturn(Optional.of(a));assertThatThrownBy(()->service.publish(1L)).isInstanceOf(ResponseStatusException.class).hasMessageContaining("draft");}
  @Test void createsAsDraftWithServerAuthor(){User u=new User();u.setUsername("admin");u.setRole(Role.ADMIN);when(users.findByUsername("admin")).thenReturn(Optional.of(u));when(targeting.resolve(TargetType.GLOBAL,null,null,null,null,null,null)).thenReturn(new TargetingService.Target(TargetType.GLOBAL,null,null,null,null,null,null));when(repo.save(any())).thenAnswer(x->x.getArgument(0));var result=service.create(new AnnouncementService.Request("T","Body",false,TargetType.GLOBAL,null,null,null,null,null,null),"admin");assertThat(result.status()).isEqualTo(AnnouncementStatus.DRAFT);}
 
+ @Test void departmentAdminCannotDeleteAnotherUsersAnnouncement(){
+     User owner = new User(); owner.setId(1L); owner.setRole(Role.FACULTY);
+     Announcement announcement = new Announcement(); announcement.setCreatedBy(owner);
+     User departmentAdmin = new User(); departmentAdmin.setId(2L); departmentAdmin.setRole(Role.DEPARTMENT_ADMIN);
+     when(repo.findById(7L)).thenReturn(Optional.of(announcement));
+     when(users.findByUsername("deptadmin")).thenReturn(Optional.of(departmentAdmin));
+
+     assertThatThrownBy(() -> service.delete(7L, "deptadmin"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("You can only manage announcements you authored");
+     verify(repo, never()).delete(any(Announcement.class));
+ }
+
  @Test
  void attachmentUrlValidationRejectsUnsafeSchemesAndBypasses() {
      assertThatThrownBy(() -> AnnouncementService.validateAttachmentUrl("javascript:alert(1)"))

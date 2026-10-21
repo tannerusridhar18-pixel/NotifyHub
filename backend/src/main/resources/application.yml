@@ -19,9 +19,9 @@ spring:
   application:
     name: notifyhub-backend
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/notifyhub?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    url: ${DB_URL:${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/notifyhub?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}}
+    username: ${DB_USERNAME:${SPRING_DATASOURCE_USERNAME:root}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:}}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -65,29 +65,29 @@ management:
 
 
 notifyhub:
-  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
-  jwt-secret: ${JWT_SECRET:}
+  frontend-origin: ${FRONTEND_ORIGIN:${NOTIFYHUB_FRONTEND_ORIGIN:${NOTIFYHUB_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000}}}
+  jwt-secret: ${JWT_SECRET:${NOTIFYHUB_JWT_SECRET:${NOTIFYHUB_AUTH_JWT_SECRET:}}}
   jwt-access-minutes: ${JWT_ACCESS_MINUTES:15}
   jwt-refresh-days: ${JWT_REFRESH_DAYS:7}
   password-reset-minutes: ${PASSWORD_RESET_MINUTES:30}
   invitation-hours: ${INVITATION_HOURS:48}
   auth:
-    cookie-secure: ${AUTH_COOKIE_SECURE:false}
-    cookie-same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
+    cookie-secure: ${AUTH_COOKIE_SECURE:${NOTIFYHUB_AUTH_COOKIE_SECURE:false}}
+    cookie-same-site: ${AUTH_COOKIE_SAME_SITE:${NOTIFYHUB_AUTH_COOKIE_SAME_SITE:Lax}}
   admin-username: ${ADMIN_USERNAME:admin}
   admin-email: ${ADMIN_EMAIL:admin@notifyhub.local}
   admin-password: ${ADMIN_PASSWORD:}
   admin-sync-password: ${ADMIN_SYNC_PASSWORD:false}
   mail:
-    enabled: ${MAIL_ENABLED:false}
-    provider: ${MAIL_PROVIDER:smtp}
-    from: ${MAIL_FROM:notifyhub@localhost}
+    enabled: ${MAIL_ENABLED:${NOTIFYHUB_MAIL_ENABLED:false}}
+    provider: ${MAIL_PROVIDER:${NOTIFYHUB_MAIL_PROVIDER:smtp}}
+    from: ${MAIL_FROM:${NOTIFYHUB_MAIL_FROM:notifyhub@localhost}}
     invitation-path: ${INVITATION_PATH:/auth/register}
     password-reset-path: ${PASSWORD_RESET_PATH:/auth/reset-password}
     announcement-path: ${ANNOUNCEMENT_PATH:/announcements}
     resend:
-      api-key: ${RESEND_API_KEY:}
-      api-url: ${RESEND_API_URL:https://api.resend.com/emails}
+      api-key: ${RESEND_API_KEY:${NOTIFYHUB_MAIL_RESEND_API_KEY:${NOTIFYHUB_RESEND_API_KEY:}}}
+      api-url: ${RESEND_API_URL:${NOTIFYHUB_MAIL_RESEND_API_URL:https://api.resend.com/emails}}
   rate-limit-public-per-minute: ${RATE_LIMIT_PUBLIC_PER_MINUTE:120}
   rate-limit-auth-per-minute: ${RATE_LIMIT_AUTH_PER_MINUTE:10}
   rate-limit-query-per-minute: ${RATE_LIMIT_QUERY_PER_MINUTE:10}

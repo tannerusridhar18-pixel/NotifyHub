@@ -20,10 +20,11 @@ public class AuthCookieService {
     }
     public void setSessionCookies(HttpServletResponse response, AuthService.IssuedSession session) {
         response.addHeader("Set-Cookie", cookie("NH_ACCESS", session.accessToken(), accessMaxAge, "/").toString());
-        response.addHeader("Set-Cookie", cookie("NH_REFRESH", session.rawRefreshToken(), refreshMaxAge, "/api/v1/auth").toString());
+        response.addHeader("Set-Cookie", cookie("NH_REFRESH", session.rawRefreshToken(), refreshMaxAge, "/").toString());
     }
     public void clearSessionCookies(HttpServletResponse response) {
         response.addHeader("Set-Cookie", cookie("NH_ACCESS", "", 0, "/").toString());
+        response.addHeader("Set-Cookie", cookie("NH_REFRESH", "", 0, "/").toString());
         response.addHeader("Set-Cookie", cookie("NH_REFRESH", "", 0, "/api/v1/auth").toString());
     }
     private ResponseCookie cookie(String name, String value, long maxAge, String path) {
