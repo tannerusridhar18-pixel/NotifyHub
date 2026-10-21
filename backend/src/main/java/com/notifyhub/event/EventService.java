@@ -406,7 +406,7 @@ public class EventService {
         }
     }
 
-    /** Server-side ownership enforcement: author only; Dept Admin only within own department; SuperAdmin any. */
+    /** Server-side ownership enforcement: author or SuperAdmin only. */
     private void assertCanManage(Long id, String username) {
         Event event = get(id);
         User actor = user(username);
@@ -419,20 +419,8 @@ public class EventService {
             return;
         }
 
-        boolean isDeptAdmin = actor.getRole() == Role.DEPARTMENT_ADMIN
-                || "DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName());
-        if (isDeptAdmin) {
-            Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
-            Long postDeptId = event.getTargetDepartment() != null ? event.getTargetDepartment().getId() :
-                    (event.getCreatedBy() != null && event.getCreatedBy().getDepartmentEntity() != null ? event.getCreatedBy().getDepartmentEntity().getId() : null);
-            if (actorDeptId != null && Objects.equals(actorDeptId, postDeptId)) {
-                return;
-            }
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins can only manage events within their department.");
-        }
-
         if (ownerId == null || !actor.getId().equals(ownerId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage events you authored.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage events you authored unless you are a SuperAdmin.");
         }
     }
     public EventDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }

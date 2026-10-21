@@ -60,8 +60,8 @@ public class SecurityConfig {
                 .map(String::trim).filter(origin -> !origin.isEmpty()).toList();
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-XSRF-TOKEN"));
-        configuration.setExposedHeaders(List.of("Retry-After"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-XSRF-TOKEN", "X-CSRF-TOKEN"));
+        configuration.setExposedHeaders(List.of("Retry-After", "X-XSRF-TOKEN", "X-CSRF-TOKEN"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -70,12 +70,24 @@ public class SecurityConfig {
     }
 
     @Bean
+    CookieCsrfTokenRepository cookieCsrfTokenRepository(
+            @Value("${notifyhub.auth.cookie-secure:false}") boolean cookieSecure,
+            @Value("${notifyhub.auth.cookie-same-site:Lax}") String cookieSameSite) {
+        CookieCsrfTokenRepository csrfTokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokens.setHeaderName("X-XSRF-TOKEN");
+        csrfTokens.setCookieCustomizer(customizer -> customizer
+                .sameSite(cookieSameSite)
+                .secure(cookieSecure)
+                .path("/"));
+        return csrfTokens;
+    }
+
+    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter, RateLimitFilter rateLimitFilter,
                                              CorsConfigurationSource corsConfigurationSource,
                                              AuthenticationEntryPoint authenticationEntryPoint,
-                                             AccessDeniedHandler accessDeniedHandler) throws Exception {
-        CookieCsrfTokenRepository csrfTokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrfTokens.setHeaderName("X-XSRF-TOKEN");
+                                             AccessDeniedHandler accessDeniedHandler,
+                                             CookieCsrfTokenRepository csrfTokens) throws Exception {
         CsrfTokenRequestHandler csrfHandler = new SpaCsrfTokenRequestHandler();
 
         http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokens).csrfTokenRequestHandler(csrfHandler)

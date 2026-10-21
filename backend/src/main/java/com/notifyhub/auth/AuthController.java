@@ -10,21 +10,63 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/v1/auth", "/auth"})
 public class AuthController {
     private final AuthService service;
     private final AuthCookieService cookies;
+    private final CookieCsrfTokenRepository csrfTokenRepository;
 
-    public AuthController(AuthService service, AuthCookieService cookies) { this.service = service; this.cookies = cookies; }
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthController(AuthService service, AuthCookieService cookies, CookieCsrfTokenRepository csrfTokenRepository) {
+        this.service = service;
+        this.cookies = cookies;
+        this.csrfTokenRepository = csrfTokenRepository;
+    }
+
+    public AuthController(AuthService service, AuthCookieService cookies) {
+        this(service, cookies, null);
+    }
+
+    @GetMapping("/csrf")
+    public ResponseEntity<ApiResponse<Map<String, String>>> csrf(HttpServletRequest request, HttpServletResponse response) {
+        CsrfToken csrfToken = resolveOrGenerateCsrfToken(request, response);
+        String token = csrfToken != null ? csrfToken.getToken() : "";
+        String headerName = csrfToken != null ? csrfToken.getHeaderName() : "X-XSRF-TOKEN";
+        String parameterName = csrfToken != null ? csrfToken.getParameterName() : "_csrf";
+        var builder = ResponseEntity.ok();
+        if (token != null && !token.isBlank()) {
+            builder.header("X-XSRF-TOKEN", token);
+            if (!"X-XSRF-TOKEN".equalsIgnoreCase(headerName)) {
+                builder.header(headerName, token);
+            }
+        }
+        return builder.body(ApiResponse.ok(Map.of(
+                "token", token,
+                "headerName", headerName,
+                "parameterName", parameterName
+        )));
+    }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
         AuthService.IssuedSession session = service.login(request.email(), request.password());
         cookies.setSessionCookies(response, session);
-        return ResponseEntity.ok(ApiResponse.ok(new AuthResponse(
+        CsrfToken csrfToken = resolveOrGenerateCsrfToken(httpRequest, response);
+        var builder = ResponseEntity.ok();
+        if (csrfToken != null && csrfToken.getToken() != null && !csrfToken.getToken().isBlank()) {
+            builder.header("X-XSRF-TOKEN", csrfToken.getToken());
+            if (!"X-XSRF-TOKEN".equalsIgnoreCase(csrfToken.getHeaderName())) {
+                builder.header(csrfToken.getHeaderName(), csrfToken.getToken());
+            }
+        }
+        return builder.body(ApiResponse.ok(new AuthResponse(
                 session.roleName(),
                 session.roleId(),
                 session.roleLevel(),
@@ -36,12 +78,37 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(HttpServletRequest request, HttpServletResponse response) {
         AuthService.IssuedSession session = service.refresh(cookie(request, "NH_REFRESH"));
         cookies.setSessionCookies(response, session);
-        return ResponseEntity.ok(ApiResponse.ok(new AuthResponse(
+        CsrfToken csrfToken = resolveOrGenerateCsrfToken(request, response);
+        var builder = ResponseEntity.ok();
+        if (csrfToken != null && csrfToken.getToken() != null && !csrfToken.getToken().isBlank()) {
+            builder.header("X-XSRF-TOKEN", csrfToken.getToken());
+            if (!"X-XSRF-TOKEN".equalsIgnoreCase(csrfToken.getHeaderName())) {
+                builder.header(csrfToken.getHeaderName(), csrfToken.getToken());
+            }
+        }
+        return builder.body(ApiResponse.ok(new AuthResponse(
                 session.roleName(),
                 session.roleId(),
                 session.roleLevel(),
                 session.mustChangePassword()
         )));
+    }
+
+    private CsrfToken resolveOrGenerateCsrfToken(HttpServletRequest request, HttpServletResponse response) {
+        Object attr = request.getAttribute(CsrfToken.class.getName());
+        if (attr == null) attr = request.getAttribute("_csrf");
+        if (attr instanceof java.util.function.Supplier<?> supplier) {
+            attr = supplier.get();
+        }
+        if (attr instanceof CsrfToken token) {
+            return token;
+        }
+        if (csrfTokenRepository != null) {
+            CsrfToken token = csrfTokenRepository.generateToken(request);
+            csrfTokenRepository.saveToken(token, request, response);
+            return token;
+        }
+        return null;
     }
 
     @PostMapping("/logout")

@@ -52,6 +52,16 @@ public class DepartmentLeadershipController {
         return ResponseEntity.ok(ApiResponse.message("Student section updated successfully."));
     }
 
+    @PostMapping("/departments/{id}/students/reassign-section")
+    public ResponseEntity<ApiResponse<Void>> reassignDepartmentStudentSection(
+            @PathVariable Long id,
+            Authentication authentication,
+            @Valid @RequestBody ReassignDepartmentStudentSectionRequest request
+    ) {
+        leadershipService.reassignStudentSection(request.studentId(), request.sectionId(), authentication.getName());
+        return ResponseEntity.ok(ApiResponse.message("Student section updated successfully."));
+    }
+
     @GetMapping("/departments/{id}/analytics")
     public ResponseEntity<ApiResponse<DepartmentLeadershipService.DepartmentAnalyticsDto>> departmentAnalytics(
             @PathVariable Long id,
@@ -106,5 +116,6 @@ public class DepartmentLeadershipController {
     public record BatchPromoteRequest(@NotNull Long departmentId, @NotNull Integer fromYear, @NotNull Integer toYear) {}
     public record AssignHodRequest(@NotNull Long userId) {}
     public record ReassignSectionRequest(@NotNull Long sectionId) {}
+    public record ReassignDepartmentStudentSectionRequest(@NotNull Long studentId, @NotNull Long sectionId) {}
     public record StudentUpdateRequest(String name, Integer year, Integer semester) {}
 }

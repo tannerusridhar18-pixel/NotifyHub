@@ -4,7 +4,7 @@ import { getRoleRoute } from "./roles";
 describe("canonical role routes", () => {
   it.each([
     ["SUPER_ADMIN", 0, "/admin/dashboard"],
-    ["ADMIN", 1, "/admin/dashboard"],
+    ["ADMIN", 0, "/admin/dashboard"],
     ["PRINCIPAL", 1, "/dashboard/principal"],
     ["DEAN", 2, "/dashboard/dean"],
     ["HOD", 3, "/dashboard/hod"],
@@ -13,6 +13,12 @@ describe("canonical role routes", () => {
     ["STUDENT", 5, "/dashboard/student"],
   ])("uses the canonical route for %s", (role, roleLevel, route) => {
     expect(getRoleRoute(role, roleLevel)).toBe(route);
+  });
+
+  it("verifies ADMIN role config has level 0 matching backend", async () => {
+    const { ROLE_CONFIGS } = await import("./roles");
+    expect(ROLE_CONFIGS.ADMIN.level).toBe(0);
+    expect(ROLE_CONFIGS.SUPER_ADMIN.level).toBe(0);
   });
 
   it.each([
