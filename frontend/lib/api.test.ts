@@ -440,5 +440,86 @@ describe("Phase 1 authentication API contract", () => {
       expect.objectContaining({ method: "DELETE" })
     );
   });
+
+  it("captures x-xsrf-token from response headers and attaches it to subsequent mutation requests", async () => {
+    const { createAnnouncement, setCsrfToken } = await import("@/lib/api");
+    setCsrfToken(null);
+
+    const headers = new Headers();
+    headers.set("x-xsrf-token", "captured-token-123");
+
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+      const urlStr = String(url);
+      if (urlStr.includes("/auth/login")) {
+        return new Response(
+          JSON.stringify({ success: true, data: { role: "ADMIN", roleLevel: 0, mustChangePassword: false }, message: null }),
+          { status: 200, headers }
+        );
+      }
+      if (urlStr.includes("/announcements")) {
+        expect(new Headers(init?.headers).get("x-xsrf-token")).toBe("captured-token-123");
+        return new Response(
+          JSON.stringify({ success: true, data: { id: 10, title: "Test", status: "DRAFT" }, message: null }),
+          { status: 201 }
+        );
+      }
+      return new Response("{}", { status: 404 });
+    });
+
+    const { login } = await import("@/lib/api");
+    await login("admin@notifyhub.local", "AdminPass123!");
+    await createAnnouncement({
+      title: "Test",
+      content: "Test announcement content",
+      targetType: "GLOBAL",
+      recipientType: "ALL",
+      urgent: false,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries state-changing request once with fresh CSRF token if backend returns 403", async () => {
+    const { createAnnouncement, setCsrfToken } = await import("@/lib/api");
+    setCsrfToken("old-token");
+
+    let callCount = 0;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+      callCount++;
+      const urlStr = String(url);
+      if (urlStr.includes("/announcements") && callCount === 1) {
+        expect(new Headers(init?.headers).get("x-xsrf-token")).toBe("old-token");
+        return new Response(
+          JSON.stringify({ success: false, data: null, message: "Access denied." }),
+          { status: 403 }
+        );
+      }
+      if (urlStr.includes("/auth/csrf")) {
+        return new Response(
+          JSON.stringify({ success: true, data: { token: "fresh-token-999" }, message: null }),
+          { status: 200 }
+        );
+      }
+      if (urlStr.includes("/announcements") && callCount === 3) {
+        expect(new Headers(init?.headers).get("x-xsrf-token")).toBe("fresh-token-999");
+        return new Response(
+          JSON.stringify({ success: true, data: { id: 11, title: "Retried", status: "DRAFT" }, message: null }),
+          { status: 201 }
+        );
+      }
+      return new Response("{}", { status: 404 });
+    });
+
+    const result = await createAnnouncement({
+      title: "Retried",
+      content: "Retried content",
+      targetType: "GLOBAL",
+      recipientType: "ALL",
+      urgent: false,
+    });
+
+    expect(result.id).toBe(11);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
 });
 

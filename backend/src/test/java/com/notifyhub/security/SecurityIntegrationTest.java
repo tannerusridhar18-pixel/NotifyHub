@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import java.time.Instant;
@@ -229,5 +230,56 @@ class SecurityIntegrationTest {
         mvc.perform(get("/users/me"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Authentication required."));
+    }
+
+    @Test
+    void csrfEndpointReturnsTokenAndSetsHeader() throws Exception {
+        mvc.perform(get("/api/v1/auth/csrf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.token").isNotEmpty())
+                .andExpect(header().exists("X-XSRF-TOKEN"));
+    }
+
+    @Test
+    @Transactional
+    void loginResponseAttachesCsrfHeader() throws Exception {
+        User user = new User();
+        user.setUsername("csrf-hdr-" + System.nanoTime() + "@example.edu");
+        user.setEmail(user.getUsername());
+        user.setPasswordHash(passwordEncoder.encode("ValidPassword123"));
+        user.setRole(Role.ADMIN);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(user);
+
+        String loginBody = """
+            {"email":"%s","password":"ValidPassword123"}
+            """.formatted(user.getEmail());
+
+        mvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginBody))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("X-XSRF-TOKEN"));
+    }
+
+    @Test
+    @Transactional
+    void departmentAdminIsForbiddenFromGlobalAdminUsersList() throws Exception {
+        User user = new User();
+        user.setUsername("dept-admin-" + System.nanoTime() + "@example.edu");
+        user.setEmail(user.getUsername());
+        user.setPasswordHash(passwordEncoder.encode("ValidPassword123"));
+        user.setRole(Role.DEPARTMENT_ADMIN);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        users.saveAndFlush(user);
+
+        String token = jwt.accessToken(user);
+
+        // Global admin directory (/api/v1/admin/users) is restricted to SUPER_ADMIN and ADMIN
+        mvc.perform(get("/api/v1/admin/users")
+                .cookie(new Cookie("NH_ACCESS", token)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Access denied."));
     }
 }

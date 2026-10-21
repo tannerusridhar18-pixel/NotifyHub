@@ -22,7 +22,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 @Service
 @Transactional
@@ -308,7 +307,7 @@ public class AnnouncementService {
         }
     }
 
-    /** Server-side ownership enforcement: author only; Dept Admin only within own department; SuperAdmin any. */
+    /** Server-side ownership enforcement: author or SuperAdmin only. */
     private void assertCanManage(Long id, String username) {
         Announcement a = get(id);
         User actor = user(username);
@@ -321,20 +320,8 @@ public class AnnouncementService {
             return;
         }
 
-        boolean isDeptAdmin = actor.getRole() == Role.DEPARTMENT_ADMIN
-                || "DEPARTMENT_ADMIN".equalsIgnoreCase(actor.getEffectiveRoleName());
-        if (isDeptAdmin) {
-            Long actorDeptId = actor.getDepartmentEntity() != null ? actor.getDepartmentEntity().getId() : null;
-            Long postDeptId = a.getTargetDepartment() != null ? a.getTargetDepartment().getId() :
-                    (a.getCreatedBy() != null && a.getCreatedBy().getDepartmentEntity() != null ? a.getCreatedBy().getDepartmentEntity().getId() : null);
-            if (actorDeptId != null && Objects.equals(actorDeptId, postDeptId)) {
-                return;
-            }
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Department admins can only manage announcements within their department.");
-        }
-
         if (ownerId == null || !actor.getId().equals(ownerId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage announcements you authored.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage announcements you authored unless you are a SuperAdmin.");
         }
     }
     public AnnouncementDto publish(Long id, String username) { assertCanManage(id, username); return publish(id); }

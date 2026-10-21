@@ -125,4 +125,35 @@ class RateLimitFilterTest {
         filter.doFilter(reqB, resB, chain);
         assertThat(resB.getStatus()).isEqualTo(200);
     }
+
+    @Test
+    void csrfEndpointUsesPublicRateLimitAndDoesNotConsumeAuthBucket() throws ServletException, IOException {
+        String ip = "192.0.2.30";
+
+        // Auth limit is 3, Public limit is 5.
+        // Send 3 CSRF token requests; they should NOT exhaust the AUTH bucket
+        for (int i = 0; i < 3; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/v1/auth/csrf");
+            req.setRemoteAddr(ip);
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, chain);
+            assertThat(res.getStatus()).isEqualTo(200);
+        }
+
+        // Now client should still be able to make 3 login requests in the AUTH bucket
+        for (int i = 0; i < 3; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+            req.setRemoteAddr(ip);
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            filter.doFilter(req, res, chain);
+            assertThat(res.getStatus()).isEqualTo(200);
+        }
+
+        // 4th login request is blocked by auth limit
+        MockHttpServletRequest req4 = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        req4.setRemoteAddr(ip);
+        MockHttpServletResponse res4 = new MockHttpServletResponse();
+        filter.doFilter(req4, res4, chain);
+        assertThat(res4.getStatus()).isEqualTo(429);
+    }
 }

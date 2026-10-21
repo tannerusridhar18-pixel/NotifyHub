@@ -1,13 +1,60 @@
 import type { ApiResponse, Announcement, CampusQuery, EnrollmentItem, EventItem, PageResponse, Role, RoleItem, TargetType, UserListItem } from "@/types";
 export type { RoleItem, UserListItem, EnrollmentItem, Role };
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/$/, "");
+const RAW_API_URL = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/$/, "");
+const API_URL = RAW_API_URL.endsWith("/api/v1") ? RAW_API_URL : `${RAW_API_URL}/api/v1`;
 let refreshPromise: Promise<boolean> | null = null;
+let memoryCsrfToken: string | null = null;
+let csrfPromise: Promise<string | null> | null = null;
 
-function csrf() {
+export function setCsrfToken(token: string | null) {
+  memoryCsrfToken = token;
+}
+
+export function getCsrfToken(): string | null {
+  if (memoryCsrfToken) return memoryCsrfToken;
   if (typeof document === "undefined") return null;
   const value = document.cookie.split("; ").find((x) => x.startsWith("XSRF-TOKEN="));
   return value ? decodeURIComponent(value.split("=").slice(1).join("=")) : null;
+}
+
+function csrf() {
+  return getCsrfToken();
+}
+
+function updateCsrfFromHeaders(headers: Headers) {
+  const token = headers.get("x-xsrf-token");
+  if (token) {
+    memoryCsrfToken = token;
+  }
+}
+
+export async function fetchCsrfToken(): Promise<string | null> {
+  if (csrfPromise) return csrfPromise;
+  csrfPromise = (async () => {
+    try {
+      const r = await fetch(`${API_URL}/auth/csrf`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        credentials: "include",
+        cache: "no-store",
+      });
+      updateCsrfFromHeaders(r.headers);
+      if (r.ok) {
+        const json = (await r.json().catch(() => null)) as ApiResponse<{ token?: string }> | null;
+        if (json?.data?.token) {
+          memoryCsrfToken = json.data.token;
+          return memoryCsrfToken;
+        }
+      }
+      return getCsrfToken();
+    } catch {
+      return getCsrfToken();
+    } finally {
+      csrfPromise = null;
+    }
+  })();
+  return csrfPromise;
 }
 
 export function safeUrl(url?: string | null): string | undefined {
@@ -82,6 +129,7 @@ async function refresh() {
         const token = csrf();
         if (token) headers.set("X-XSRF-TOKEN", token);
         const r = await fetch(`${API_URL}/auth/refresh`, { method: "POST", headers, credentials: "include", cache: "no-store" });
+        updateCsrfFromHeaders(r.headers);
         return r.ok;
       } catch {
         return false;
@@ -114,24 +162,41 @@ function safeRedirectToLogin(reason = "session-expired") {
 async function request<T>(
   path: string,
   init: RequestInit & { redirectOn401?: boolean } = {},
-  retry = true
+  retry = true,
+  csrfRetried = false
 ): Promise<T> {
+  const normalizedPath = path.startsWith("/api/v1/") ? path.replace(/^\/api\/v1/, "") : path;
+  const method = (init.method || "GET").toUpperCase();
+  const isStateChanging = !["GET", "HEAD", "OPTIONS"].includes(method);
+
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (init.body) headers.set("Content-Type", "application/json");
-  const method = (init.method || "GET").toUpperCase();
-  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+
+  if (isStateChanging) {
     const token = csrf();
     if (token) headers.set("X-XSRF-TOKEN", token);
   }
+
   let response: Response;
   try {
-    response = await fetch(`${API_URL}${path}`, { ...init, headers, credentials: "include", cache: "no-store" });
+    response = await fetch(`${API_URL}${normalizedPath}`, { ...init, headers, credentials: "include", cache: "no-store" });
   } catch {
     throw new Error("VNotify cannot reach the server right now. Check that the backend is running, then try again.");
   }
-  if (response.status === 401 && retry && !path.startsWith("/auth/")) {
-    if (await refresh()) return request<T>(path, init, false);
+
+  updateCsrfFromHeaders(response.headers);
+
+  // If 403 Forbidden occurs on a state-changing request and we haven't retried with a fresh CSRF token yet, fetch fresh CSRF and retry once.
+  if (response.status === 403 && isStateChanging && !csrfRetried && typeof window !== "undefined") {
+    const freshToken = await fetchCsrfToken();
+    if (freshToken) {
+      return request<T>(path, init, retry, true);
+    }
+  }
+
+  if (response.status === 401 && retry && !normalizedPath.startsWith("/auth/")) {
+    if (await refresh()) return request<T>(path, init, false, csrfRetried);
   }
   if (response.status === 204) return undefined as T;
   const body = (await response.json().catch(() => null)) as ApiResponse<T> | null;
@@ -139,12 +204,12 @@ async function request<T>(
     if (
       response.status === 401 &&
       init.redirectOn401 !== false &&
-      !path.startsWith("/auth/") &&
-      !isPublicRead(path, method)
+      !normalizedPath.startsWith("/auth/") &&
+      !isPublicRead(normalizedPath, method)
     ) {
       safeRedirectToLogin("session-expired");
     }
-    throw new Error(friendlyMessage(response.status, body, path));
+    throw new Error(friendlyMessage(response.status, body, normalizedPath));
   }
   return body.data as T;
 }

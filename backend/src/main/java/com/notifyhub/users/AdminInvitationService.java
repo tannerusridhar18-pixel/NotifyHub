@@ -206,7 +206,7 @@ public class AdminInvitationService {
 
         User user = invitation.getUser();
         if (invitation.getUsedAt() != null || invitation.getStatus() == InvitationStatus.USED
-                || (user != null && user.getAccountStatus() == AccountStatus.ACTIVE && invitation.getStatus() != InvitationStatus.PENDING)) {
+                || (user != null && user.getAccountStatus() == AccountStatus.ACTIVE)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Invitation has already been accepted and activated.");
         }
 
@@ -248,7 +248,7 @@ public class AdminInvitationService {
 
         User user = invitation.getUser();
         if (invitation.getUsedAt() != null || invitation.getStatus() == InvitationStatus.USED
-                || (user != null && user.getAccountStatus() == AccountStatus.ACTIVE && invitation.getStatus() != InvitationStatus.PENDING)) {
+                || (user != null && user.getAccountStatus() == AccountStatus.ACTIVE)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot delete an invitation that has already been accepted and activated.");
         }
 

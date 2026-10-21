@@ -8,10 +8,11 @@ import com.notifyhub.faculty.FacultyProfileRepository;
 import com.notifyhub.student.StudentProfile;
 import com.notifyhub.student.StudentProfileRepository;
 import com.notifyhub.targeting.TargetingService;
+import com.notifyhub.mail.EmailTransport;
+import com.notifyhub.mail.SmtpEmailTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -28,16 +29,15 @@ import java.util.stream.Stream;
  * is published. This is what makes NotifyHub actually "notify" people,
  * rather than only updating a feed they have to check manually.
  *
- * Reuses the same SMTP configuration and enable flag as invitation emails
- * (notifyhub.mail.enabled / notifyhub.mail.from) and the same async,
- * after-commit dispatch pattern as InvitationEmailDispatcher so a slow or
- * failing mail server never blocks or fails the publish request itself.
+ * Uses the EmailTransport abstraction (SMTP or Resend HTTPS) and the same
+ * async, after-commit dispatch pattern as InvitationEmailDispatcher so a slow
+ * or failing mail server never blocks or fails the publish request itself.
  */
 @Service
 public class AnnouncementNotificationDispatcher {
     private static final Logger log = LoggerFactory.getLogger(AnnouncementNotificationDispatcher.class);
 
-    private final JavaMailSender mailSender;
+    private final EmailTransport transport;
     private final UserRepository users;
     private final StudentProfileRepository students;
     private final FacultyProfileRepository faculty;
@@ -48,14 +48,15 @@ public class AnnouncementNotificationDispatcher {
     private final String frontendOrigin;
     private final String announcementPath;
 
-    public AnnouncementNotificationDispatcher(JavaMailSender mailSender, UserRepository users,
+    @org.springframework.beans.factory.annotation.Autowired
+    public AnnouncementNotificationDispatcher(EmailTransport transport, UserRepository users,
                                               StudentProfileRepository students, FacultyProfileRepository faculty,
                                               AnnouncementRepository announcements, TargetingService targeting,
                                               @Value("${notifyhub.mail.enabled:false}") boolean enabled,
                                               @Value("${notifyhub.mail.from:notifyhub@localhost}") String from,
                                               @Value("${notifyhub.frontend-origin:http://localhost:3000}") String frontendOrigin,
                                               @Value("${notifyhub.mail.announcement-path:/announcements}") String announcementPath) {
-        this.mailSender = mailSender;
+        this.transport = transport;
         this.users = users;
         this.students = students;
         this.faculty = faculty;
@@ -65,6 +66,13 @@ public class AnnouncementNotificationDispatcher {
         this.from = from;
         this.frontendOrigin = frontendOrigin.replaceAll("/$", "");
         this.announcementPath = announcementPath;
+    }
+
+    public AnnouncementNotificationDispatcher(JavaMailSender mailSender, UserRepository users,
+                                              StudentProfileRepository students, FacultyProfileRepository faculty,
+                                              AnnouncementRepository announcements, TargetingService targeting,
+                                              boolean enabled, String from, String frontendOrigin, String announcementPath) {
+        this(new SmtpEmailTransport(mailSender), users, students, faculty, announcements, targeting, enabled, from, frontendOrigin, announcementPath);
     }
 
     @Async("notifyHubTaskExecutor")
@@ -86,12 +94,7 @@ public class AnnouncementNotificationDispatcher {
         int failed = 0;
         for (String email : recipients) {
             try {
-                SimpleMailMessage message = new SimpleMailMessage();
-                message.setFrom(from);
-                message.setTo(email);
-                message.setSubject(subject);
-                message.setText(body);
-                mailSender.send(message);
+                transport.send(from, email, subject, body);
                 sent++;
             } catch (RuntimeException ex) {
                 failed++;

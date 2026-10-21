@@ -235,6 +235,19 @@ import static org.assertj.core.api.Assertions.*;
              .hasMessageContaining("Only draft events may be edited");
  }
 
+ @Test void departmentAdminCannotDeleteAnotherUsersEvent() {
+     User owner = new User(); owner.setId(1L); owner.setRole(Role.FACULTY);
+     Event event = new Event(); event.setCreatedBy(owner);
+     User departmentAdmin = new User(); departmentAdmin.setId(2L); departmentAdmin.setRole(Role.DEPARTMENT_ADMIN);
+     org.mockito.Mockito.when(repo.findById(103L)).thenReturn(Optional.of(event));
+     org.mockito.Mockito.when(users.findByUsername("deptadmin")).thenReturn(Optional.of(departmentAdmin));
+
+     assertThatThrownBy(() -> service.delete(103L, "deptadmin"))
+             .isInstanceOf(ResponseStatusException.class)
+             .hasMessageContaining("You can only manage events you authored");
+     org.mockito.Mockito.verify(repo, org.mockito.Mockito.never()).delete(ArgumentMatchers.any(Event.class));
+ }
+
  @Test void publicFeedExcludesDrafts() {
      org.mockito.Mockito.when(repo.publicGlobal(org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
              .thenReturn(org.springframework.data.domain.Page.empty());

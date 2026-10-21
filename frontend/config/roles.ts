@@ -26,7 +26,7 @@ export const ROLE_CONFIGS: Record<RoleKey, RoleConfig> = {
   },
   ADMIN: {
     key: "ADMIN",
-    level: 1,
+    level: 0,
     label: "Admin",
     route: "/admin/dashboard",
     description: "Campus administrative operations and governance",
