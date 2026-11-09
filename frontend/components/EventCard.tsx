@@ -3,7 +3,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { EventItem } from "@/types";
 import Countdown from "./Countdown";
 import { AudienceBadge, formatAudienceLabel } from "@/components/ui/Badge";
@@ -26,13 +26,19 @@ export default function EventCard({
   onRegistered?: () => void | Promise<void>;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [imageError, setImageError] = useState(false);
   const startDate = new Date(item.startAt);
   const dayStr = startDate.toLocaleDateString(undefined, { day: "2-digit" });
   const monthStr = startDate.toLocaleDateString(undefined, { month: "short" });
 
+  const detailsHref =
+    pathname && pathname !== "/" && pathname !== "/events"
+      ? `/events/${item.id}?from=${encodeURIComponent(pathname)}`
+      : `/events/${item.id}`;
+
   const navigateToDetails = () => {
-    router.push(`/events/${item.id}`);
+    router.push(detailsHref);
   };
 
   return (
@@ -114,7 +120,7 @@ export default function EventCard({
               <span className="text-brand-2-light font-bold">◷</span> {startDate.toLocaleString()}
             </span>
             <Link
-              href={`/events/${item.id}`}
+              href={detailsHref}
               onClick={(e) => e.stopPropagation()}
               className="ml-auto inline-flex items-center gap-1 text-sm font-bold text-brand-2-light group-hover:text-brand-light transition-colors"
               aria-label={`View details for ${item.title}`}

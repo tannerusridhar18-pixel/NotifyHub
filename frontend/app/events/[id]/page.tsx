@@ -1,16 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { getEvent, safeUrl } from "@/lib/api";
+import { currentUser, getEvent, safeUrl, type CurrentUser } from "@/lib/api";
 import type { EventItem } from "@/types";
 import { AudienceBadge, formatAudienceLabel } from "@/components/ui/Badge";
 import Countdown from "@/components/Countdown";
 import { Loading, ErrorState } from "@/components/States";
 import Reveal from "@/components/ui/Reveal";
+import AuthenticatedContentShell from "@/components/AuthenticatedContentShell";
+
+function isValidRedirect(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  return url.startsWith("/") && !url.startsWith("//") && !url.includes(":");
+}
 
 const EventRegistrationPanel = dynamic(() => import("@/components/EventRegistrationPanel"), {
   loading: () => (
@@ -20,15 +26,35 @@ const EventRegistrationPanel = dynamic(() => import("@/components/EventRegistrat
 
 export default function EventDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawId = params?.id;
+  const fromParam = searchParams?.get("from");
   const eventId = typeof rawId === "string" ? Number(rawId) : NaN;
   const isInvalidId = !rawId || isNaN(eventId);
 
+  const [user, setUser] = useState<CurrentUser | null>(null);
   const [event, setEvent] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(!isInvalidId);
   const [error, setError] = useState(isInvalidId ? "Invalid event ID." : "");
   const [reloadKey, setReloadKey] = useState(0);
   const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    currentUser()
+      .then((u) => {
+        if (!alive) return;
+        setUser(u);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setUser(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (isInvalidId) return;
@@ -58,26 +84,39 @@ export default function EventDetailPage() {
     setReloadKey((k) => k + 1);
   };
 
-
   const startDate = event ? new Date(event.startAt) : null;
   const endDate = event ? new Date(event.endAt) : null;
 
-  return (
-    <section className="nh-public-page mx-auto w-full max-w-[1000px] px-4 py-10 sm:py-16 sm:px-6">
-      <div className="nh-public-orbit" aria-hidden="true">
-        <div className="nh-public-stars" />
-        <div className="nh-public-sun"><span /></div>
-        <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
-        <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
-        <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
-      </div>
+  let backHref = "/events";
+  let backLabel = "Back to Events";
 
+  if (fromParam && isValidRedirect(fromParam)) {
+    backHref = fromParam;
+    if (fromParam.includes("student")) backLabel = "Back to Student Dashboard";
+    else if (fromParam.includes("calendar")) backLabel = "Back to Calendar";
+    else if (fromParam.includes("department-admin")) backLabel = "Back to Department Events";
+    else if (fromParam.includes("admin")) backLabel = "Back to Dashboard";
+  } else if (user) {
+    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+      backHref = "/admin/dashboard?tab=events";
+      backLabel = "Back to Events";
+    } else if (user.role === "DEPARTMENT_ADMIN") {
+      backHref = "/department-admin/events";
+      backLabel = "Back to Department Events";
+    } else {
+      backHref = "/dashboard/calendar";
+      backLabel = "Back to Calendar";
+    }
+  }
+
+  const content = (
+    <>
       <div className="mb-6">
         <Link
-          href="/events"
+          href={backHref}
           className="inline-flex items-center gap-2 text-sm font-bold text-brand-2-light hover:text-white transition-colors"
         >
-          <span>←</span> Back to Events
+          <span>←</span> {backLabel}
         </Link>
       </div>
 
@@ -91,10 +130,10 @@ export default function EventDetailPage() {
           />
           <div className="mt-6">
             <Link
-              href="/events"
+              href={backHref}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-2 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-brand-2/80 transition-colors"
             >
-              Browse All Events
+              {user ? backLabel : "Browse All Events"}
             </Link>
           </div>
         </div>
@@ -178,6 +217,29 @@ export default function EventDetailPage() {
           )}
         </article>
       )}
+    </>
+  );
+
+  if (user) {
+    return (
+      <AuthenticatedContentShell role={user.role}>
+        <div className="mx-auto w-full max-w-[1000px] px-4 py-8 sm:py-12 sm:px-6">
+          {content}
+        </div>
+      </AuthenticatedContentShell>
+    );
+  }
+
+  return (
+    <section className="nh-public-page mx-auto w-full max-w-[1000px] px-4 py-10 sm:py-16 sm:px-6">
+      <div className="nh-public-orbit" aria-hidden="true">
+        <div className="nh-public-stars" />
+        <div className="nh-public-sun"><span /></div>
+        <div className="nh-public-orbit-path nh-public-orbit-a"><i className="nh-public-planet nh-public-planet-a" /></div>
+        <div className="nh-public-orbit-path nh-public-orbit-b"><i className="nh-public-planet nh-public-planet-b" /></div>
+        <div className="nh-public-orbit-path nh-public-orbit-c"><i className="nh-public-planet nh-public-planet-c" /></div>
+      </div>
+      {content}
     </section>
   );
 }

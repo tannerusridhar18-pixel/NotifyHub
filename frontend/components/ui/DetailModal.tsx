@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Announcement, CampusQuery, EventItem } from "@/types";
 import { AudienceBadge, StatusBadge, UrgentBadge, formatAudienceLabel } from "@/components/ui/Badge";
 import Countdown from "@/components/Countdown";
@@ -29,6 +30,7 @@ export default function DetailModal({
   item: ModalItem | null;
   onClose: () => void;
 }) {
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -243,7 +245,15 @@ export default function DetailModal({
                     Open event link
                   </a>
                 )}
-                <Link href={`/events/${item.data.id}`} onClick={onClose} className="text-sm font-bold text-brand-2-light hover:underline">
+                <Link
+                  href={
+                    pathname && pathname !== "/" && pathname !== "/events"
+                      ? `/events/${item.data.id}?from=${encodeURIComponent(pathname)}`
+                      : `/events/${item.data.id}`
+                  }
+                  onClick={onClose}
+                  className="text-sm font-bold text-brand-2-light hover:underline"
+                >
                   View full event page →
                 </Link>
               </div>

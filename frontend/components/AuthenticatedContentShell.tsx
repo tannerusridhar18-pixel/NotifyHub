@@ -7,7 +7,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { cx } from "@/components/ui/classes";
 import { getRoleRoute } from "@/config/roles";
 
-export default function AuthenticatedContentShell({ children, role }: { children: React.ReactNode; role: "STUDENT" | "FACULTY" | "MEMBER" }) {
+export default function AuthenticatedContentShell({ children, role = "MEMBER" }: { children: React.ReactNode; role?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [resolvedUser, setResolvedUser] = useState<CurrentUser | null>(null);
@@ -18,7 +18,7 @@ export default function AuthenticatedContentShell({ children, role }: { children
     }).catch(() => {});
   }, []);
 
-  const from = (resolvedUser?.role || searchParams.get("from") || role).toLowerCase();
+  const from = (resolvedUser?.role || searchParams?.get("from") || role).toLowerCase();
   const dashboardHref = resolvedUser ? getRoleRoute(resolvedUser.role, resolvedUser.roleLevel) : (role === "FACULTY" ? "/dashboard/faculty" : "/dashboard/student");
 
   async function signOut() {
@@ -42,7 +42,7 @@ export default function AuthenticatedContentShell({ children, role }: { children
         </Link>
         <span className="hidden items-center gap-2 rounded-[var(--nh-radius-pill)] border border-white/10 bg-surface-2 px-3 py-1 text-xs font-bold text-muted md:inline-flex">
           <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-          {role} · Campus workspace
+          {resolvedUser?.role || role} · Campus workspace
         </span>
         <nav className="ml-auto flex items-center gap-1.5 sm:gap-2.5" aria-label="Authenticated dashboard navigation">
           <Link href={`/dashboard/feed?from=${from}`} className="rounded-[var(--nh-radius-md)] px-3 py-2 text-xs font-bold text-muted hover:bg-surface-2 hover:text-white transition-colors">
