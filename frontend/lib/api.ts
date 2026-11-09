@@ -111,14 +111,19 @@ function friendlyMessage(status: number, body: ApiResponse<unknown> | null, path
 
 function isPublicRead(path: string, method: string) {
   const cleanPath = path.split("?")[0];
-  return (
-    (method === "GET" &&
-      (cleanPath === "/announcements" ||
-        cleanPath === "/announcements/urgent" ||
-        cleanPath === "/events" ||
-        cleanPath === "/events/upcoming")) ||
-    (method === "POST" && cleanPath === "/queries")
-  );
+  if (method === "GET") {
+    if (
+      cleanPath === "/announcements" ||
+      cleanPath === "/announcements/urgent" ||
+      /^\/announcements\/\d+$/.test(cleanPath) ||
+      cleanPath === "/events" ||
+      cleanPath === "/events/upcoming" ||
+      /^\/events\/\d+$/.test(cleanPath)
+    ) {
+      return true;
+    }
+  }
+  return method === "POST" && cleanPath === "/queries";
 }
 
 async function refresh() {

@@ -23,6 +23,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -174,7 +175,7 @@ class AdminInvitationServiceTest {
         invitation.setEmailStatus(InvitationEmailStatus.FAILED);
         invitation.setEmailError("SMTP connection timed out");
 
-        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+        when(invitations.findForUpdateById(invitationId)).thenReturn(Optional.of(invitation));
 
         AdminInvitationService.InvitationResult result = service.resend("admin", invitationId);
 
@@ -183,8 +184,33 @@ class AdminInvitationServiceTest {
         assertThat(result.emailError()).isNull();
         assertThat(invitation.getEmailStatus()).isEqualTo(InvitationEmailStatus.PENDING);
         assertThat(invitation.getEmailError()).isNull();
+        assertThat(invitation.getLastDispatchedAt()).isNotNull();
         verify(invitations).save(invitation);
         verify(events).publishEvent(any(InvitationCreatedEvent.class));
+    }
+
+    @Test
+    void concurrentResendBlocksRapidDuplicateDispatches() {
+        UUID invitationId = UUID.randomUUID();
+        User invitedUser = new User();
+        invitedUser.setPublicId(UUID.randomUUID());
+        invitedUser.setEmail("student@example.edu");
+        invitedUser.setRole(Role.STUDENT);
+        invitedUser.setAccountStatus(AccountStatus.INVITED);
+
+        Invitation invitation = new Invitation();
+        invitation.setUser(invitedUser);
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setEmailStatus(InvitationEmailStatus.PENDING);
+        // Dispatch was initiated 1 second ago
+        invitation.setLastDispatchedAt(Instant.now().minusSeconds(1));
+
+        when(invitations.findForUpdateById(invitationId)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.resend("admin", invitationId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("An invitation dispatch is already in progress");
+        verify(events, never()).publishEvent(any());
     }
 
     @Test
@@ -198,7 +224,7 @@ class AdminInvitationServiceTest {
         invitation.setStatus(InvitationStatus.USED);
         invitation.setUsedAt(java.time.Instant.now());
 
-        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+        when(invitations.findForUpdateById(invitationId)).thenReturn(Optional.of(invitation));
 
         assertThatThrownBy(() -> service.resend("admin", invitationId))
                 .isInstanceOf(ResponseStatusException.class)
@@ -217,7 +243,7 @@ class AdminInvitationServiceTest {
         invitation.setUser(activeUser);
         invitation.setStatus(InvitationStatus.PENDING);
 
-        when(invitations.findById(invitationId)).thenReturn(Optional.of(invitation));
+        when(invitations.findForUpdateById(invitationId)).thenReturn(Optional.of(invitation));
 
         assertThatThrownBy(() -> service.resend("admin", invitationId))
                 .isInstanceOf(ResponseStatusException.class)

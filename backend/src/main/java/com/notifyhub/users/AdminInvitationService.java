@@ -185,6 +185,7 @@ public class AdminInvitationService {
         invitation.setExpiresAt(Instant.now().plus(invitationHours, ChronoUnit.HOURS));
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setEmailStatus(InvitationEmailStatus.PENDING);
+        invitation.setLastDispatchedAt(Instant.now());
         invitations.save(invitation);
         events.publishEvent(new InvitationCreatedEvent(invitation.getId(), user.getEmail(), user.getEffectiveRoleName(), rawToken, invitation.getExpiresAt()));
         return new InvitationResult(
@@ -201,7 +202,7 @@ public class AdminInvitationService {
     @Transactional
     public InvitationResult resend(String adminUsername, UUID invitationId) {
         User caller = admin(adminUsername);
-        Invitation invitation = invitations.findById(invitationId)
+        Invitation invitation = invitations.findForUpdateById(invitationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found."));
 
         User user = invitation.getUser();
@@ -219,12 +220,19 @@ public class AdminInvitationService {
             }
         }
 
+        if (invitation.getEmailStatus() == InvitationEmailStatus.PENDING
+                && invitation.getLastDispatchedAt() != null
+                && invitation.getLastDispatchedAt().isAfter(Instant.now().minus(5, ChronoUnit.SECONDS))) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "An invitation dispatch is already in progress. Please wait a few seconds before resending.");
+        }
+
         String rawToken = secureTokens.rawToken();
         invitation.setTokenHash(secureTokens.hash(rawToken));
         invitation.setExpiresAt(Instant.now().plus(invitationHours, ChronoUnit.HOURS));
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setEmailStatus(InvitationEmailStatus.PENDING);
         invitation.setEmailError(null);
+        invitation.setLastDispatchedAt(Instant.now());
         invitations.save(invitation);
 
         events.publishEvent(new InvitationCreatedEvent(invitation.getId(), user.getEmail(), user.getEffectiveRoleName(), rawToken, invitation.getExpiresAt()));

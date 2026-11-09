@@ -18,6 +18,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   const isAdmin = path.startsWith("/admin");
   const isDashboard = path.startsWith("/dashboard");
   const isDepartmentAdmin = path.startsWith("/department-admin");
+  const isEventDetail = /^\/events\/[^/]+$/.test(path);
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -25,12 +26,12 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
     if (isAdmin || isDashboard || isDepartmentAdmin) return;
     let alive = true;
     currentUser()
-      .then(() => { if (alive) setIsLoggedIn(true); })
+      .then((u) => { if (alive) setIsLoggedIn(Boolean(u)); })
       .catch(() => { if (alive) setIsLoggedIn(false); });
     return () => { alive = false; };
   }, [isAdmin, isDashboard, isDepartmentAdmin, path]);
 
-  if (isAdmin || isDashboard || isDepartmentAdmin) return <>{children}</>;
+  if (isAdmin || isDashboard || isDepartmentAdmin || (isLoggedIn && isEventDetail)) return <>{children}</>;
 
   return (
     <>

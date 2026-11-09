@@ -46,11 +46,14 @@ public class InvitationEmailService {
     @PostConstruct
     void validateSmtpConnection() {
         if (!enabled) {
-            log.info("NotifyHub invitation email delivery is disabled.");
+            log.info("NotifyHub invitation email delivery is disabled (MAIL_ENABLED=false). Set MAIL_ENABLED=true in production environment variables to activate delivery.");
             return;
         }
         try {
             transport.validateConnection();
+            if (from != null && (from.endsWith("@localhost") || from.endsWith(".local") || from.contains("example.com"))) {
+                log.warn("NotifyHub outbound email sender address is configured as '{}'. Ensure this is a deliverable address or verified domain.", from);
+            }
         } catch (Exception ex) {
             log.warn("NotifyHub email validation warning: {}", safeMessage(ex));
         }

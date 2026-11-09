@@ -271,7 +271,7 @@ export default function StudentDashboardView({ user }: { user: CurrentUser }) {
                   <span className="text-xs font-bold text-muted">{eventsList.length} Scheduled</span>
                 </div>
                 <Link
-                  href="/events"
+                  href="/dashboard/calendar"
                   className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-surface-2/60 px-3 py-1.5 text-xs font-bold text-brand-light hover:bg-surface-2 hover:text-white transition-all"
                 >
                   See all events →
