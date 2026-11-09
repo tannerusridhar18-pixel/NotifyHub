@@ -19,12 +19,14 @@ public class Invitation {
     @Column(name = "email_error", length = 500) private String emailError;
     @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "created_by", nullable = false) private User createdBy;
     @Column(nullable = false, updatable = false) private Instant createdAt;
+    @Column(name = "last_dispatched_at") private Instant lastDispatchedAt;
 
     @PrePersist void prePersist() {
         if (id == null) id = UUID.randomUUID();
         if (createdAt == null) createdAt = Instant.now();
         if (status == null) status = InvitationStatus.PENDING;
         if (emailStatus == null) emailStatus = InvitationEmailStatus.PENDING;
+        if (lastDispatchedAt == null) lastDispatchedAt = Instant.now();
     }
     public UUID getId() { return id; }
     public User getUser() { return user; }
@@ -36,6 +38,7 @@ public class Invitation {
     public String getEmailError() { return emailError; }
     public User getCreatedBy() { return createdBy; }
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getLastDispatchedAt() { return lastDispatchedAt; }
     public void setUser(User user) { this.user = user; }
     public void setTokenHash(String tokenHash) { this.tokenHash = tokenHash; }
     public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
@@ -44,4 +47,5 @@ public class Invitation {
     public void setEmailStatus(InvitationEmailStatus emailStatus) { this.emailStatus = emailStatus; }
     public void setEmailError(String emailError) { this.emailError = emailError; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+    public void setLastDispatchedAt(Instant lastDispatchedAt) { this.lastDispatchedAt = lastDispatchedAt; }
 }

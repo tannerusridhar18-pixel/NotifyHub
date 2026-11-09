@@ -23,22 +23,23 @@ public class MailTransportConfig {
     @Bean
     @ConditionalOnMissingBean(EmailTransport.class)
     public EmailTransport emailTransport(
-            @Value("${notifyhub.mail.provider:smtp}") String provider,
+            @Value("${notifyhub.mail.provider:auto}") String provider,
             @Value("${notifyhub.mail.from:notifyhub@localhost}") String mailFrom,
             @Value("${notifyhub.mail.resend.api-key:}") String resendApiKey,
             @Value("${notifyhub.mail.resend.api-url:https://api.resend.com/emails}") String resendApiUrl,
             JavaMailSender javaMailSender,
             ObjectMapper objectMapper) {
 
-        String p = provider != null ? provider.trim().toLowerCase() : "smtp";
+        String p = provider != null ? provider.trim().toLowerCase() : "auto";
+        boolean hasResendKey = resendApiKey != null && !resendApiKey.isBlank();
 
         boolean useResend = "resend".equals(p) || "api".equals(p)
-                || ((p.isEmpty() || "auto".equals(p)) && resendApiKey != null && !resendApiKey.isBlank());
+                || (("auto".equals(p) || p.isEmpty()) && hasResendKey);
 
         if (useResend) {
             log.info("Configuring NotifyHub EmailTransport using Resend HTTPS API.");
-            if (mailFrom != null && (mailFrom.endsWith("@localhost") || mailFrom.endsWith(".local"))) {
-                log.warn("Resend email delivery is enabled, but MAIL_FROM is '{}'. Resend requires a verified sender domain (e.g. notifications@yourdomain.edu).", mailFrom);
+            if (mailFrom != null && (mailFrom.endsWith("@localhost") || mailFrom.endsWith(".local") || mailFrom.contains("example.com"))) {
+                log.warn("Resend email delivery is enabled, but MAIL_FROM is '{}'. Resend requires a verified sender domain (e.g. notifications@yourdomain.edu) or 'onboarding@resend.dev'.", mailFrom);
             }
             return new ResendEmailTransport(resendApiKey, resendApiUrl, null, objectMapper);
         }
